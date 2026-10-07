@@ -16,7 +16,7 @@ import {
   buildDictionary,
   entryFromDictionary,
 } from '../src/app/core/dictionary.ts';
-import { readCharacters, writeCharacters } from '../server/characters-file.ts';
+import { readCharacters, writeCharacters } from '../server/data-files.ts';
 
 const args = new Set(process.argv.slice(2));
 const dryRun = args.has('--dry-run');

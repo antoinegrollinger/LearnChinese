@@ -541,3 +541,31 @@ fieldset {
   box-shadow: 0 4px 16px rgb(0 0 0 / 0.25);
 }
 .toast.error { background: var(--tone1); }
+
+/* ---------- Words ---------- */
+.word-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; }
+.word-tile { width: 100%; display: grid; grid-template-columns: auto 1fr; column-gap: 10px; text-align: left; }
+.word-tile .word-hz { font-size: 1.4rem; grid-row: span 2; align-self: center; }
+.word-tile .word-meaning { font-size: 0.8rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.word-tile.active { border-color: var(--accent); background: var(--bg); }
+.word-editor { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.word-editor label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; }
+.word-editor .row { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+.word-editor .grow { flex: 1; min-width: 200px; }
+.word-input { font-size: 2rem; letter-spacing: 0.1em; }
+.composition { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.char-chip {
+  position: relative; display: flex; flex-direction: column; align-items: center; min-width: 76px; max-width: 130px;
+  padding: 6px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); text-align: center;
+}
+.char-chip > a:first-child, .char-chip > span:first-child { font-size: 1.8rem; line-height: 1.2; color: inherit; text-decoration: none; }
+.char-chip small { color: var(--muted); font-size: 0.7rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.char-chip.unknown { border-style: dashed; }
+.char-chip .remove { position: absolute; top: -8px; right: -8px; padding: 0 6px; border-radius: 50%; font-size: 0.8rem; }
+.lookup { display: flex; flex-direction: column; gap: 6px; padding: 10px; border: 1px solid var(--tone4); border-radius: 10px; }
+.lookup-entry { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; border-bottom: 1px dashed var(--border); padding-bottom: 6px; }
+.lookup-entry p { margin: 2px 0 0; font-size: 0.9rem; }
+.lookup-pinyin { font-weight: 600; margin-left: 6px; }
+.picker { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 6px; max-height: 240px; overflow-y: auto; }
+a.hz { color: inherit; text-decoration: none; }
+a.hz:hover { color: var(--accent); }

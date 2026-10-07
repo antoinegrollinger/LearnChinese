@@ -31,6 +31,7 @@ An internet connection is needed: the stroke data (Hanzi Writer) and the diction
 | Route | Page |
 |---|---|
 | `/study/:character` | Character card: *Animate* the stroke order, *Practice* drawing with stroke-by-stroke checking, toggle the outline, 🔊 pronunciation, coloured decomposition (red = meaning, blue = sound), stroke-order strip, words, notes. ← → move between characters. |
+| `/words`, `/words/:word` | Your words: compose a word by clicking your characters (or type it). Each character shows your pinyin and meaning, or a *+ Add* link if it is not in your list yet. **🔎 Look up meaning** searches CC-CEDICT; words that aren't in it are split into parts it knows. **Save** writes to `data/words.json`. Each character's Study card lists your words that contain it. |
 | `/review` | You are given the pinyin and meaning and write the character from memory. Characters you have never reviewed, or often miss, come back first. Scores are kept in localStorage. |
 | `/add`, `/add/:character` | Add or edit a character. Find one by pinyin (`ma`, `ma3`, `mǎ`, `nv3`), or type it: the form fills itself in from the dictionary (pinyin, meaning, type, components with roles and stroke numbers, example words, notes). **Save** writes to `data/characters.json`, keeping the previous version in `data/characters.backup.json`. |
 
@@ -38,7 +39,11 @@ An internet connection is needed: the stroke data (Hanzi Writer) and the diction
 
 ```
 data/characters.json          your characters (written by the API)
-server/server.ts              local API (GET/POST/DELETE /api/characters) + static server for `npm run app`
+data/words.json               your words (written by the API)
+server/server.ts              local API: /api/characters, /api/words (GET/POST/DELETE), /api/lookup/:word
+server/cedict.ts              CC-CEDICT word dictionary (downloaded once into .cache/)
+server/data-files.ts          reading/writing data/*.json with backups
+scripts/                      npm run add-components (adds missing components as characters)
 src/app/
   app.ts, app.routes.ts       shell (header + tabs) and routes
   core/
@@ -82,4 +87,5 @@ Sources:
 - [Hanzi Writer](https://hanziwriter.org): stroke order.
 - [Make Me a Hanzi](https://github.com/skishore/makemeahanzi): definitions, etymology, decomposition.
 - Jun Da's character frequency list.
+- [CC-CEDICT](https://cc-cedict.org) (CC BY-SA 4.0): word meanings on the Words page. It is downloaded once into `.cache/`; delete that folder to get a newer version.
 - [Complete HSK vocabulary](https://github.com/drkameleon/complete-hsk-vocabulary): example words.

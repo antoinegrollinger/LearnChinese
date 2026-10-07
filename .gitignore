@@ -46,3 +46,8 @@ Thumbs.db
 # Hanzi Workshop
 /data/characters.backup.json
 /data/characters.json.tmp
+
+# CC-CEDICT download (server/cedict.ts)
+/.cache
+/data/words.backup.json
+/data/words.json.tmp

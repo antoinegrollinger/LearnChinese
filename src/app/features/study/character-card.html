@@ -108,6 +108,21 @@
     </ul>
   }
 
+  @if (savedWords().length) {
+    <h3>In your word list</h3>
+    <ul class="words">
+      @for (w of savedWords(); track w.word) {
+        <li>
+          <a class="hz" [routerLink]="['/words', w.word]">{{ w.word }}</a>
+          <app-pinyin [text]="w.pinyin" />
+          @if (w.meaning) {
+            — {{ w.meaning }}
+          }
+        </li>
+      }
+    </ul>
+  }
+
   @if (entry().notes) {
     <h3>Notes</h3>
     <p>{{ entry().notes }}</p>

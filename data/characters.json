@@ -306,134 +306,6 @@
     "meaning": "water"
   },
   {
-    "character": "可",
-    "pinyin": "kě",
-    "meaning": "may, can, -able; possibly",
-    "type": "phonosemantic",
-    "components": [
-      {
-        "character": "丁",
-        "role": "meaning",
-        "pinyin": "dīng",
-        "meaning": "male adult",
-        "strokes": "1,5"
-      },
-      {
-        "character": "口",
-        "role": "sound",
-        "pinyin": "kou3",
-        "meaning": "mouth, opening",
-        "strokes": "2-4"
-      }
-    ],
-    "words": [
-      [
-        "可以",
-        "ke3yi3",
-        "can; may"
-      ],
-      [
-        "可能",
-        "ke3neng2",
-        "might (happen); possible"
-      ],
-      [
-        "可是",
-        "ke3shi4",
-        "but; however; (used for emphasis) indeed"
-      ]
-    ]
-  },
-  {
-    "character": "河",
-    "pinyin": "he2",
-    "meaning": "river",
-    "type": "phonosemantic",
-    "components": [
-      {
-        "character": "氵",
-        "role": "meaning",
-        "pinyin": "shui3",
-        "meaning": "water"
-      },
-      {
-        "character": "可",
-        "role": "sound",
-        "pinyin": "ke3",
-        "meaning": "can"
-      }
-    ],
-    "words": [
-      [
-        "黄河",
-        "Huang2he2",
-        "the Yellow River"
-      ]
-    ],
-    "notes": "The sound has shifted over time: 可 kě → 河 hé."
-  },
-  {
-    "character": "青",
-    "pinyin": "qīng",
-    "meaning": "nature's color; blue, green, black; young",
-    "components": [
-      {
-        "character": "龶",
-        "role": "other"
-      },
-      {
-        "character": "月",
-        "role": "other",
-        "pinyin": "yuè",
-        "meaning": "moon"
-      }
-    ],
-    "words": [
-      [
-        "青年",
-        "qing1nian2",
-        "youth; youthful years"
-      ],
-      [
-        "青少年",
-        "qing1shao4nian2",
-        "adolescent; youth"
-      ],
-      [
-        "青春",
-        "qing1chun1",
-        "youth; youthfulness"
-      ]
-    ]
-  },
-  {
-    "character": "清",
-    "pinyin": "qing1",
-    "meaning": "clear, pure",
-    "type": "phonosemantic",
-    "components": [
-      {
-        "character": "氵",
-        "role": "meaning",
-        "pinyin": "shui3",
-        "meaning": "water"
-      },
-      {
-        "character": "青",
-        "role": "sound",
-        "pinyin": "qing1",
-        "meaning": "blue-green"
-      }
-    ],
-    "words": [
-      [
-        "清楚",
-        "qing1chu5",
-        "clear, distinct"
-      ]
-    ]
-  },
-  {
     "character": "门",
     "pinyin": "mén",
     "meaning": "gate, door, entrance, opening",
@@ -456,128 +328,6 @@
       ]
     ],
     "notes": "An open doorway or gate"
-  },
-  {
-    "character": "问",
-    "pinyin": "wen4",
-    "meaning": "to ask",
-    "type": "phonosemantic",
-    "components": [
-      {
-        "character": "门",
-        "role": "sound",
-        "pinyin": "men2",
-        "meaning": "door"
-      },
-      {
-        "character": "口",
-        "role": "meaning",
-        "pinyin": "kou3",
-        "meaning": "mouth"
-      }
-    ],
-    "words": [
-      [
-        "问题",
-        "wen4ti2",
-        "question, problem"
-      ]
-    ],
-    "notes": "Here the phonetic part (门) wraps around the semantic part (口)."
-  },
-  {
-    "character": "相",
-    "pinyin": "xiāng",
-    "meaning": "mutual, reciprocal; equal; each other",
-    "type": "ideogram",
-    "components": [
-      {
-        "character": "木",
-        "role": "meaning",
-        "pinyin": "mu4",
-        "meaning": "tree, wood"
-      },
-      {
-        "character": "目",
-        "role": "meaning",
-        "pinyin": "mù",
-        "meaning": "eye"
-      }
-    ],
-    "words": [
-      [
-        "相信",
-        "xiang1xin4",
-        "to be convinced (that sth is true); to believe; to accept sth as true"
-      ],
-      [
-        "相当",
-        "xiang1dang1",
-        "equivalent to; appropriate"
-      ],
-      [
-        "相关",
-        "xiang1guan1",
-        "related; relevant"
-      ]
-    ],
-    "notes": "To stare 目 at a tree 木, meaning to observe"
-  },
-  {
-    "character": "心",
-    "pinyin": "xīn",
-    "meaning": "heart; mind; soul",
-    "type": "pictogram",
-    "words": [
-      [
-        "担心",
-        "dan1xin1",
-        "anxious; worried"
-      ],
-      [
-        "中心",
-        "zhong1xin1",
-        "center; heart"
-      ],
-      [
-        "开心",
-        "kai1xin1",
-        "to feel happy; to rejoice"
-      ]
-    ],
-    "notes": "A heart"
-  },
-  {
-    "character": "想",
-    "pinyin": "xiang3",
-    "meaning": "to think, to want",
-    "type": "phonosemantic",
-    "components": [
-      {
-        "character": "相",
-        "role": "sound",
-        "pinyin": "xiang1",
-        "meaning": "mutual"
-      },
-      {
-        "character": "心",
-        "role": "meaning",
-        "pinyin": "xin1",
-        "meaning": "heart (mind)"
-      }
-    ],
-    "words": [
-      [
-        "我想…",
-        "wo3 xiang3…",
-        "I would like…"
-      ],
-      [
-        "想家",
-        "xiang3jia1",
-        "to be homesick"
-      ]
-    ]
   },
   {
     "character": "子",
@@ -610,5 +360,416 @@
       ]
     ],
     "notes": "A child in a wrap, with outstretched arms but bundled legs"
+  },
+  {
+    "character": "呢",
+    "pinyin": "né",
+    "meaning": "wool; interrogative or emphatic final particle",
+    "type": "phonosemantic",
+    "components": [
+      {
+        "character": "口",
+        "role": "meaning",
+        "pinyin": "kou3",
+        "meaning": "mouth, opening"
+      },
+      {
+        "character": "尼",
+        "role": "sound",
+        "pinyin": "ní",
+        "meaning": "Buddhist nun"
+      }
+    ]
+  },
+  {
+    "character": "你",
+    "pinyin": "nǐ",
+    "meaning": "you, second person pronoun",
+    "type": "ideogram",
+    "components": [
+      {
+        "character": "亻",
+        "role": "meaning",
+        "pinyin": "rén",
+        "meaning": "man, person; people"
+      },
+      {
+        "character": "尔",
+        "role": "meaning",
+        "pinyin": "ěr",
+        "meaning": "you"
+      }
+    ],
+    "words": [
+      [
+        "你们",
+        "ni3men5",
+        "you (plural)"
+      ]
+    ],
+    "notes": "Pronoun 尔 for a person 亻"
+  },
+  {
+    "character": "们",
+    "pinyin": "men",
+    "meaning": "plural marker for pronouns and some nouns",
+    "type": "phonosemantic",
+    "components": [
+      {
+        "character": "亻",
+        "role": "meaning",
+        "pinyin": "rén",
+        "meaning": "man, person; people"
+      },
+      {
+        "character": "门",
+        "role": "sound",
+        "pinyin": "mén",
+        "meaning": "gate, door, entrance, opening"
+      }
+    ],
+    "words": [
+      [
+        "我们",
+        "wo3men5",
+        "we; us"
+      ],
+      [
+        "他们",
+        "ta1men5",
+        "they"
+      ],
+      [
+        "你们",
+        "ni3men5",
+        "you (plural)"
+      ]
+    ]
+  },
+  {
+    "character": "二",
+    "pinyin": "èr",
+    "meaning": "two; twice",
+    "type": "ideogram",
+    "components": [
+      {
+        "character": "一",
+        "role": "meaning",
+        "pinyin": "yī",
+        "meaning": "one; a, an; alone"
+      },
+      {
+        "character": "一",
+        "role": "meaning",
+        "pinyin": "yī",
+        "meaning": "one; a, an; alone"
+      }
+    ],
+    "words": [
+      [
+        "第二",
+        "di4er4",
+        "second; number two"
+      ],
+      [
+        "二手",
+        "er4shou3",
+        "indirectly acquired; second-hand (information, equipment etc)"
+      ],
+      [
+        "二手车",
+        "er4shou3che1",
+        "second-hand car"
+      ]
+    ],
+    "notes": "Two  parallel lines; compare 一 (one) and 三 (three)"
+  },
+  {
+    "character": "三",
+    "pinyin": "sān",
+    "meaning": "three",
+    "type": "ideogram",
+    "components": [
+      {
+        "character": "一",
+        "role": "meaning",
+        "pinyin": "yī",
+        "meaning": "one; a, an; alone"
+      },
+      {
+        "character": "二",
+        "role": "meaning",
+        "pinyin": "èr",
+        "meaning": "two; twice"
+      }
+    ],
+    "words": [
+      [
+        "三角",
+        "san1jiao3",
+        "triangle"
+      ],
+      [
+        "再三",
+        "zai4san1",
+        "over and over again; again and again"
+      ],
+      [
+        "三明治",
+        "san1ming2zhi4",
+        "sandwich (loanword)"
+      ]
+    ],
+    "notes": "Three  parallel lines; compare 一 (one) and 二 (two)"
+  },
+  {
+    "character": "四",
+    "pinyin": "sì",
+    "meaning": "four",
+    "type": "ideogram",
+    "components": [
+      {
+        "character": "囗",
+        "role": "meaning",
+        "pinyin": "wéi",
+        "meaning": "enclosure",
+        "strokes": "1-2,5"
+      },
+      {
+        "character": "儿",
+        "role": "meaning",
+        "pinyin": "ér",
+        "meaning": "son",
+        "strokes": "3-4"
+      }
+    ],
+    "words": [
+      [
+        "四处",
+        "si4chu4",
+        "all over the place; everywhere and all directions"
+      ],
+      [
+        "四周",
+        "si4zhou1",
+        "all around"
+      ],
+      [
+        "四肢",
+        "si4zhi1",
+        "the four limbs of the body"
+      ]
+    ],
+    "notes": "A child 儿 in a room with four walls 囗"
+  },
+  {
+    "character": "五",
+    "pinyin": "wǔ",
+    "meaning": "five; surname",
+    "type": "ideogram",
+    "components": [
+      {
+        "character": "二",
+        "role": "meaning",
+        "pinyin": "èr",
+        "meaning": "two; twice",
+        "strokes": "1,4"
+      }
+    ],
+    "words": [
+      [
+        "五星级",
+        "wu3xing1ji2",
+        "five-star (hotel)"
+      ],
+      [
+        "五花八门",
+        "wu3hua1ba1men2",
+        "myriad; all kinds of"
+      ],
+      [
+        "五颜六色",
+        "wu3yan2liu4se4",
+        "multicolored; every color under the sun"
+      ]
+    ],
+    "notes": "Five elements (the cross with the extra stroke) between heaven 一 and earth 一"
+  },
+  {
+    "character": "六",
+    "pinyin": "liù",
+    "meaning": "six",
+    "components": [
+      {
+        "character": "亠",
+        "role": "other",
+        "pinyin": "tóu",
+        "meaning": "lid"
+      },
+      {
+        "character": "八",
+        "role": "other",
+        "pinyin": "bā",
+        "meaning": "eight"
+      }
+    ],
+    "words": [
+      [
+        "五颜六色",
+        "wu3yan2liu4se4",
+        "multicolored; every color under the sun"
+      ]
+    ]
+  },
+  {
+    "character": "七",
+    "pinyin": "qī",
+    "meaning": "seven",
+    "components": [
+      {
+        "character": "一",
+        "role": "other",
+        "pinyin": "yī",
+        "meaning": "one; a, an; alone"
+      },
+      {
+        "character": "乚",
+        "role": "other",
+        "pinyin": "gōu",
+        "meaning": "secret"
+      }
+    ],
+    "words": [
+      [
+        "乱七八糟",
+        "luan4qi1ba1zao1",
+        "(idiom) chaotic; in disorder; muddled"
+      ],
+      [
+        "七嘴八舌",
+        "qi1zui3ba1she2",
+        "lively discussion with everybody talking at once"
+      ],
+      [
+        "横七竖八",
+        "heng2qi1shu4ba1",
+        "in disorder; at sixes and sevens (idiom)"
+      ]
+    ]
+  },
+  {
+    "character": "八",
+    "pinyin": "bā",
+    "meaning": "eight; all around, all sides",
+    "type": "ideogram",
+    "components": [
+      {
+        "character": "八",
+        "role": "meaning",
+        "pinyin": "bā",
+        "meaning": "eight; all around, all sides"
+      }
+    ],
+    "words": [
+      [
+        "八卦",
+        "ba1gua4",
+        "the eight divinatory trigrams of the Book of Changes 易经; gossip"
+      ],
+      [
+        "乱七八糟",
+        "luan4qi1ba1zao1",
+        "(idiom) chaotic; in disorder; muddled"
+      ],
+      [
+        "四面八方",
+        "si4mian4ba1fang1",
+        "in all directions; all around"
+      ]
+    ],
+    "notes": "Two bent lines meaning \"to divide\""
+  },
+  {
+    "character": "九",
+    "pinyin": "jiǔ",
+    "meaning": "nine",
+    "type": "pictogram",
+    "components": [
+      {
+        "character": "九",
+        "role": "meaning",
+        "pinyin": "jiǔ",
+        "meaning": "nine"
+      }
+    ],
+    "notes": "An elbow"
+  },
+  {
+    "character": "十",
+    "pinyin": "shí",
+    "meaning": "ten, tenth; complete; perfect",
+    "components": [
+      {
+        "character": "一",
+        "role": "other",
+        "pinyin": "yī",
+        "meaning": "one; a, an; alone"
+      },
+      {
+        "character": "丨",
+        "role": "other",
+        "pinyin": "shù",
+        "meaning": "number one"
+      }
+    ],
+    "words": [
+      [
+        "十分",
+        "shi2fen1",
+        "very; completely"
+      ],
+      [
+        "十足",
+        "shi2zu2",
+        "ample; complete"
+      ],
+      [
+        "十字路口",
+        "shi2zi4lu4kou3",
+        "crossroads; intersection"
+      ]
+    ]
+  },
+  {
+    "character": "火",
+    "pinyin": "huǒ",
+    "meaning": "fire, flame; to burn; anger, rage",
+    "type": "pictogram",
+    "components": [
+      {
+        "character": "火",
+        "role": "meaning",
+        "pinyin": "huǒ",
+        "meaning": "fire, flame; to burn; anger, rage"
+      }
+    ],
+    "words": [
+      [
+        "火车",
+        "huo3che1",
+        "train"
+      ],
+      [
+        "火箭",
+        "huo3jian4",
+        "rocket"
+      ],
+      [
+        "火灾",
+        "huo3zai1",
+        "serious fire (in a city or a forest etc)"
+      ]
+    ],
+    "notes": "Flames"
   }
 ]

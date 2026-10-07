@@ -1,0 +1,63 @@
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { inject, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+
+export interface SaveResult<T> {
+  entry: T;
+  created: boolean;
+}
+
+/** A list stored in data/<name>.json, read and written through server/server.ts (/api/<name>). */
+export abstract class ApiListStore<T> {
+  private readonly http = inject(HttpClient);
+
+  readonly list = signal<T[]>([]);
+  readonly loaded = signal(false);
+  readonly error = signal<string | null>(null);
+
+  constructor(
+    private readonly url: string,
+    private readonly keyOf: (item: T) => string,
+    private readonly clean: (raw: unknown) => T,
+  ) {
+    this.reload();
+  }
+
+  async reload(): Promise<void> {
+    try {
+      const list = await firstValueFrom(this.http.get<unknown[]>(this.url));
+      this.list.set(list.map(this.clean));
+      this.error.set(null);
+    } catch {
+      this.error.set('Could not reach the local server. Start the app with "npm start".');
+    } finally {
+      this.loaded.set(true);
+    }
+  }
+
+  find(key: string | undefined): T | undefined {
+    return this.list().find((item) => this.keyOf(item) === key);
+  }
+
+  /** Adds the item, or replaces the one with the same key. */
+  async save(item: T): Promise<SaveResult<T>> {
+    const result = await firstValueFrom(this.http.post<SaveResult<T>>(this.url, item));
+    const key = this.keyOf(result.entry);
+    this.list.update((list) => {
+      const i = list.findIndex((x) => this.keyOf(x) === key);
+      return i >= 0 ? list.map((x, k) => (k === i ? result.entry : x)) : [...list, result.entry];
+    });
+    return result;
+  }
+
+  async remove(key: string): Promise<void> {
+    await firstValueFrom(this.http.delete(`${this.url}/${encodeURIComponent(key)}`));
+    this.list.update((list) => list.filter((x) => this.keyOf(x) !== key));
+  }
+}
+
+/** Readable message for a failed API call. */
+export function errorMessage(err: unknown): string {
+  if (err instanceof HttpErrorResponse) return err.error?.error ?? err.message;
+  return err instanceof Error ? err.message : String(err);
+}

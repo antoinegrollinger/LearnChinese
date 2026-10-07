@@ -10,6 +10,7 @@ import { CharactersService } from './core/characters.service';
       <h1><span class="logo">汉字</span> Workshop</h1>
       <nav class="tabs">
         <a class="button" routerLink="/study" routerLinkActive="active">Study</a>
+        <a class="button" routerLink="/words" routerLinkActive="active">Words</a>
         <a class="button" routerLink="/review" routerLinkActive="active">Review</a>
         <a class="button" routerLink="/add" routerLinkActive="active">Add</a>
       </nav>

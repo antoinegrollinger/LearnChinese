@@ -13,6 +13,7 @@ import { CharacterEntry, CharacterPart } from '../../core/character.model';
 import { ROLES, typeOf } from '../../core/config';
 import { speak } from '../../core/speech';
 import { StatsService } from '../../core/stats.service';
+import { WordsService } from '../../core/words.service';
 import { StrokeDataService, partColors } from '../../core/stroke-data.service';
 import { HanziWriterView } from '../../shared/hanzi-writer';
 import { Pinyin } from '../../shared/pinyin';
@@ -31,6 +32,7 @@ export class CharacterCard {
 
   private readonly strokeData = inject(StrokeDataService);
   private readonly statsService = inject(StatsService);
+  private readonly words = inject(WordsService);
   private readonly writer = viewChild.required(HanziWriterView);
 
   protected readonly roles = ROLES;
@@ -40,6 +42,8 @@ export class CharacterCard {
   protected readonly type = computed(() => typeOf(this.entry().type));
   protected readonly parts = computed<CharacterPart[]>(() => this.entry().components ?? []);
   protected readonly colors = computed(() => partColors(this.parts()));
+  /** Saved words (data/words.json) containing this character. */
+  protected readonly savedWords = computed(() => this.words.containing(this.entry().character));
 
   /** Stroke paths + which component each stroke belongs to. */
   protected readonly strokeInfo = resource({
