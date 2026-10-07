@@ -1,0 +1,34 @@
+<section class="view centered">
+  @if (card(); as c) {
+    <div class="review">
+      <p class="muted">Write the matching character:</p>
+      <div class="question">
+        <div class="pinyin"><app-pinyin [text]="c.pinyin" /></div>
+        <div class="meaning">{{ c.meaning }}</div>
+      </div>
+
+      <app-hanzi-writer [character]="c.character" [showOutline]="false" [hideCharacter]="true" />
+
+      <div class="buttons">
+        <button type="button" (click)="hint()">Hint (outline)</button>
+        <button type="button" (click)="solution()">Show solution</button>
+        <button type="button" title="Pronounce" (click)="speak()">🔊</button>
+        <button type="button" class="primary" (click)="next()">Next →</button>
+      </div>
+      <p class="message" [class]="message().kind">{{ message().text }}</p>
+
+      @if (done()) {
+        <div class="answer">
+          <div class="big-char">{{ c.character }}</div>
+          <span class="badge" [style.--type-color]="typeOf(c.type).color">{{
+            typeOf(c.type).name
+          }}</span>
+          <app-parts-summary class="summary" [parts]="c.components ?? []" />
+        </div>
+      }
+      <p class="muted">{{ score() }}</p>
+    </div>
+  } @else {
+    <p class="muted">Add some characters first.</p>
+  }
+</section>

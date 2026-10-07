@@ -1,0 +1,614 @@
+[
+  {
+    "character": "人",
+    "pinyin": "ren2",
+    "meaning": "person, people",
+    "type": "pictogram",
+    "words": [
+      [
+        "中国人",
+        "Zhong1guo2ren2",
+        "Chinese person"
+      ],
+      [
+        "人们",
+        "ren2men5",
+        "people"
+      ]
+    ],
+    "notes": "A person seen from the side, walking."
+  },
+  {
+    "character": "口",
+    "pinyin": "kou3",
+    "meaning": "mouth, opening",
+    "type": "pictogram",
+    "words": [
+      [
+        "人口",
+        "ren2kou3",
+        "population"
+      ],
+      [
+        "口语",
+        "kou3yu3",
+        "spoken language"
+      ]
+    ],
+    "notes": "An open mouth. A very common semantic component for speech and sounds."
+  },
+  {
+    "character": "木",
+    "pinyin": "mu4",
+    "meaning": "tree, wood",
+    "type": "pictogram",
+    "words": [
+      [
+        "木头",
+        "mu4tou5",
+        "wood"
+      ]
+    ],
+    "notes": "A tree: trunk, branches and roots."
+  },
+  {
+    "character": "日",
+    "pinyin": "ri4",
+    "meaning": "sun, day",
+    "type": "pictogram",
+    "words": [
+      [
+        "生日",
+        "sheng1ri4",
+        "birthday"
+      ],
+      [
+        "日本",
+        "Ri4ben3",
+        "Japan"
+      ]
+    ]
+  },
+  {
+    "character": "女",
+    "pinyin": "nü3",
+    "meaning": "woman",
+    "type": "pictogram",
+    "words": [
+      [
+        "女人",
+        "nü3ren2",
+        "woman"
+      ],
+      [
+        "女儿",
+        "nü3'er2",
+        "daughter"
+      ]
+    ],
+    "notes": "A kneeling woman with crossed arms."
+  },
+  {
+    "character": "马",
+    "pinyin": "ma3",
+    "meaning": "horse",
+    "type": "pictogram",
+    "words": [
+      [
+        "马上",
+        "ma3shang4",
+        "right away"
+      ]
+    ],
+    "notes": "Simplified form of 馬: the horse's head, mane and legs."
+  },
+  {
+    "character": "上",
+    "pinyin": "shang4",
+    "meaning": "above, to go up",
+    "type": "ideogram",
+    "words": [
+      [
+        "上午",
+        "shang4wu3",
+        "morning"
+      ],
+      [
+        "马上",
+        "ma3shang4",
+        "right away"
+      ]
+    ],
+    "notes": "A stroke above a reference line."
+  },
+  {
+    "character": "一",
+    "pinyin": "yī",
+    "meaning": "one; a, an; alone",
+    "type": "ideogram",
+    "words": [
+      [
+        "一起",
+        "yi1qi3",
+        "in the same place; together"
+      ],
+      [
+        "一些",
+        "yi1xie1",
+        "some; a few"
+      ],
+      [
+        "一定",
+        "yi1ding4",
+        "surely; certainly"
+      ]
+    ],
+    "notes": "Represents heaven (天), earth (旦), or the number 1"
+  },
+  {
+    "character": "本",
+    "pinyin": "ben3",
+    "meaning": "root, origin; measure word for books",
+    "type": "ideogram",
+    "components": [
+      {
+        "character": "木",
+        "role": "meaning",
+        "pinyin": "mu4",
+        "meaning": "tree"
+      },
+      {
+        "character": "一",
+        "role": "other",
+        "pinyin": "yi1",
+        "meaning": "marker stroke (the root)"
+      }
+    ],
+    "words": [
+      [
+        "本子",
+        "ben3zi5",
+        "notebook"
+      ],
+      [
+        "日本",
+        "Ri4ben3",
+        "Japan"
+      ]
+    ],
+    "notes": "A stroke at the foot of the tree points to its root."
+  },
+  {
+    "character": "亻",
+    "pinyin": "rén",
+    "meaning": "man, person; people",
+    "type": "ideogram",
+    "notes": "Visual abbreviation of 人"
+  },
+  {
+    "character": "休",
+    "pinyin": "xiu1",
+    "meaning": "to rest",
+    "type": "ideogram",
+    "components": [
+      {
+        "character": "亻",
+        "role": "meaning",
+        "pinyin": "ren2",
+        "meaning": "person"
+      },
+      {
+        "character": "木",
+        "role": "meaning",
+        "pinyin": "mu4",
+        "meaning": "tree"
+      }
+    ],
+    "words": [
+      [
+        "休息",
+        "xiu1xi5",
+        "to rest"
+      ]
+    ],
+    "notes": "A person leaning against a tree: resting."
+  },
+  {
+    "character": "好",
+    "pinyin": "hao3",
+    "meaning": "good, well",
+    "type": "ideogram",
+    "components": [
+      {
+        "character": "女",
+        "role": "meaning",
+        "pinyin": "nü3",
+        "meaning": "woman"
+      },
+      {
+        "character": "子",
+        "role": "meaning",
+        "pinyin": "zi3",
+        "meaning": "child"
+      }
+    ],
+    "words": [
+      [
+        "你好",
+        "ni3 hao3",
+        "hello"
+      ],
+      [
+        "好吃",
+        "hao3chi1",
+        "delicious"
+      ]
+    ],
+    "notes": "A woman with her child: that is good."
+  },
+  {
+    "character": "妈",
+    "pinyin": "ma1",
+    "meaning": "mum, mother",
+    "type": "phonosemantic",
+    "components": [
+      {
+        "character": "女",
+        "role": "meaning",
+        "pinyin": "nü3",
+        "meaning": "woman"
+      },
+      {
+        "character": "马",
+        "role": "sound",
+        "pinyin": "ma3",
+        "meaning": "horse"
+      }
+    ],
+    "words": [
+      [
+        "妈妈",
+        "ma1ma5",
+        "mum"
+      ]
+    ]
+  },
+  {
+    "character": "吗",
+    "pinyin": "ma5",
+    "meaning": "question particle",
+    "type": "phonosemantic",
+    "components": [
+      {
+        "character": "口",
+        "role": "meaning",
+        "pinyin": "kou3",
+        "meaning": "mouth (speech)"
+      },
+      {
+        "character": "马",
+        "role": "sound",
+        "pinyin": "ma3",
+        "meaning": "horse"
+      }
+    ],
+    "words": [
+      [
+        "你好吗？",
+        "ni3 hao3 ma5?",
+        "how are you?"
+      ]
+    ]
+  },
+  {
+    "character": "氵",
+    "pinyin": "shuǐ",
+    "meaning": "water"
+  },
+  {
+    "character": "可",
+    "pinyin": "kě",
+    "meaning": "may, can, -able; possibly",
+    "type": "phonosemantic",
+    "components": [
+      {
+        "character": "丁",
+        "role": "meaning",
+        "pinyin": "dīng",
+        "meaning": "male adult",
+        "strokes": "1,5"
+      },
+      {
+        "character": "口",
+        "role": "sound",
+        "pinyin": "kou3",
+        "meaning": "mouth, opening",
+        "strokes": "2-4"
+      }
+    ],
+    "words": [
+      [
+        "可以",
+        "ke3yi3",
+        "can; may"
+      ],
+      [
+        "可能",
+        "ke3neng2",
+        "might (happen); possible"
+      ],
+      [
+        "可是",
+        "ke3shi4",
+        "but; however; (used for emphasis) indeed"
+      ]
+    ]
+  },
+  {
+    "character": "河",
+    "pinyin": "he2",
+    "meaning": "river",
+    "type": "phonosemantic",
+    "components": [
+      {
+        "character": "氵",
+        "role": "meaning",
+        "pinyin": "shui3",
+        "meaning": "water"
+      },
+      {
+        "character": "可",
+        "role": "sound",
+        "pinyin": "ke3",
+        "meaning": "can"
+      }
+    ],
+    "words": [
+      [
+        "黄河",
+        "Huang2he2",
+        "the Yellow River"
+      ]
+    ],
+    "notes": "The sound has shifted over time: 可 kě → 河 hé."
+  },
+  {
+    "character": "青",
+    "pinyin": "qīng",
+    "meaning": "nature's color; blue, green, black; young",
+    "components": [
+      {
+        "character": "龶",
+        "role": "other"
+      },
+      {
+        "character": "月",
+        "role": "other",
+        "pinyin": "yuè",
+        "meaning": "moon"
+      }
+    ],
+    "words": [
+      [
+        "青年",
+        "qing1nian2",
+        "youth; youthful years"
+      ],
+      [
+        "青少年",
+        "qing1shao4nian2",
+        "adolescent; youth"
+      ],
+      [
+        "青春",
+        "qing1chun1",
+        "youth; youthfulness"
+      ]
+    ]
+  },
+  {
+    "character": "清",
+    "pinyin": "qing1",
+    "meaning": "clear, pure",
+    "type": "phonosemantic",
+    "components": [
+      {
+        "character": "氵",
+        "role": "meaning",
+        "pinyin": "shui3",
+        "meaning": "water"
+      },
+      {
+        "character": "青",
+        "role": "sound",
+        "pinyin": "qing1",
+        "meaning": "blue-green"
+      }
+    ],
+    "words": [
+      [
+        "清楚",
+        "qing1chu5",
+        "clear, distinct"
+      ]
+    ]
+  },
+  {
+    "character": "门",
+    "pinyin": "mén",
+    "meaning": "gate, door, entrance, opening",
+    "type": "pictogram",
+    "words": [
+      [
+        "部门",
+        "bu4men2",
+        "department; branch"
+      ],
+      [
+        "专门",
+        "zhuan1men2",
+        "specialist; specialized"
+      ],
+      [
+        "门口",
+        "men2kou3",
+        "doorway; gate"
+      ]
+    ],
+    "notes": "An open doorway or gate"
+  },
+  {
+    "character": "问",
+    "pinyin": "wen4",
+    "meaning": "to ask",
+    "type": "phonosemantic",
+    "components": [
+      {
+        "character": "门",
+        "role": "sound",
+        "pinyin": "men2",
+        "meaning": "door"
+      },
+      {
+        "character": "口",
+        "role": "meaning",
+        "pinyin": "kou3",
+        "meaning": "mouth"
+      }
+    ],
+    "words": [
+      [
+        "问题",
+        "wen4ti2",
+        "question, problem"
+      ]
+    ],
+    "notes": "Here the phonetic part (门) wraps around the semantic part (口)."
+  },
+  {
+    "character": "相",
+    "pinyin": "xiāng",
+    "meaning": "mutual, reciprocal; equal; each other",
+    "type": "ideogram",
+    "components": [
+      {
+        "character": "木",
+        "role": "meaning",
+        "pinyin": "mu4",
+        "meaning": "tree, wood"
+      },
+      {
+        "character": "目",
+        "role": "meaning",
+        "pinyin": "mù",
+        "meaning": "eye"
+      }
+    ],
+    "words": [
+      [
+        "相信",
+        "xiang1xin4",
+        "to be convinced (that sth is true); to believe; to accept sth as true"
+      ],
+      [
+        "相当",
+        "xiang1dang1",
+        "equivalent to; appropriate"
+      ],
+      [
+        "相关",
+        "xiang1guan1",
+        "related; relevant"
+      ]
+    ],
+    "notes": "To stare 目 at a tree 木, meaning to observe"
+  },
+  {
+    "character": "心",
+    "pinyin": "xīn",
+    "meaning": "heart; mind; soul",
+    "type": "pictogram",
+    "words": [
+      [
+        "担心",
+        "dan1xin1",
+        "anxious; worried"
+      ],
+      [
+        "中心",
+        "zhong1xin1",
+        "center; heart"
+      ],
+      [
+        "开心",
+        "kai1xin1",
+        "to feel happy; to rejoice"
+      ]
+    ],
+    "notes": "A heart"
+  },
+  {
+    "character": "想",
+    "pinyin": "xiang3",
+    "meaning": "to think, to want",
+    "type": "phonosemantic",
+    "components": [
+      {
+        "character": "相",
+        "role": "sound",
+        "pinyin": "xiang1",
+        "meaning": "mutual"
+      },
+      {
+        "character": "心",
+        "role": "meaning",
+        "pinyin": "xin1",
+        "meaning": "heart (mind)"
+      }
+    ],
+    "words": [
+      [
+        "我想…",
+        "wo3 xiang3…",
+        "I would like…"
+      ],
+      [
+        "想家",
+        "xiang3jia1",
+        "to be homesick"
+      ]
+    ]
+  },
+  {
+    "character": "子",
+    "pinyin": "zi",
+    "meaning": "son, child; seed, egg; fruit; small thing",
+    "type": "pictogram",
+    "components": [
+      {
+        "character": "子",
+        "role": "meaning",
+        "pinyin": "zi",
+        "meaning": "son, child; seed, egg; fruit; small thing"
+      }
+    ],
+    "words": [
+      [
+        "孩子",
+        "hai2zi5",
+        "child"
+      ],
+      [
+        "儿子",
+        "er2zi5",
+        "son"
+      ],
+      [
+        "房子",
+        "fang2zi5",
+        "house; building (single- or two-story)"
+      ]
+    ],
+    "notes": "A child in a wrap, with outstretched arms but bundled legs"
+  }
+]

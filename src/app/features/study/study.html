@@ -1,0 +1,48 @@
+<section class="view">
+  <aside class="sidebar">
+    <input
+      type="search"
+      placeholder="Search: 妈, ma, mother…"
+      [value]="query()"
+      (input)="query.set($any($event.target).value)"
+    />
+    <div class="filters">
+      @for (f of filters(); track f.key) {
+        <button
+          type="button"
+          [class.active]="typeFilter() === f.key"
+          (click)="typeFilter.set(f.key)"
+        >
+          {{ f.name }} ({{ f.count }})
+        </button>
+      }
+    </div>
+    <ul class="tiles">
+      @for (c of visible(); track c.character) {
+        <li>
+          <button
+            type="button"
+            class="tile"
+            [class.active]="c.character === current()?.character"
+            [class.just-saved]="c.character === justSaved()"
+            [style.--type-color]="typeOf(c.type).color"
+            [title]="(c.meaning ?? '') + ' — ' + typeOf(c.type).name"
+            (click)="select(c)"
+          >
+            <span class="tile-char">{{ c.character }}</span>
+            <span class="tile-py">{{ toPinyin(c.pinyin) }}</span>
+          </button>
+        </li>
+      }
+    </ul>
+  </aside>
+
+  @if (toast(); as t) {
+    <p class="toast" [class.error]="t.kind === 'error'" role="status">{{ t.text }}</p>
+  }
+  @if (current(); as entry) {
+    <app-character-card [entry]="entry" (deleteRequested)="deleteCurrent()" />
+  } @else if (characters.loaded()) {
+    <p class="muted">No characters yet. Add your first one in the Add tab.</p>
+  }
+</section>
