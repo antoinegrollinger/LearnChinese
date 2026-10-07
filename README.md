@@ -34,7 +34,7 @@ An internet connection is needed: the stroke data (Hanzi Writer) and the diction
 |---|---|
 | Node version | **22.x** or 24.x |
 | Build command | `npm run build` |
-| Entry file | `dist/server/server.mjs` |
+| Entry file | `server.js` (it starts `dist/server/server.mjs`) |
 | Environment variables | `APP_PASSWORD`: **set one**, otherwise anyone can edit or delete your data. The browser asks for it (any user name).<br>`DATA_DIR`: a folder outside the deployed build, e.g. `/home/<user>/domains/<domain>/hanzi-data`, so your changes survive redeploys. |
 
 Environment variables read by the server:
