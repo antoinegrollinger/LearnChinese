@@ -7,7 +7,7 @@ An Angular app for studying Chinese characters. For each character it shows the 
 **Double-click `start.command`**, or run:
 
 ```sh
-nvm use      # Node 24 (see .nvmrc); Angular 22 needs Node ^22.22, ^24.15 or >=26
+nvm use      # Node 24 (see .nvmrc); Angular 21 needs Node ^22.12 or >=24
 npm install  # first time only
 npm start
 ```
@@ -21,10 +21,27 @@ npm start
 
 Other scripts:
 
-- `npm run app` builds the app and serves everything from the API server at http://localhost:8642, with no dev server.
+- `npm run app` builds everything (`npm run build`) and runs the production server (`node dist/server/server.mjs`) at http://localhost:8642, with no dev server.
 - `npm run typecheck` type-checks both the app and the server.
 
 An internet connection is needed: the stroke data (Hanzi Writer) and the dictionary are loaded from a CDN.
+
+## Deploy (e.g. Hostinger Node.js Web App)
+
+`npm run build` produces the Angular app in `dist/hanzi-workshop/browser` and the server as a single file, `dist/server/server.mjs`. That server serves the app and the API.
+
+| Hostinger setting | Value |
+|---|---|
+| Node version | **22.x** or 24.x |
+| Build command | `npm run build` |
+| Entry file | `dist/server/server.mjs` |
+| Environment variables | `APP_PASSWORD`: **set one**, otherwise anyone can edit or delete your data. The browser asks for it (any user name).<br>`DATA_DIR`: a folder outside the deployed build, e.g. `/home/<user>/domains/<domain>/hanzi-data`, so your changes survive redeploys. |
+
+Environment variables read by the server:
+
+- `PORT` is set by the host. Without it, the server listens on `localhost:8642`.
+- `DATA_DIR`: where `characters.json` and `words.json` are kept. On the first run it is filled with a copy of the project's `data/` folder. Without it, the server uses `data/`, which a redeploy replaces with the version from git.
+- `APP_PASSWORD` enables password protection (HTTP Basic auth). It is only safe over HTTPS.
 
 ## Pages
 

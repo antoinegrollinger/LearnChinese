@@ -803,5 +803,43 @@
       ]
     ],
     "notes": "Three mountain peaks"
+  },
+  {
+    "character": "是",
+    "pinyin": "shì",
+    "meaning": "to be; indeed, right, yes; okay",
+    "type": "ideogram",
+    "components": [
+      {
+        "character": "日",
+        "role": "meaning",
+        "pinyin": "ri4",
+        "meaning": "sun, day"
+      },
+      {
+        "character": "疋",
+        "role": "meaning",
+        "pinyin": "pǐ",
+        "meaning": "roll"
+      }
+    ],
+    "words": [
+      [
+        "就是",
+        "jiu4shi4",
+        "exactly; precisely; only; simply; just"
+      ],
+      [
+        "但是",
+        "dan4shi4",
+        "but; however"
+      ],
+      [
+        "还是",
+        "hai2shi5",
+        "still (as before); had better"
+      ]
+    ],
+    "notes": "To speak 日 directly 疋"
   }
 ]

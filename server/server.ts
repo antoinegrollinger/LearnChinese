@@ -8,14 +8,33 @@
  * During development (npm start) Angular's dev server forwards /api to this server (proxy.conf.json).
  * With `npm run app`, it also serves the built app from dist/.
  */
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { createReadStream, existsSync } from 'node:fs';
 import { IncomingMessage, ServerResponse, createServer } from 'node:http';
 import { extname, join, resolve, sep } from 'node:path';
 import { lookupWord, loadCedict } from './cedict.ts';
-import { CHARACTERS, ListFile, ROOT, WORDS, readList, writeList } from './data-files.ts';
+import { CHARACTERS, DATA_DIR, ListFile, ROOT, WORDS, readList, writeList } from './data-files.ts';
 
 const DIST = join(ROOT, 'dist', 'hanzi-workshop', 'browser');
-const PORT = Number(process.env['PORT']) || 8642;
+/** Set by the host in production (a port number or a socket path); 8642 on your computer. */
+const PORT = process.env['PORT'];
+const LOCAL_PORT = 8642;
+/** When set, every request needs this password (HTTP Basic auth, any user name). */
+const PASSWORD = process.env['APP_PASSWORD'];
+
+/** Checks the password, if one is configured. Returns false after asking the browser for it. */
+function authorized(req: IncomingMessage, res: ServerResponse): boolean {
+  if (!PASSWORD) return true;
+  const [scheme, encoded] = (req.headers.authorization ?? '').split(' ');
+  if (scheme === 'Basic' && encoded) {
+    const decoded = Buffer.from(encoded, 'base64').toString('utf8');
+    const sha = (text: string) => createHash('sha256').update(text).digest();
+    if (timingSafeEqual(sha(decoded.slice(decoded.indexOf(':') + 1)), sha(PASSWORD))) return true;
+  }
+  res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="Hanzi Workshop", charset="UTF-8"' });
+  res.end('Password required.');
+  return false;
+}
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -105,6 +124,7 @@ function serveApp(res: ServerResponse, url: URL): void {
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
   try {
+    if (!authorized(req, res)) return;
     if (url.pathname.startsWith('/api/')) await handleApi(req, res, url);
     else serveApp(res, url);
   } catch (err) {
@@ -115,15 +135,20 @@ const server = createServer(async (req, res) => {
 
 server.on('error', (err: NodeJS.ErrnoException) => {
   if (err.code === 'EADDRINUSE') {
-    console.error(`Port ${PORT} is already in use: is the app already running?`);
+    console.error(`Port ${PORT ?? LOCAL_PORT} is already in use: is the app already running?`);
     process.exit(1);
   }
   throw err;
 });
 
-server.listen(PORT, '127.0.0.1', () => {
+const onListening = () => {
   console.log(
-    `API ready on http://localhost:${PORT} (data: data/characters.json, data/words.json)`,
+    PORT ? `Hanzi Workshop listening on ${PORT}` : `API ready on http://localhost:${LOCAL_PORT}`,
   );
+  console.log(`Data: ${DATA_DIR}${PASSWORD ? ' · password protected' : ''}`);
   loadCedict().catch(() => {}); // warm up the word dictionary
-});
+};
+
+// In production listen where the host says; on your computer only accept local connections.
+if (PORT) server.listen(/^\d+$/.test(PORT) ? Number(PORT) : PORT, onListening);
+else server.listen(LOCAL_PORT, '127.0.0.1', onListening);
