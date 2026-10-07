@@ -28,8 +28,12 @@ export abstract class ApiListStore<T> {
       const list = await firstValueFrom(this.http.get<unknown[]>(this.url));
       this.list.set(list.map(this.clean));
       this.error.set(null);
-    } catch {
-      this.error.set('Could not reach the local server. Start the app with "npm start".');
+    } catch (err) {
+      const url = err instanceof HttpErrorResponse && err.url ? err.url : this.url;
+      this.error.set(
+        `Could not reach the server (${url}): ${errorMessage(err)}. ` +
+          'On your computer, start the app with "npm start"; online, check apiUrl in config.json.',
+      );
     } finally {
       this.loaded.set(true);
     }

@@ -5,7 +5,7 @@
   "scripts": {
     "start": "concurrently -k -n api,web -c blue,magenta \"npm:api\" \"ng serve --open\"",
     "api": "tsx watch --clear-screen=false server/server.ts",
-    "build": "ng build && npm run build:server",
+    "build": "ng build && node scripts/write-config.mjs && npm run build:server",
     "app": "npm run build && node dist/server/server.mjs",
     "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p server/tsconfig.json",
     "add-components": "tsx scripts/add-missing-components.ts",
