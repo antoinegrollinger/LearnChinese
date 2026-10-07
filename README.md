@@ -42,6 +42,14 @@ Environment variables read by the server:
 - `PORT` is set by the host. Without it, the server listens on `localhost:8642`.
 - `DATA_DIR`: where `characters.json` and `words.json` are kept. On the first run it is filled with a copy of the project's `data/` folder. Without it, the server uses `data/`, which a redeploy replaces with the version from git.
 - `APP_PASSWORD` enables password protection (HTTP Basic auth). It is only safe over HTTPS.
+- `CORS_ORIGINS`: only when the app and the API are on different domains (see below). Comma-separated, e.g. `https://example.com,https://www.example.com`.
+
+### App and API on separate domains (e.g. `example.com` + `api.example.com`)
+
+- **API** (`api.example.com`): a Node.js Web App as above, with `CORS_ORIGINS` set to the app's address(es).
+- **App** (`example.com`): plain static hosting. Upload the contents of `dist/hanzi-workshop/browser/` to `public_html/` (the included `.htaccess` sends routes like `/study/马` to `index.html`). In the uploaded `config.json`, set `"apiUrl": "https://api.example.com"`. You can change it later without rebuilding.
+
+With `"apiUrl": ""` (the default) the app calls `/api` on its own server, as with `npm start` and `npm run app`. When the API is on another domain and has a password, the app asks for it once and keeps it in the browser's localStorage.
 
 ## Pages
 

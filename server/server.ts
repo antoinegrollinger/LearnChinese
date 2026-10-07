@@ -22,8 +22,26 @@ const LOCAL_PORT = 8642;
 /** When set, every request needs this password (HTTP Basic auth, any user name). */
 const PASSWORD = process.env['APP_PASSWORD'];
 
+/**
+ * Sites allowed to call the API from another domain, comma-separated
+ * (e.g. "https://example.com,https://www.example.com"). Only needed when the app and the API are on different domains.
+ */
+const CORS_ORIGINS = (process.env['CORS_ORIGINS'] ?? '')
+  .split(',')
+  .map((origin) => origin.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+
+/** Adds the CORS headers for an allowed origin. Returns true when the request came from one. */
+function allowCors(req: IncomingMessage, res: ServerResponse): boolean {
+  const origin = req.headers.origin;
+  if (!origin || !CORS_ORIGINS.includes(origin)) return false;
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Vary', 'Origin');
+  return true;
+}
+
 /** Checks the password, if one is configured. Returns false after asking the browser for it. */
-function authorized(req: IncomingMessage, res: ServerResponse): boolean {
+function authorized(req: IncomingMessage, res: ServerResponse, crossOrigin: boolean): boolean {
   if (!PASSWORD) return true;
   const [scheme, encoded] = (req.headers.authorization ?? '').split(' ');
   if (scheme === 'Basic' && encoded) {
@@ -31,7 +49,11 @@ function authorized(req: IncomingMessage, res: ServerResponse): boolean {
     const sha = (text: string) => createHash('sha256').update(text).digest();
     if (timingSafeEqual(sha(decoded.slice(decoded.indexOf(':') + 1)), sha(PASSWORD))) return true;
   }
-  res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="Hanzi Workshop", charset="UTF-8"' });
+  // From another domain the app asks for the password itself (src/app/core/api.interceptor.ts).
+  res.writeHead(
+    401,
+    crossOrigin ? {} : { 'WWW-Authenticate': 'Basic realm="Hanzi Workshop", charset="UTF-8"' },
+  );
   res.end('Password required.');
   return false;
 }
@@ -124,7 +146,18 @@ function serveApp(res: ServerResponse, url: URL): void {
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
   try {
-    if (!authorized(req, res)) return;
+    const crossOrigin = allowCors(req, res);
+    if (crossOrigin && req.method === 'OPTIONS') {
+      // Preflight: the browser checks what it may send before the real request (no password yet).
+      res.writeHead(204, {
+        'Access-Control-Allow-Methods': 'GET, POST, DELETE',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Max-Age': '86400',
+      });
+      res.end();
+      return;
+    }
+    if (!authorized(req, res, crossOrigin)) return;
     if (url.pathname.startsWith('/api/')) await handleApi(req, res, url);
     else serveApp(res, url);
   } catch (err) {
@@ -146,6 +179,7 @@ const onListening = () => {
     PORT ? `Hanzi Workshop listening on ${PORT}` : `API ready on http://localhost:${LOCAL_PORT}`,
   );
   console.log(`Data: ${DATA_DIR}${PASSWORD ? ' · password protected' : ''}`);
+  if (CORS_ORIGINS.length) console.log(`Accepting API calls from ${CORS_ORIGINS.join(', ')}`);
   loadCedict().catch(() => {}); // warm up the word dictionary
 };
 

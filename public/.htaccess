@@ -1,0 +1,10 @@
+# Static hosting (Apache/LiteSpeed, e.g. Hostinger): send app routes like /study/马 to index.html.
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.html [L]
+
+# Always fetch the latest config.json (it holds the API URL).
+<Files "config.json">
+  Header set Cache-Control "no-store"
+</Files>
