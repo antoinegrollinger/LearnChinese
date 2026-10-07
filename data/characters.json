@@ -771,5 +771,37 @@
       ]
     ],
     "notes": "Flames"
+  },
+  {
+    "character": "山",
+    "pinyin": "shān",
+    "meaning": "mountain, hill, peak",
+    "type": "pictogram",
+    "components": [
+      {
+        "character": "山",
+        "role": "meaning",
+        "pinyin": "shān",
+        "meaning": "mountain, hill, peak"
+      }
+    ],
+    "words": [
+      [
+        "山顶",
+        "shan1ding3",
+        "hilltop"
+      ],
+      [
+        "山谷",
+        "shan1gu3",
+        "valley; ravine"
+      ],
+      [
+        "山区",
+        "shan1qu1",
+        "mountain area"
+      ]
+    ],
+    "notes": "Three mountain peaks"
   }
 ]
