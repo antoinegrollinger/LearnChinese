@@ -1,5 +1,6 @@
 import { Routes, UrlMatcher } from '@angular/router';
 import { loggedIn, loggedOut } from './core/auth.guard';
+import { Account } from './features/account/account';
 import { Add } from './features/add/add';
 import { Login } from './features/login/login';
 import { Review } from './features/review/review';
@@ -27,6 +28,7 @@ const pages: Routes = [
     component: Words,
     title: 'Words · Hanzi Workshop',
   },
+  { path: 'account', component: Account, title: 'Account · Hanzi Workshop' },
 ];
 
 export const routes: Routes = [

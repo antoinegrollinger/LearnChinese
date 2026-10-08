@@ -7,15 +7,15 @@
     }
 
     <label>
-      Email address
+      {{ mode() === 'login' ? 'Email address or username' : 'Email address' }}
       <input
-        type="email"
+        [attr.type]="mode() === 'login' ? 'text' : 'email'"
         formControlName="email"
-        autocomplete="email"
-        inputmode="email"
+        [attr.autocomplete]="mode() === 'login' ? 'username' : 'email'"
+        [attr.inputmode]="mode() === 'login' ? null : 'email'"
         autocapitalize="none"
         spellcheck="false"
-        placeholder="name@example.com"
+        [attr.placeholder]="mode() === 'login' ? 'name@example.com or username' : 'name@example.com'"
         [attr.aria-invalid]="!!fieldError('email')"
         aria-describedby="email-error"
       />
@@ -23,6 +23,27 @@
         <span class="field-error" id="email-error">{{ e }}</span>
       }
     </label>
+
+    @if (mode() === 'register') {
+      <label>
+        Username
+        <input
+          type="text"
+          formControlName="username"
+          autocomplete="username"
+          autocapitalize="none"
+          spellcheck="false"
+          maxlength="32"
+          [attr.aria-invalid]="!!fieldError('username')"
+          aria-describedby="username-error"
+        />
+        @if (fieldError('username'); as e) {
+          <span class="field-error" id="username-error">{{ e }}</span>
+        } @else {
+          <span class="muted">3–32 letters, digits, ".", "_" or "-". Unique; you can log in with it.</span>
+        }
+      </label>
+    }
 
     <label>
       Password

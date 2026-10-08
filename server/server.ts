@@ -2,7 +2,7 @@
  * store.ts and db/schema.sql). Every route except /api/auth/register and /api/auth/login needs
  * "Authorization: Bearer <token>" from a login (see auth.ts).
  *
- *   POST   /api/auth/register, /api/auth/login, /api/auth/logout, GET /api/auth/me   (see auth.ts)
+ *   /api/auth/register, /login, /logout, /me                     accounts and sessions (see auth.ts)
  *   GET    /api/characters             → the list           (same routes for /api/words)
  *   POST   /api/characters             → add or update one character (body: CharacterEntry)
  *   DELETE /api/characters/:character  → delete one character
@@ -105,25 +105,29 @@ async function readJson(req: IncomingMessage): Promise<Record<string, unknown>> 
 async function handleAuth(req: IncomingMessage, res: ServerResponse, action?: string): Promise<void> {
   const userAgent = req.headers['user-agent'];
   if (req.method === 'POST' && action === 'register') {
-    const { email, password } = await readJson(req);
-    const session = await auth.register(email, password, userAgent);
-    console.log(`New account ${session.user.email} (user ${session.user.id})`);
+    const { email, username, password } = await readJson(req);
+    const session = await auth.register(email, username, password, userAgent);
+    console.log(`New account ${session.user.username} <${session.user.email}> (user ${session.user.id})`);
     return sendJson(res, 201, session);
   }
   if (req.method === 'POST' && action === 'login') {
-    const { email, password } = await readJson(req);
-    const session = await auth.login(email, password, clientIp(req), userAgent);
-    console.log(`Login ${session.user.email} (user ${session.user.id})`);
+    const { login, password } = await readJson(req);
+    const session = await auth.login(login, password, clientIp(req), userAgent);
+    console.log(`Login ${session.user.username ?? session.user.email} (user ${session.user.id})`);
     return sendJson(res, 200, session);
   }
   if (req.method === 'POST' && action === 'logout') {
     await auth.logout(bearerToken(req));
     return sendJson(res, 200, { ok: true });
   }
-  if (req.method === 'GET' && action === 'me') {
+  if (action === 'me' && (req.method === 'GET' || req.method === 'PATCH')) {
     const user = await auth.userOf(bearerToken(req));
     if (!user) throw new AuthError(401, 'Please log in.');
-    return sendJson(res, 200, { user });
+    if (req.method === 'GET') return sendJson(res, 200, { user });
+    const { username } = await readJson(req);
+    const updated = await auth.setUsername(user, username);
+    console.log(`User ${user.id} is now ${updated.username}`);
+    return sendJson(res, 200, { user: updated });
   }
   sendJson(res, 404, { error: 'Unknown API route.' });
 }
@@ -195,7 +199,7 @@ const server = createServer(async (req, res) => {
     if (crossOrigin && req.method === 'OPTIONS') {
       // Preflight: the browser checks what it may send before the real request (no token yet).
       res.writeHead(204, {
-        'Access-Control-Allow-Methods': 'GET, POST, DELETE',
+        'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Max-Age': '86400',
       });

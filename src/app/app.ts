@@ -17,11 +17,20 @@ import { CharactersService } from './core/characters.service';
           <a class="button" routerLink="/add" routerLinkActive="active">Add</a>
         </nav>
         <div class="account">
-          <span class="muted" title="Logged in">{{ user.email }}</span>
+          <a routerLink="/account" routerLinkActive="active" [title]="user.email">{{
+            user.username ?? user.email
+          }}</a>
           <button type="button" (click)="auth.logout()">Log out</button>
         </div>
       }
     </header>
+    @if (auth.user(); as user) {
+      @if (!user.username) {
+        <p class="banner">
+          Choose a username: <a routerLink="/account">Account →</a>
+        </p>
+      }
+    }
     @if (auth.user() && characters.error(); as error) {
       <p class="banner error">
         {{ error }} <button type="button" (click)="characters.reload()">Retry</button>

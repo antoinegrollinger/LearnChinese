@@ -11,6 +11,7 @@
     "add-components": "tsx scripts/add-missing-components.ts",
     "build:server": "esbuild server/server.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/server/server.mjs \"--banner:js=import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --log-level=warning",
     "db:import": "tsx --env-file-if-exists=.env.local scripts/db-import.ts",
+    "db:export": "tsx --env-file-if-exists=.env.local scripts/db-export.ts",
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
     "db:reset": "docker compose down --volumes && docker compose up -d --wait",

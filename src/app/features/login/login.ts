@@ -1,17 +1,17 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, input, signal } from '@angular/core';
-import { AbstractControl, NonNullableFormBuilder, ReactiveFormsModule, ValidationErrors } from '@angular/forms';
+import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { PASSWORD_MIN_LENGTH, emailError, passwordError } from '../../core/auth.model';
+import {
+  PASSWORD_MIN_LENGTH,
+  emailError,
+  passwordError,
+  usernameError,
+} from '../../core/auth.model';
 import { AuthService } from '../../core/auth.service';
 
 type Mode = 'login' | 'register';
-
-/** Same checks as the server (core/auth.model.ts), shown under the field. */
-const emailValidator = (c: AbstractControl): ValidationErrors | null => {
-  const error = emailError(c.value ?? '');
-  return error ? { email: error } : null;
-};
+type Field = 'email' | 'username' | 'password' | 'confirm';
 
 /** Log in, or create an account (/login). */
 @Component({
@@ -34,8 +34,10 @@ export class Login {
   protected readonly serverError = signal<string | null>(null);
   protected readonly passwordMin = PASSWORD_MIN_LENGTH;
 
+  /** email: the email address when registering, the email or the username when logging in. */
   protected readonly form = this.fb.group({
-    email: ['', [emailValidator]],
+    email: [''],
+    username: [''],
     password: [''],
     confirm: [''],
   });
@@ -44,21 +46,26 @@ export class Login {
     this.mode() === 'login' ? 'Log in' : 'Create an account',
   );
 
-  /** Error to show under a field (after a first submit, or once the field was left). */
-  protected fieldError(name: 'email' | 'password' | 'confirm'): string | null {
+  /** Error to show under a field (after a first submit, or once the field was left). Same checks as the server (core/auth.model.ts). */
+  protected fieldError(name: Field): string | null {
     const control = this.form.controls[name];
     if (!this.submitted() && !control.touched) return null;
     return this.errors()[name] ?? null;
   }
 
-  private errors(): Partial<Record<'email' | 'password' | 'confirm', string>> {
-    const { email, password, confirm } = this.form.getRawValue();
-    const result: Partial<Record<'email' | 'password' | 'confirm', string>> = {};
-    const e = emailError(email);
-    if (e) result.email = e;
+  private errors(): Partial<Record<Field, string>> {
+    const { email, username, password, confirm } = this.form.getRawValue();
+    const result: Partial<Record<Field, string>> = {};
     if (this.mode() === 'login') {
+      if (!email.trim()) result.email = 'Enter your email address or username.';
+      else if (email.includes('@') && emailError(email)) result.email = emailError(email)!;
+      else if (!email.includes('@') && usernameError(email)) result.email = usernameError(email)!;
       if (!password) result.password = 'Enter your password.';
     } else {
+      const e = emailError(email);
+      if (e) result.email = e;
+      const u = usernameError(username);
+      if (u) result.username = u;
       const p = passwordError(password);
       if (p) result.password = p;
       if (confirm !== password) result.confirm = 'The two passwords are different.';
@@ -78,11 +85,11 @@ export class Login {
     this.submitted.set(true);
     this.serverError.set(null);
     if (Object.keys(this.errors()).length) return;
-    const { email, password } = this.form.getRawValue();
+    const { email, username, password } = this.form.getRawValue();
     this.busy.set(true);
     try {
       if (this.mode() === 'login') await this.auth.login(email, password);
-      else await this.auth.register(email, password);
+      else await this.auth.register(email, username, password);
       this.form.reset();
       const target = this.returnUrl();
       // Only paths inside the app.

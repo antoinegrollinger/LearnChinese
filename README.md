@@ -86,7 +86,9 @@ Every row belongs to a user (`app_user` table): each account has its own charact
 
 ## Accounts
 
-The app opens on a login screen. **Create an account** with an email address and a password (at least 8 characters, letters and a digit or symbol); each account has its own lists, starting empty.
+The app opens on a login screen. **Create an account** with an email address, a username and a password (at least 8 characters, letters and a digit or symbol); each account has its own lists, starting empty. You log in with the email address **or** the username.
+
+- **Usernames** are unique (`app_user.username`), 3–32 letters, digits, `.`, `_` or `-`, stored in lower case (`Grollian` and `grollian` are the same). `default`, `admin` and `root` are reserved. Accounts created before usernames existed choose one on the **Account** page (click your name in the header), where it can also be changed.
 
 - **Your existing lists** belong to the `default` user (what `npm run db:import` fills). Set `OWNER_EMAIL` to your email address on the server, then create your account with that address: it takes over these lists. This happens once; afterwards `OWNER_EMAIL` does nothing. Create your account soon after deploying, since until then anyone registering with that address would get the lists.
 - **Sessions:** logging in creates a session (table `sessions`) valid for 30 days. The browser keeps only a random token (localStorage `hanzi-workshop-session`) and sends it as `Authorization: Bearer …`; the database keeps only its SHA-256 hash. **Log out** ends that session; the other devices stay logged in. To log someone out everywhere: `DELETE FROM sessions WHERE user_id = …`.
@@ -94,6 +96,16 @@ The app opens on a login screen. **Create an account** with an email address and
 - Email addresses are checked (format and length) in the form and again by the server, and compared in lower case.
 - Not included yet: email confirmation and "forgot password".
 - Review scores are still kept per browser (localStorage), not per account.
+
+### Copying lists to an account
+
+`npm run db:export -- --from <email or username> --to <username>` writes `db/<username>.sql` with all the lists of one account, as they are now in the database (`DATABASE_URL`), for another username. For example, to copy your local lists to your account on Hostinger:
+
+1. On Hostinger, create the account in the app (or choose that username on the Account page).
+2. `npm run db:export -- --from you@example.com --to grollian` → `db/grollian.sql`.
+3. phpMyAdmin → **Import** `db/grollian.sql`: it replaces that account's characters, components and words. If there is no account with that username, it stops with "Column 'user_id' cannot be null" and changes nothing.
+
+`db/*.sql` files other than `schema.sql` contain your data and are not committed.
 
 `npm run add-components` still works on the JSON files only: run `npm run db:import -- --replace` afterwards to copy the result into the database (this replaces what is there).
 

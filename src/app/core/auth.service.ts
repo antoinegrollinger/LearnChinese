@@ -55,12 +55,22 @@ export class AuthService {
     return this.restoring;
   }
 
-  login(email: string, password: string): Promise<User> {
-    return this.start('/api/auth/login', email, password);
+  /** login: the email address or the username. */
+  login(login: string, password: string): Promise<User> {
+    return this.start('/api/auth/login', { login, password });
   }
 
-  register(email: string, password: string): Promise<User> {
-    return this.start('/api/auth/register', email, password);
+  register(email: string, username: string, password: string): Promise<User> {
+    return this.start('/api/auth/register', { email, username, password });
+  }
+
+  /** Chooses or changes the username (unique). */
+  async setUsername(username: string): Promise<User> {
+    const { user } = await firstValueFrom(
+      this.http.patch<{ user: User }>('/api/auth/me', { username }),
+    );
+    this.user.set(user);
+    return user;
   }
 
   async logout(): Promise<void> {
@@ -78,8 +88,8 @@ export class AuthService {
     this.end({ expired: '1', returnUrl: this.router.url });
   }
 
-  private async start(url: string, email: string, password: string): Promise<User> {
-    const session = await firstValueFrom(this.http.post<Session>(url, { email, password }));
+  private async start(url: string, body: Record<string, string>): Promise<User> {
+    const session = await firstValueFrom(this.http.post<Session>(url, body));
     storeToken(session.token);
     this.restoring = Promise.resolve(session.user);
     this.user.set(session.user);

@@ -3,6 +3,8 @@
 export interface User {
   id: number;
   email: string;
+  /** Unique, lower case; null for accounts created before usernames existed. */
+  username: string | null;
 }
 
 /** Returned by POST /api/auth/login and /api/auth/register. */
@@ -41,6 +43,25 @@ export function emailError(email: string): string | null {
   if (labels.length < 2 || !labels.every(validLabel) || labels.at(-1)!.length < 2) {
     return 'Enter a valid email address, e.g. name@example.com.';
   }
+  return null;
+}
+
+/** Trims and lower-cases, so "Grollian" and "grollian" are the same name. */
+export const normalizeUsername = (username: string): string => username.trim().toLowerCase();
+
+/** Used by npm run db:import for the imported lists. */
+const RESERVED_USERNAMES = ['default', 'admin', 'root'];
+
+/** 3 to 32 letters, digits, ".", "_" or "-", starting with a letter or digit. */
+export function usernameError(username: string): string | null {
+  const value = normalizeUsername(username);
+  if (!value) return 'Choose a username.';
+  if (value.length < 3) return 'Use at least 3 characters.';
+  if (value.length > 32) return 'Use at most 32 characters.';
+  if (!/^[a-z0-9][a-z0-9._-]*$/.test(value)) {
+    return 'Use letters, digits, ".", "_" or "-" (no spaces), starting with a letter or digit.';
+  }
+  if (RESERVED_USERNAMES.includes(value)) return 'This username is reserved.';
   return null;
 }
 
