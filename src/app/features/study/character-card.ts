@@ -1,11 +1,13 @@
 import {
   Component,
   computed,
+  effect,
   inject,
   input,
   output,
   resource,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -37,6 +39,8 @@ export class CharacterCard {
 
   protected readonly roles = ROLES;
   protected readonly showOutline = signal(true);
+  /** Practice mode stays on when you move to another character (← → or the list). */
+  protected readonly practicing = signal(false);
   protected readonly message = signal<{ text: string; kind?: 'ok' | 'error' }>({ text: '' });
 
   protected readonly type = computed(() => typeOf(this.entry().type));
@@ -76,13 +80,22 @@ export class CharacterCard {
     );
   });
 
+  constructor() {
+    effect(() => {
+      this.entry();
+      if (untracked(this.practicing)) untracked(() => setTimeout(() => this.practice()));
+    });
+  }
+
   protected animate(): void {
+    this.practicing.set(false);
     this.message.set({ text: '' });
     this.writer().animate();
   }
 
   protected practice(): void {
     const character = this.entry().character;
+    this.practicing.set(true);
     this.message.set({ text: 'Draw the first stroke…' });
     this.writer().quiz({
       showHintAfterMisses: 2,

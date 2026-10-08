@@ -34,33 +34,14 @@ export class HanziWriterView {
   private writer?: HanziWriter;
 
   constructor() {
-    afterNextRender(() => {
-      this.writer = HanziWriter.create(this.host.nativeElement, this.character(), {
-        width: this.size(),
-        height: this.size(),
-        padding: 14,
-        strokeColor: cssVar('--ink'),
-        outlineColor: cssVar('--outline'),
-        drawingColor: cssVar('--drawing'),
-        highlightColor: cssVar('--tone4'),
-        strokeAnimationSpeed: 1,
-        delayBetweenStrokes: 250,
-        drawingWidth: 6,
-        showOutline: this.showOutline(),
-        showCharacter: !this.hideCharacter(),
-        onLoadCharDataError: () => this.loadError.emit(),
-      });
-    });
+    afterNextRender(() => this.create(this.character()));
 
-    // Character changed → load it and restore the display options.
+    // Character changed → a new writer. With setCharacter(), drawing on a phone only worked for
+    // the first character.
     effect(() => {
       const character = this.character();
-      const writer = this.writer;
-      if (!writer) return;
-      untracked(() => {
-        writer.cancelQuiz();
-        writer.setCharacter(character).then(() => this.applyDisplay());
-      });
+      if (!this.writer) return;
+      untracked(() => this.create(character));
     });
 
     effect(() => {
@@ -87,6 +68,26 @@ export class HanziWriterView {
 
   revealOutline(): void {
     this.writer?.showOutline();
+  }
+
+  private create(character: string): void {
+    this.writer?.cancelQuiz();
+    this.host.nativeElement.replaceChildren();
+    this.writer = HanziWriter.create(this.host.nativeElement, character, {
+      width: this.size(),
+      height: this.size(),
+      padding: 14,
+      strokeColor: cssVar('--ink'),
+      outlineColor: cssVar('--outline'),
+      drawingColor: cssVar('--drawing'),
+      highlightColor: cssVar('--tone4'),
+      strokeAnimationSpeed: 1,
+      delayBetweenStrokes: 250,
+      drawingWidth: 6,
+      showOutline: this.showOutline(),
+      showCharacter: !this.hideCharacter(),
+      onLoadCharDataError: () => this.loadError.emit(),
+    });
   }
 
   private applyDisplay(): void {

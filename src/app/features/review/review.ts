@@ -8,7 +8,17 @@ import { HanziWriterView } from '../../shared/hanzi-writer';
 import { Pinyin } from '../../shared/pinyin';
 import { PartsSummary } from '../study/parts-summary';
 
-/** Write the character from its pinyin and meaning; missed characters come back more often. */
+/** Fisher–Yates shuffle (returns a new array). */
+function shuffle<T>(items: T[]): T[] {
+  const result = [...items];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+/** Write the character from its pinyin and meaning, in random order; missed characters come back soon. */
 @Component({
   selector: 'app-review',
   imports: [HanziWriterView, Pinyin, PartsSummary],
@@ -24,6 +34,8 @@ export class Review {
   protected readonly outline = signal(false);
   protected readonly message = signal<{ text: string; kind?: 'ok' | 'error' }>({ text: '' });
   protected readonly typeOf = typeOf;
+  /** Characters still to come in this round. */
+  private deck: string[] = [];
 
   protected readonly score = computed(() => {
     const stats = this.statsService.stats();
@@ -82,6 +94,7 @@ export class Review {
     if (this.done() || !card) return;
     this.done.set(true);
     this.statsService.record(card.character, mistakes);
+    if (mistakes) this.comeBackSoon(card.character);
     this.message.set(
       solutionShown
         ? { text: 'Watch the stroke order carefully, it will come back soon.' }
@@ -91,23 +104,29 @@ export class Review {
     );
   }
 
-  /** Characters never reviewed or often missed come first. */
+  /**
+   * Every character once per round, in a new random order each round. A missed character is put
+   * back a few cards later, so it comes back soon.
+   */
   private pick(): CharacterEntry | null {
     const list = this.characters.list();
-    const stats = this.statsService.stats();
-    const previous = this.card();
-    let best: CharacterEntry | null = null;
-    let max = -Infinity;
-    for (const c of list) {
-      if (previous && c.character === previous.character && list.length > 1) continue;
-      const s = stats[c.character];
-      const priority =
-        (s ? s.mistakes / s.attempts + (s.attempts - s.perfect) / s.attempts : 2) + Math.random();
-      if (priority > max) {
-        max = priority;
-        best = c;
+    if (!list.length) return null;
+    const known = new Set(list.map((c) => c.character));
+    this.deck = this.deck.filter((character) => known.has(character));
+    if (!this.deck.length) {
+      this.deck = shuffle(list.map((c) => c.character));
+      // Not the same character twice in a row when a new round starts.
+      if (this.deck.length > 1 && this.deck[0] === this.card()?.character) {
+        this.deck.push(this.deck.shift()!);
       }
     }
-    return best;
+    const character = this.deck.shift()!;
+    return list.find((c) => c.character === character) ?? null;
+  }
+
+  private comeBackSoon(character: string): void {
+    this.deck = this.deck.filter((c) => c !== character);
+    const position = Math.min(this.deck.length, 3 + Math.floor(Math.random() * 4));
+    this.deck.splice(position, 0, character);
   }
 }

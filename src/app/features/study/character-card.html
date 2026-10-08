@@ -10,7 +10,9 @@
       />
       <div class="buttons">
         <button type="button" (click)="animate()">▶ Animate</button>
-        <button type="button" class="primary" (click)="practice()">✍ Practice</button>
+        <button type="button" class="primary" [class.active]="practicing()" (click)="practice()">
+          ✍ Practice
+        </button>
         <button
           type="button"
           [class.active]="!showOutline()"
