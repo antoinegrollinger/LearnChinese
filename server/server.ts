@@ -1,4 +1,5 @@
-/* Local API that reads and writes data/characters.json and data/words.json (no dependencies besides Node).
+/* API that reads and writes your characters and words: data/characters.json and data/words.json, or a
+ * PostgreSQL database when DATABASE_URL is set (see store.ts and db/schema.sql).
  *
  *   GET    /api/characters             → the list           (same routes for /api/words)
  *   POST   /api/characters             → add or update one character (body: CharacterEntry)
@@ -13,9 +14,12 @@ import { createReadStream, existsSync } from 'node:fs';
 import { IncomingMessage, ServerResponse, createServer } from 'node:http';
 import { extname, join, resolve, sep } from 'node:path';
 import { lookupWord, loadCedict } from './cedict.ts';
-import { CHARACTERS, DATA_DIR, ListFile, ROOT, WORDS, readList, writeList } from './data-files.ts';
+import { CHARACTERS, ListFile, ROOT, WORDS } from './data-files.ts';
+import { ListStore, createStores } from './store.ts';
 
 const DIST = join(ROOT, 'dist', 'hanzi-workshop', 'browser');
+/** JSON files, or PostgreSQL when DATABASE_URL is set (see store.ts). */
+const stores = createStores();
 /** Set by the host in production (a port number or a socket path); 8642 on your computer. */
 const PORT = process.env['PORT'];
 const LOCAL_PORT = 8642;
@@ -82,35 +86,28 @@ async function readBody(req: IncomingMessage): Promise<string> {
   return data;
 }
 
-/** CRUD routes for one JSON list: GET /api/<name>, POST /api/<name>, DELETE /api/<name>/:key */
+/** CRUD routes for one list: GET /api/<name>, POST /api/<name>, DELETE /api/<name>/:key */
 async function handleList<T>(
   list: ListFile<T>,
+  store: ListStore<T>,
   req: IncomingMessage,
   res: ServerResponse,
   param?: string,
 ): Promise<void> {
-  const keyOf = (item: T) => String(item[list.key]);
-
-  if (req.method === 'GET' && !param) return sendJson(res, 200, await readList(list));
+  if (req.method === 'GET' && !param) return sendJson(res, 200, await store.all());
 
   if (req.method === 'POST' && !param) {
     const entry = list.clean(JSON.parse(await readBody(req)));
-    if (!keyOf(entry)) return sendJson(res, 400, { error: `The ${list.key} is missing.` });
-    const items = await readList(list);
-    const i = items.findIndex((item) => keyOf(item) === keyOf(entry));
-    if (i >= 0) items[i] = entry;
-    else items.push(entry);
-    await writeList(list, items);
-    console.log(`${i >= 0 ? 'Updated' : 'Added'} ${list.key} ${keyOf(entry)}`);
-    return sendJson(res, 200, { entry, created: i < 0 });
+    const key = String(entry[list.key]);
+    if (!key) return sendJson(res, 400, { error: `The ${list.key} is missing.` });
+    const created = await store.save(entry);
+    console.log(`${created ? 'Added' : 'Updated'} ${list.key} ${key}`);
+    return sendJson(res, 200, { entry, created });
   }
 
   if (req.method === 'DELETE' && param) {
     const key = decodeURIComponent(param);
-    const items = await readList(list);
-    const kept = items.filter((item) => keyOf(item) !== key);
-    if (kept.length === items.length) return sendJson(res, 404, { error: 'Not found.' });
-    await writeList(list, kept);
+    if (!(await store.remove(key))) return sendJson(res, 404, { error: 'Not found.' });
     console.log(`Deleted ${list.key} ${key}`);
     return sendJson(res, 200, { ok: true });
   }
@@ -120,8 +117,8 @@ async function handleList<T>(
 
 async function handleApi(req: IncomingMessage, res: ServerResponse, url: URL): Promise<void> {
   const [, , resource, param] = url.pathname.split('/'); // "", "api", "characters", ":character"
-  if (resource === 'characters') return handleList(CHARACTERS, req, res, param);
-  if (resource === 'words') return handleList(WORDS, req, res, param);
+  if (resource === 'characters') return handleList(CHARACTERS, stores.characters, req, res, param);
+  if (resource === 'words') return handleList(WORDS, stores.words, req, res, param);
   if (resource === 'lookup' && param && req.method === 'GET') {
     return sendJson(res, 200, await lookupWord(decodeURIComponent(param)));
   }
@@ -178,7 +175,7 @@ const onListening = () => {
   console.log(
     PORT ? `Hanzi Workshop listening on ${PORT}` : `API ready on http://localhost:${LOCAL_PORT}`,
   );
-  console.log(`Data: ${DATA_DIR}${PASSWORD ? ' · password protected' : ''}`);
+  console.log(`Data: ${stores.description}${PASSWORD ? ' · password protected' : ''}`);
   if (CORS_ORIGINS.length) console.log(`Accepting API calls from ${CORS_ORIGINS.join(', ')}`);
   loadCedict().catch(() => {}); // warm up the word dictionary
 };

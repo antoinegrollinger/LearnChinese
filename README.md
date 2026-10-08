@@ -51,6 +51,22 @@ Environment variables read by the server:
 
 With `"apiUrl": ""` (the default) the app calls `/api` on its own server, as with `npm start` and `npm run app`. When the API is on another domain and has a password, the app asks for it once and keeps it in the browser's localStorage.
 
+## PostgreSQL (optional)
+
+By default the lists are JSON files. Set `DATABASE_URL` and the server uses PostgreSQL (13 or newer) instead. Nothing else changes for the app.
+
+1. Create the tables: `psql "$DATABASE_URL" -f db/schema.sql` (or paste `db/schema.sql` into your database's SQL editor).
+2. Copy your JSON lists in, either:
+   - `DATABASE_URL=… npm run db:import` (also runs `db/schema.sql`; refuses to overwrite existing data unless you add `-- --replace`), or
+   - `npm run db:import -- --sql`, which writes `db/seed.sql` from your JSON files, to run with `psql` or paste into the SQL editor.
+3. Start the server with these environment variables:
+   - `DATABASE_URL`: e.g. `postgres://user:password@host:5432/hanzi`. Hosted databases usually need `?sslmode=require` at the end.
+   - `DATABASE_USER` (optional): whose lists to use, `default` if not set.
+
+Every row belongs to a user (`app_user` table), so accounts can be added later: a login decides the user for each request, and each person gets their own characters and words. Until then, all requests use `DATABASE_USER`. `npm run db:import -- --user anna` imports the JSON lists for another user.
+
+`npm run add-components` still works on the JSON files only.
+
 ## Pages
 
 | Route | Page |
@@ -68,6 +84,8 @@ data/words.json               your words (written by the API)
 server/server.ts              local API: /api/characters, /api/words (GET/POST/DELETE), /api/lookup/:word
 server/cedict.ts              CC-CEDICT word dictionary (downloaded once into .cache/)
 server/data-files.ts          reading/writing data/*.json with backups
+server/store.ts               where the lists are kept: JSON files, or PostgreSQL with DATABASE_URL
+db/schema.sql                 PostgreSQL tables (npm run db:import copies the JSON lists in)
 scripts/                      npm run add-components (adds missing components as characters)
 src/app/
   app.ts, app.routes.ts       shell (header + tabs) and routes

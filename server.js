@@ -20,6 +20,11 @@ if (!existsSync(bundle)) {
       format: 'esm',
       target: 'node22',
       outfile: bundle,
+      external: ['pg-native'],
+      // pg is CommonJS: give it require() inside the ES module bundle.
+      banner: {
+        js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
+      },
       logLevel: 'warning',
     });
   } catch (err) {
