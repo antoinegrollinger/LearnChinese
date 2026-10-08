@@ -96,7 +96,7 @@ export class Study {
     const note = usedBy.length
       ? `\n\nIt is a component of ${usedBy.join(' ')}: they will keep it listed as a component.`
       : '';
-    if (!confirm(`Delete ${entry.character} from data/characters.json?${note}`)) return;
+    if (!confirm(`Delete ${entry.character} from your list?${note}`)) return;
 
     const list = this.visible();
     const i = list.findIndex((c) => c.character === entry.character);

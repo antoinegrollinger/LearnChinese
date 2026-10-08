@@ -36,7 +36,7 @@ export class Words {
   protected readonly form = this.fb.group({ word: '', pinyin: '', meaning: '', notes: '' });
   protected readonly value = toSignal(this.form.valueChanges, { initialValue: this.form.value });
 
-  /** Word being edited (already saved in data/words.json). */
+  /** Word being edited (already saved). */
   protected readonly editing = signal<string | null>(null);
   protected readonly status = signal<{ text: string; kind?: 'ok' | 'error' }>({ text: '' });
   protected readonly saving = signal(false);
@@ -192,7 +192,7 @@ export class Words {
 
   protected async remove(): Promise<void> {
     const word = this.editing();
-    if (!word || !confirm(`Delete ${word} from data/words.json?`)) return;
+    if (!word || !confirm(`Delete ${word} from your words?`)) return;
     try {
       await this.words.remove(word);
       this.clear();

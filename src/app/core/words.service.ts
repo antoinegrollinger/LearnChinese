@@ -25,7 +25,7 @@ export const joinPinyin = (pinyin: string): string => pinyin.replace(/\s+/g, '')
 export const meaningOf = (entry: CedictEntry): string =>
   entry.definitions.filter((d) => !d.startsWith('CL:')).join('; ');
 
-/** Your words (data/words.json) and the CC-CEDICT word lookup. */
+/** Your words (through the API) and the CC-CEDICT word lookup. */
 @Injectable({ providedIn: 'root' })
 export class WordsService extends ApiListStore<WordEntry> {
   private readonly httpClient = inject(HttpClient);

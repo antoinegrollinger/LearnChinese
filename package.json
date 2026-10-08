@@ -4,13 +4,17 @@
   "type": "module",
   "scripts": {
     "start": "concurrently -k -n api,web -c blue,magenta \"npm:api\" \"ng serve --open\"",
-    "api": "tsx watch --clear-screen=false server/server.ts",
+    "api": "tsx watch --env-file-if-exists=.env.local --clear-screen=false server/server.ts",
     "build": "ng build && node scripts/write-config.mjs && npm run build:server",
-    "app": "npm run build && node dist/server/server.mjs",
+    "app": "npm run build && node --env-file-if-exists=.env.local dist/server/server.mjs",
     "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p server/tsconfig.json",
     "add-components": "tsx scripts/add-missing-components.ts",
     "build:server": "esbuild server/server.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/server/server.mjs --external:pg-native \"--banner:js=import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --log-level=warning",
-    "db:import": "tsx scripts/db-import.ts"
+    "db:import": "tsx --env-file-if-exists=.env.local scripts/db-import.ts",
+    "db:up": "docker compose up -d --wait",
+    "db:down": "docker compose down",
+    "db:reset": "docker compose down --volumes && docker compose up -d --wait db",
+    "db:psql": "docker compose exec db psql -U hanzi -d hanzi"
   },
   "private": true,
   "packageManager": "npm@11.19.0",

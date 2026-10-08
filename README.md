@@ -17,7 +17,7 @@ npm start
 | Process | What it does |
 |---|---|
 | `web` | `ng serve`, the Angular dev server with live reload. It forwards `/api` to the API (`proxy.conf.json`). |
-| `api` | `server/server.ts` (run with `tsx`). It reads and writes `data/characters.json`. |
+| `api` | `server/server.ts` (run with `tsx`). It reads and writes your lists in PostgreSQL: see [Local database](#local-database-for-testing) for the first start. |
 
 Other scripts:
 
@@ -35,12 +35,12 @@ An internet connection is needed: the stroke data (Hanzi Writer) and the diction
 | Node version | **22.x** or 24.x |
 | Build command | `npm run build` |
 | Entry file | `server.js` (it starts `dist/server/server.mjs`) |
-| Environment variables | `APP_PASSWORD`: **set one**, otherwise anyone can edit or delete your data. The browser asks for it (any user name).<br>`DATA_DIR`: a folder outside the deployed build, e.g. `/home/<user>/domains/<domain>/hanzi-data`, so your changes survive redeploys. |
+| Environment variables | `APP_PASSWORD`: **set one**, otherwise anyone can edit or delete your data. The browser asks for it (any user name).<br>`DATABASE_URL`: **required**, your PostgreSQL database (see [PostgreSQL](#postgresql)). |
 
 Environment variables read by the server:
 
 - `PORT` is set by the host. Without it, the server listens on `localhost:8642`.
-- `DATA_DIR`: where `characters.json` and `words.json` are kept. On the first run it is filled with a copy of the project's `data/` folder. Without it, the server uses `data/`, which a redeploy replaces with the version from git.
+- `DATABASE_URL` and `DATABASE_USER`: see [PostgreSQL](#postgresql). Without `DATABASE_URL` the server stops with an error.
 - `APP_PASSWORD` enables password protection (HTTP Basic auth). It is only safe over HTTPS.
 - `CORS_ORIGINS`: only when the app and the API are on different domains (see below). Comma-separated, e.g. `https://example.com,https://www.example.com`.
 
@@ -51,40 +51,68 @@ Environment variables read by the server:
 
 With `"apiUrl": ""` (the default) the app calls `/api` on its own server, as with `npm start` and `npm run app`. When the API is on another domain and has a password, the app asks for it once and keeps it in the browser's localStorage.
 
-## PostgreSQL (optional)
+## PostgreSQL
 
-By default the lists are JSON files. Set `DATABASE_URL` and the server uses PostgreSQL (13 or newer) instead. Nothing else changes for the app.
+The server keeps the lists in PostgreSQL (13 or newer). `data/characters.json` and `data/words.json` are only the starting data that `npm run db:import` copies in.
 
 1. Create the tables: `psql "$DATABASE_URL" -f db/schema.sql` (or paste `db/schema.sql` into your database's SQL editor).
 2. Copy your JSON lists in, either:
    - `DATABASE_URL=… npm run db:import` (also runs `db/schema.sql`; refuses to overwrite existing data unless you add `-- --replace`), or
    - `npm run db:import -- --sql`, which writes `db/seed.sql` from your JSON files, to run with `psql` or paste into the SQL editor.
 3. Start the server with these environment variables:
-   - `DATABASE_URL`: e.g. `postgres://user:password@host:5432/hanzi`. Hosted databases usually need `?sslmode=require` at the end.
+   - `DATABASE_URL` (required): e.g. `postgres://user:password@host:5432/hanzi`. Hosted databases usually need `?sslmode=require` at the end.
    - `DATABASE_USER` (optional): whose lists to use, `default` if not set.
+
+| Table | Contents |
+|---|---|
+| `app_user` | users (for the future login) |
+| `characters` | your characters, in list order (`position`) |
+| `components` | each component once (女, 马, 亻…), with its usual pinyin and meaning |
+| `character_components` | which components a character is made of: `character_id` → `characters.id`, `component_id` → `components.id`, in writing order (`position`), with the role and stroke numbers. `pinyin`/`meaning` are only set when they differ in this character (一 in 本: "marker stroke (the root)"): empty = the component's own. |
+| `words` | your words |
+| `character_components_view` | the links with the names filled in, for browsing: `SELECT * FROM character_components_view WHERE hanzi = '妈'` |
+
+Every table has a numeric `id`, and links use these ids. A hanzi (or word) appears only once per user.
+
+Editing a component's meaning on the Add page changes it for that character only. To change it everywhere, edit the `components` table (e.g. in Adminer).
 
 Every row belongs to a user (`app_user` table), so accounts can be added later: a login decides the user for each request, and each person gets their own characters and words. Until then, all requests use `DATABASE_USER`. `npm run db:import -- --user anna` imports the JSON lists for another user.
 
-`npm run add-components` still works on the JSON files only.
+`npm run add-components` still works on the JSON files only: run `npm run db:import -- --replace` afterwards to copy the result into the database (this replaces what is there).
+
+### Local database for testing
+
+Needs Docker Desktop (running). The database is on port 5433 (user, password and database name: `hanzi`).
+
+```sh
+cp .env.example .env.local   # first time: DATABASE_URL for npm start, npm run app and npm run db:import
+npm run db:up                # start PostgreSQL (docker-compose.yml); tables come from db/schema.sql
+npm run db:import            # first time: copy data/*.json into it
+npm start                    # the log says "Data: PostgreSQL …"
+```
+
+- **http://localhost:8080/?pgsql=db&username=hanzi&db=hanzi** is Adminer, a database admin page (also started by `npm run db:up`). The password is `hanzi`. This link selects PostgreSQL; from http://localhost:8080 you must change System from MySQL to PostgreSQL yourself, or the login fails.
+- `npm run db:psql` opens a SQL prompt, `npm run db:down` stops the database (the data is kept).
+- `npm run db:reset` deletes the database and creates it again empty. Run `npm run db:import` afterwards.
 
 ## Pages
 
 | Route | Page |
 |---|---|
 | `/study/:character` | Character card: *Animate* the stroke order, *Practice* drawing with stroke-by-stroke checking, toggle the outline, 🔊 pronunciation, coloured decomposition (red = meaning, blue = sound), stroke-order strip, words, notes. ← → move between characters. |
-| `/words`, `/words/:word` | Your words: compose a word by clicking your characters (or type it). Each character shows your pinyin and meaning, or a *+ Add* link if it is not in your list yet. **🔎 Look up meaning** searches CC-CEDICT; words that aren't in it are split into parts it knows. **Save** writes to `data/words.json`. Each character's Study card lists your words that contain it. |
+| `/words`, `/words/:word` | Your words: compose a word by clicking your characters (or type it). Each character shows your pinyin and meaning, or a *+ Add* link if it is not in your list yet. **🔎 Look up meaning** searches CC-CEDICT; words that aren't in it are split into parts it knows. **Save** writes to the database. Each character's Study card lists your words that contain it. |
 | `/review` | You are given the pinyin and meaning and write the character from memory. Characters you have never reviewed, or often miss, come back first. Scores are kept in localStorage. |
-| `/add`, `/add/:character` | Add or edit a character. Find one by pinyin (`ma`, `ma3`, `mǎ`, `nv3`), or type it: the form fills itself in from the dictionary (pinyin, meaning, type, components with roles and stroke numbers, example words, notes). **Save** writes to `data/characters.json`, keeping the previous version in `data/characters.backup.json`. |
+| `/add`, `/add/:character` | Add or edit a character. Find one by pinyin (`ma`, `ma3`, `mǎ`, `nv3`), or type it: the form fills itself in from the dictionary (pinyin, meaning, type, components with roles and stroke numbers, example words, notes). **Save** writes to the database. |
 
 ## Project structure
 
 ```
-data/characters.json          your characters (written by the API)
-data/words.json               your words (written by the API)
+data/characters.json          starting characters (npm run db:import copies them into the database)
+data/words.json               starting words
 server/server.ts              local API: /api/characters, /api/words (GET/POST/DELETE), /api/lookup/:word
 server/cedict.ts              CC-CEDICT word dictionary (downloaded once into .cache/)
-server/data-files.ts          reading/writing data/*.json with backups
-server/store.ts               where the lists are kept: JSON files, or PostgreSQL with DATABASE_URL
+server/data-files.ts          reading/writing data/*.json (db:import, add-components)
+server/store.ts               the lists in PostgreSQL (DATABASE_URL)
 db/schema.sql                 PostgreSQL tables (npm run db:import copies the JSON lists in)
 scripts/                      npm run add-components (adds missing components as characters)
 src/app/

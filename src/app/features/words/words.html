@@ -31,7 +31,7 @@
   <!-- Editor -->
   <form class="card word-editor" [formGroup]="form" autocomplete="off" (ngSubmit)="save()">
     @if (editing(); as w) {
-      <p class="banner">Editing {{ w }} — saving will update it in data/words.json.</p>
+      <p class="banner">Editing {{ w }} — saving will update it in your list.</p>
     }
 
     <div class="row">

@@ -46,7 +46,7 @@ export class CharacterCard {
   protected readonly type = computed(() => typeOf(this.entry().type));
   protected readonly parts = computed<CharacterPart[]>(() => this.entry().components ?? []);
   protected readonly colors = computed(() => partColors(this.parts()));
-  /** Saved words (data/words.json) containing this character. */
+  /** Your saved words containing this character. */
   protected readonly savedWords = computed(() => this.words.containing(this.entry().character));
 
   /** Stroke paths + which component each stroke belongs to. */

@@ -38,7 +38,7 @@ type PartForm = FormGroup<{
   strokes: FormControl<string>;
 }>;
 
-/** Add a character, or edit one already in data/characters.json (route /add/:character). */
+/** Add a character, or edit one already in your list (route /add/:character). */
 @Component({
   selector: 'app-add',
   imports: [ReactiveFormsModule, Pinyin, RouterLink],
@@ -70,7 +70,7 @@ export class Add {
     notes: '',
   });
 
-  /** Character being edited (already saved in data/characters.json). */
+  /** Character being edited (already in your list). */
   protected readonly editing = signal<string | null>(null);
   protected readonly status = signal<{ text: string; kind?: 'ok' | 'error' }>({ text: '' });
   protected readonly check = signal('');
@@ -306,7 +306,7 @@ export class Add {
 
   protected async remove(): Promise<void> {
     const ch = this.editing();
-    if (!ch || !confirm(`Delete ${ch} from data/characters.json?`)) return;
+    if (!ch || !confirm(`Delete ${ch} from your list?`)) return;
     try {
       await this.characters.remove(ch);
       this.clear();

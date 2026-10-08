@@ -4,7 +4,7 @@ import { CharacterEntry, cleanEntry } from './character.model';
 
 export { errorMessage } from './api-list.store';
 
-/** Your characters (data/characters.json). */
+/** Your characters (through the API, stored in the database). */
 @Injectable({ providedIn: 'root' })
 export class CharactersService extends ApiListStore<CharacterEntry> {
   constructor() {

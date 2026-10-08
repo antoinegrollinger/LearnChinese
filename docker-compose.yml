@@ -1,0 +1,35 @@
+# Local PostgreSQL for testing (npm run db:up). The tables are created from db/schema.sql on the
+# first start; copy your JSON lists in with "npm run db:import". Connection string: see .env.example.
+name: hanzi-workshop
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: hanzi
+      POSTGRES_PASSWORD: hanzi
+      POSTGRES_DB: hanzi
+    ports:
+      - '127.0.0.1:5433:5432' # 5433 so it doesn't clash with another PostgreSQL on 5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'hanzi', '-d', 'hanzi']
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  # Database admin page: http://localhost:8080 (npm run db:up starts it too)
+  adminer:
+    image: adminer:latest
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+      ADMINER_DESIGN: pepa-linha
+    ports:
+      - '127.0.0.1:8080:8080'
+    depends_on:
+      - db
+
+volumes:
+  pgdata:

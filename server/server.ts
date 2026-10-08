@@ -1,5 +1,5 @@
-/* API that reads and writes your characters and words: data/characters.json and data/words.json, or a
- * PostgreSQL database when DATABASE_URL is set (see store.ts and db/schema.sql).
+/* API that reads and writes your characters and words in PostgreSQL (DATABASE_URL, see store.ts and
+ * db/schema.sql).
  *
  *   GET    /api/characters             → the list           (same routes for /api/words)
  *   POST   /api/characters             → add or update one character (body: CharacterEntry)
@@ -18,8 +18,15 @@ import { CHARACTERS, ListFile, ROOT, WORDS } from './data-files.ts';
 import { ListStore, createStores } from './store.ts';
 
 const DIST = join(ROOT, 'dist', 'hanzi-workshop', 'browser');
-/** JSON files, or PostgreSQL when DATABASE_URL is set (see store.ts). */
-const stores = createStores();
+/** PostgreSQL (see store.ts). */
+const stores = (() => {
+  try {
+    return createStores();
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : err);
+    process.exit(1);
+  }
+})();
 /** Set by the host in production (a port number or a socket path); 8642 on your computer. */
 const PORT = process.env['PORT'];
 const LOCAL_PORT = 8642;
@@ -177,6 +184,13 @@ const onListening = () => {
   );
   console.log(`Data: ${stores.description}${PASSWORD ? ' · password protected' : ''}`);
   if (CORS_ORIGINS.length) console.log(`Accepting API calls from ${CORS_ORIGINS.join(', ')}`);
+  stores.check().then(
+    () => console.log('Database connected'),
+    (err) =>
+      console.error(
+        `Database not ready: ${err.message}. Is it running, and were the tables created (npm run db:import)?`,
+      ),
+  );
   loadCedict().catch(() => {}); // warm up the word dictionary
 };
 

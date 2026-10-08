@@ -11,7 +11,14 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import pg from 'pg';
 import { CHARACTERS, ROOT, WORDS, readList } from '../server/data-files.ts';
-import { CHARACTERS_TABLE, WORDS_TABLE, userIdOf } from '../server/store.ts';
+import { CharacterEntry } from '../src/app/core/character.model.ts';
+import {
+  CHARACTERS_TABLE,
+  WORDS_TABLE,
+  componentsOf,
+  partOverride,
+  userIdOf,
+} from '../server/store.ts';
 
 const args = process.argv.slice(2);
 const sqlOnly = args.includes('--sql');
@@ -22,15 +29,55 @@ const username = (userIndex >= 0 && args[userIndex + 1]) || 'default';
 const quote = (value: unknown): string =>
   value == null ? 'NULL' : `'${String(value).replaceAll("'", "''")}'`;
 
+const user = `(SELECT id FROM app_user WHERE username = ${quote(username)})`;
+
+/** The components and character_components tables, from the characters' components. */
+function componentsSql(characters: CharacterEntry[]): string {
+  const components = componentsOf(characters);
+  const lines = [`DELETE FROM components WHERE user_id = ${user};`];
+  if (!components.size) return lines.join('\n');
+  lines.push(
+    `INSERT INTO components (user_id, hanzi, pinyin, meaning)`,
+    `SELECT ${user}, v.* FROM (VALUES`,
+    [...components]
+      .map(([hanzi, c]) => `  (${quote(hanzi)}, ${quote(c.pinyin)}, ${quote(c.meaning)})`)
+      .join(',\n'),
+    `) AS v (hanzi, pinyin, meaning);`,
+    ``,
+    `INSERT INTO character_components (character_id, component_id, position, role, strokes, pinyin, meaning)`,
+    `SELECT ch.id, co.id, v.position, v.role, v.strokes, v.pinyin, v.meaning FROM (VALUES`,
+    characters
+      .flatMap((c) =>
+        (c.components ?? []).map((part, i) => {
+          const general = components.get(part.character)!;
+          const values = [
+            c.character,
+            i + 1,
+            part.character,
+            part.role,
+            part.strokes,
+            partOverride(part.pinyin, general.pinyin),
+            partOverride(part.meaning, general.meaning),
+          ];
+          return `  (${values.map((v) => (typeof v === 'number' ? v : quote(v))).join(', ')})`;
+        }),
+      )
+      .join(',\n'),
+    `) AS v (hanzi, position, component, role, strokes, pinyin, meaning)`,
+    `JOIN characters ch ON ch.user_id = ${user} AND ch.hanzi = v.hanzi`,
+    `JOIN components co ON co.user_id = ${user} AND co.hanzi = v.component;`,
+  );
+  return lines.join('\n');
+}
+
 /** DELETE + INSERT of one user's list, with the JSON array order as position. */
 function listSql(table: typeof CHARACTERS_TABLE | typeof WORDS_TABLE, items: unknown[]): string {
-  const user = `(SELECT id FROM app_user WHERE username = ${quote(username)})`;
   const lines = [`DELETE FROM ${table.name} WHERE user_id = ${user};`];
   if (items.length) {
     const rows = items.map((item, i) => {
       const values = (table.toRow as (x: unknown) => unknown[])(item).map((v, k) => {
         const column = table.columns[k];
-        return column === 'components' || column === 'words' ? `${quote(v)}::jsonb` : quote(v);
+        return column === 'words' ? `${quote(v)}::jsonb` : quote(v);
       });
       return `  (${i + 1}, ${values.join(', ')})`;
     });
@@ -53,6 +100,7 @@ const seed = [
   `BEGIN;`,
   `INSERT INTO app_user (username) VALUES (${quote(username)}) ON CONFLICT (username) DO NOTHING;`,
   listSql(CHARACTERS_TABLE, characters),
+  componentsSql(characters),
   listSql(WORDS_TABLE, words),
   `COMMIT;`,
   ``,
@@ -77,7 +125,8 @@ try {
   const userId = await userIdOf(client, username);
   const { rows } = await client.query(
     `SELECT (SELECT count(*) FROM characters WHERE user_id = $1)
-          + (SELECT count(*) FROM words WHERE user_id = $1) AS n`,
+          + (SELECT count(*) FROM words WHERE user_id = $1)
+          + (SELECT count(*) FROM components WHERE user_id = $1) AS n`,
     [userId],
   );
   if (Number(rows[0].n) > 0 && !replace) {

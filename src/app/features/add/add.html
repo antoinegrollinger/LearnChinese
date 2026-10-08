@@ -50,7 +50,7 @@
 
     @if (editing(); as ch) {
       <p class="banner">
-        Editing {{ ch }} — saving will update it in data/characters.json.
+        Editing {{ ch }} — saving will update it in your list.
         <a [routerLink]="['/study', ch]">View in Study →</a>
       </p>
     }
@@ -150,9 +150,5 @@
       </button>
     </div>
     <p class="message" [class]="status().kind">{{ status().text }}</p>
-    <p class="muted">
-      Saving writes to <code>data/characters.json</code> (previous version kept in
-      <code>data/characters.backup.json</code>).
-    </p>
   </form>
 </section>
