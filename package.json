@@ -9,12 +9,12 @@
     "app": "npm run build && node --env-file-if-exists=.env.local dist/server/server.mjs",
     "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p server/tsconfig.json",
     "add-components": "tsx scripts/add-missing-components.ts",
-    "build:server": "esbuild server/server.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/server/server.mjs --external:pg-native \"--banner:js=import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --log-level=warning",
+    "build:server": "esbuild server/server.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/server/server.mjs \"--banner:js=import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --log-level=warning",
     "db:import": "tsx --env-file-if-exists=.env.local scripts/db-import.ts",
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
-    "db:reset": "docker compose down --volumes && docker compose up -d --wait db",
-    "db:psql": "docker compose exec db psql -U hanzi -d hanzi"
+    "db:reset": "docker compose down --volumes && docker compose up -d --wait",
+    "db:sql": "docker compose exec db mariadb -u hanzi -phanzi hanzi"
   },
   "private": true,
   "packageManager": "npm@11.19.0",
@@ -26,7 +26,7 @@
     "@angular/platform-browser": "^21.2.0",
     "@angular/router": "^21.2.0",
     "hanzi-writer": "^3.7.3",
-    "pg": "^8.23.1",
+    "mysql2": "^3.24.5",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },
@@ -35,7 +35,6 @@
     "@angular/cli": "^21.2.0",
     "@angular/compiler-cli": "^21.2.0",
     "@types/node": "^26.6.4",
-    "@types/pg": "^8.23.1",
     "concurrently": "^10.0.5",
     "esbuild": "^0.25.0",
     "prettier": "^3.8.1",

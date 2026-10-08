@@ -1,7 +1,8 @@
-/* Copies data/characters.json and data/words.json (or DATA_DIR) into PostgreSQL, keeping the order.
+/* Copies data/characters.json and data/words.json (or DATA_DIR) into MySQL / MariaDB, keeping the order.
  *
- *   npm run db:import -- --sql                 only write db/seed.sql (run it with psql or paste it
- *                                              in your database's SQL editor, after db/schema.sql)
+ *   npm run db:import -- --sql                 only write db/seed.sql (import it in phpMyAdmin, or
+ *                                              run it with the mariadb/mysql client, after
+ *                                              db/schema.sql)
  *   npm run db:import                          create the tables (db/schema.sql) and import into
  *                                              DATABASE_URL
  *   npm run db:import -- --user anna           import as another user (default: "default")
@@ -9,7 +10,7 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import pg from 'pg';
+import mysql from 'mysql2/promise';
 import { CHARACTERS, ROOT, WORDS, readList } from '../server/data-files.ts';
 import { CharacterEntry } from '../src/app/core/character.model.ts';
 import {
@@ -26,69 +27,57 @@ const replace = args.includes('--replace');
 const userIndex = args.indexOf('--user');
 const username = (userIndex >= 0 && args[userIndex + 1]) || 'default';
 
-const quote = (value: unknown): string =>
-  value == null ? 'NULL' : `'${String(value).replaceAll("'", "''")}'`;
+/** SQL literal (mysql2 escapes quotes and backslashes). */
+const quote = (value: unknown): string => (value == null ? 'NULL' : mysql.escape(String(value)));
 
-const user = `(SELECT id FROM app_user WHERE username = ${quote(username)})`;
+/** INSERT … VALUES with one line per row, or nothing when there are no rows. */
+const insertSql = (table: string, columns: string[], rows: string[][]): string =>
+  rows.length
+    ? `INSERT INTO ${table} (${columns.join(', ')}) VALUES\n` +
+      rows.map((values) => `  (${values.join(', ')})`).join(',\n') +
+      ';'
+    : '';
+
+/** The user's list, with the JSON array order as position. */
+function listSql(table: typeof CHARACTERS_TABLE | typeof WORDS_TABLE, items: unknown[]): string {
+  const toRow = table.toRow as (item: unknown) => unknown[];
+  return insertSql(
+    table.name,
+    ['user_id', 'position', ...table.columns],
+    items.map((item, i) => ['@user', String(i + 1), ...toRow(item).map(quote)]),
+  );
+}
 
 /** The components and character_components tables, from the characters' components. */
 function componentsSql(characters: CharacterEntry[]): string {
   const components = componentsOf(characters);
-  const lines = [`DELETE FROM components WHERE user_id = ${user};`];
-  if (!components.size) return lines.join('\n');
-  lines.push(
-    `INSERT INTO components (user_id, hanzi, pinyin, meaning)`,
-    `SELECT ${user}, v.* FROM (VALUES`,
-    [...components]
-      .map(([hanzi, c]) => `  (${quote(hanzi)}, ${quote(c.pinyin)}, ${quote(c.meaning)})`)
-      .join(',\n'),
-    `) AS v (hanzi, pinyin, meaning);`,
-    ``,
-    `INSERT INTO character_components (character_id, component_id, position, role, strokes, pinyin, meaning)`,
-    `SELECT ch.id, co.id, v.position, v.role, v.strokes, v.pinyin, v.meaning FROM (VALUES`,
-    characters
-      .flatMap((c) =>
+  const idOf = (table: string, hanzi: string) =>
+    `(SELECT id FROM ${table} WHERE user_id = @user AND hanzi = ${quote(hanzi)})`;
+  return [
+    insertSql(
+      'components',
+      ['user_id', 'hanzi', 'pinyin', 'meaning'],
+      [...components].map(([hanzi, c]) => ['@user', quote(hanzi), quote(c.pinyin), quote(c.meaning)]),
+    ),
+    insertSql(
+      'character_components',
+      ['character_id', 'component_id', 'position', 'role', 'strokes', 'pinyin', 'meaning'],
+      characters.flatMap((c) =>
         (c.components ?? []).map((part, i) => {
           const general = components.get(part.character)!;
-          const values = [
-            c.character,
-            i + 1,
-            part.character,
-            part.role,
-            part.strokes,
-            partOverride(part.pinyin, general.pinyin),
-            partOverride(part.meaning, general.meaning),
+          return [
+            idOf('characters', c.character),
+            idOf('components', part.character),
+            String(i + 1),
+            quote(part.role),
+            quote(part.strokes),
+            quote(partOverride(part.pinyin, general.pinyin)),
+            quote(partOverride(part.meaning, general.meaning)),
           ];
-          return `  (${values.map((v) => (typeof v === 'number' ? v : quote(v))).join(', ')})`;
         }),
-      )
-      .join(',\n'),
-    `) AS v (hanzi, position, component, role, strokes, pinyin, meaning)`,
-    `JOIN characters ch ON ch.user_id = ${user} AND ch.hanzi = v.hanzi`,
-    `JOIN components co ON co.user_id = ${user} AND co.hanzi = v.component;`,
-  );
-  return lines.join('\n');
-}
-
-/** DELETE + INSERT of one user's list, with the JSON array order as position. */
-function listSql(table: typeof CHARACTERS_TABLE | typeof WORDS_TABLE, items: unknown[]): string {
-  const lines = [`DELETE FROM ${table.name} WHERE user_id = ${user};`];
-  if (items.length) {
-    const rows = items.map((item, i) => {
-      const values = (table.toRow as (x: unknown) => unknown[])(item).map((v, k) => {
-        const column = table.columns[k];
-        return column === 'words' ? `${quote(v)}::jsonb` : quote(v);
-      });
-      return `  (${i + 1}, ${values.join(', ')})`;
-    });
-    lines.push(
-      `INSERT INTO ${table.name} (user_id, position, ${table.columns.join(', ')})`,
-      `SELECT ${user}, v.* FROM (VALUES`,
-      rows.join(',\n'),
-      `) AS v (position, ${table.columns.join(', ')});`,
-    );
-  }
-  return lines.join('\n');
+      ),
+    ),
+  ].join('\n\n');
 }
 
 const characters = await readList(CHARACTERS);
@@ -96,15 +85,21 @@ const words = await readList(WORDS);
 const seed = [
   `-- Generated by "npm run db:import -- --sql" from your JSON lists. Run db/schema.sql first.`,
   `-- Replaces the lists of user ${quote(username)}.`,
-  `SET standard_conforming_strings = on;`,
-  `BEGIN;`,
-  `INSERT INTO app_user (username) VALUES (${quote(username)}) ON CONFLICT (username) DO NOTHING;`,
+  `SET NAMES utf8mb4;`,
+  `START TRANSACTION;`,
+  `INSERT IGNORE INTO app_user (username) VALUES (${quote(username)});`,
+  `SET @user = (SELECT id FROM app_user WHERE username = ${quote(username)});`,
+  `DELETE FROM characters WHERE user_id = @user; -- and their character_components\n` +
+    `DELETE FROM components WHERE user_id = @user;\n` +
+    `DELETE FROM words WHERE user_id = @user;`,
   listSql(CHARACTERS_TABLE, characters),
   componentsSql(characters),
   listSql(WORDS_TABLE, words),
   `COMMIT;`,
   ``,
-].join('\n\n');
+]
+  .filter((part, i, all) => part || i === all.length - 1)
+  .join('\n\n');
 
 if (sqlOnly) {
   const file = join(ROOT, 'db', 'seed.sql');
@@ -118,24 +113,23 @@ if (!url) {
   console.error('Set DATABASE_URL (or use --sql to only write db/seed.sql).');
   process.exit(1);
 }
-const client = new pg.Client({ connectionString: url });
-await client.connect();
+const db = await mysql.createConnection({ uri: url, multipleStatements: true, charset: 'utf8mb4' });
 try {
-  await client.query(readFileSync(join(ROOT, 'db', 'schema.sql'), 'utf8'));
-  const userId = await userIdOf(client, username);
-  const { rows } = await client.query(
-    `SELECT (SELECT count(*) FROM characters WHERE user_id = $1)
-          + (SELECT count(*) FROM words WHERE user_id = $1)
-          + (SELECT count(*) FROM components WHERE user_id = $1) AS n`,
-    [userId],
+  await db.query(readFileSync(join(ROOT, 'db', 'schema.sql'), 'utf8'));
+  const userId = await userIdOf(db, username);
+  const [[{ n }]] = await db.query<mysql.RowDataPacket[]>(
+    `SELECT (SELECT COUNT(*) FROM characters WHERE user_id = ?)
+          + (SELECT COUNT(*) FROM words WHERE user_id = ?)
+          + (SELECT COUNT(*) FROM components WHERE user_id = ?) AS n`,
+    [userId, userId, userId],
   );
-  if (Number(rows[0].n) > 0 && !replace) {
-    console.error(`User "${username}" already has ${rows[0].n} rows. Use --replace to overwrite them.`);
+  if (Number(n) > 0 && !replace) {
+    console.error(`User "${username}" already has ${n} rows. Use --replace to overwrite them.`);
     process.exitCode = 1;
   } else {
-    await client.query(seed);
+    await db.query(seed);
     console.log(`Imported ${characters.length} characters and ${words.length} words for "${username}".`);
   }
 } finally {
-  await client.end();
+  await db.end();
 }

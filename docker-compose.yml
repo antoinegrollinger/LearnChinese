@@ -1,26 +1,29 @@
-# Local PostgreSQL for testing (npm run db:up). The tables are created from db/schema.sql on the
-# first start; copy your JSON lists in with "npm run db:import". Connection string: see .env.example.
+# Local MariaDB for testing (npm run db:up): the same database as Hostinger (MariaDB 11.8). The tables
+# are created from db/schema.sql on the first start; copy your JSON lists in with "npm run db:import".
+# Connection string: see .env.example.
 name: hanzi-workshop
 
 services:
   db:
-    image: postgres:16-alpine
+    image: mariadb:11.8
     environment:
-      POSTGRES_USER: hanzi
-      POSTGRES_PASSWORD: hanzi
-      POSTGRES_DB: hanzi
+      MARIADB_USER: hanzi
+      MARIADB_PASSWORD: hanzi
+      MARIADB_DATABASE: hanzi
+      MARIADB_ROOT_PASSWORD: hanzi-root
+    command: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_bin']
     ports:
-      - '127.0.0.1:5433:5432' # 5433 so it doesn't clash with another PostgreSQL on 5432
+      - '127.0.0.1:3307:3306' # 3307 so it doesn't clash with another MySQL on 3306
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - dbdata:/var/lib/mysql
       - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
     healthcheck:
-      test: ['CMD', 'pg_isready', '-U', 'hanzi', '-d', 'hanzi']
+      test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
       interval: 2s
       timeout: 3s
-      retries: 15
+      retries: 30
 
-  # Database admin page: http://localhost:8080 (npm run db:up starts it too)
+  # Database admin page: http://localhost:8080/?server=db&username=hanzi&db=hanzi (password hanzi)
   adminer:
     image: adminer:latest
     environment:
@@ -31,5 +34,18 @@ services:
     depends_on:
       - db
 
+  # phpMyAdmin, like on Hostinger: http://localhost:8081 (logs in as hanzi automatically)
+  phpmyadmin:
+    image: phpmyadmin:latest
+    environment:
+      PMA_HOST: db
+      PMA_USER: hanzi
+      PMA_PASSWORD: hanzi
+      UPLOAD_LIMIT: 64M # for Import of db/schema.sql and db/seed.sql
+    ports:
+      - '127.0.0.1:8081:80'
+    depends_on:
+      - db
+
 volumes:
-  pgdata:
+  dbdata:

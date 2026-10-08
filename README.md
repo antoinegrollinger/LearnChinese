@@ -17,7 +17,7 @@ npm start
 | Process | What it does |
 |---|---|
 | `web` | `ng serve`, the Angular dev server with live reload. It forwards `/api` to the API (`proxy.conf.json`). |
-| `api` | `server/server.ts` (run with `tsx`). It reads and writes your lists in PostgreSQL: see [Local database](#local-database-for-testing) for the first start. |
+| `api` | `server/server.ts` (run with `tsx`). It reads and writes your lists in MySQL/MariaDB: see [Local database](#local-database-for-testing) for the first start. |
 
 Other scripts:
 
@@ -35,12 +35,12 @@ An internet connection is needed: the stroke data (Hanzi Writer) and the diction
 | Node version | **22.x** or 24.x |
 | Build command | `npm run build` |
 | Entry file | `server.js` (it starts `dist/server/server.mjs`) |
-| Environment variables | `APP_PASSWORD`: **set one**, otherwise anyone can edit or delete your data. The browser asks for it (any user name).<br>`DATABASE_URL`: **required**, your PostgreSQL database (see [PostgreSQL](#postgresql)). |
+| Environment variables | `APP_PASSWORD`: **set one**, otherwise anyone can edit or delete your data. The browser asks for it (any user name).<br>`DATABASE_URL`: **required**, your MySQL database (see [Database](#database-mysql--mariadb)). |
 
 Environment variables read by the server:
 
 - `PORT` is set by the host. Without it, the server listens on `localhost:8642`.
-- `DATABASE_URL` and `DATABASE_USER`: see [PostgreSQL](#postgresql). Without `DATABASE_URL` the server stops with an error.
+- `DATABASE_URL` and `DATABASE_USER`: see [Database](#database-mysql--mariadb). Without `DATABASE_URL` the server stops with an error.
 - `APP_PASSWORD` enables password protection (HTTP Basic auth). It is only safe over HTTPS.
 - `CORS_ORIGINS`: only when the app and the API are on different domains (see below). Comma-separated, e.g. `https://example.com,https://www.example.com`.
 
@@ -51,17 +51,23 @@ Environment variables read by the server:
 
 With `"apiUrl": ""` (the default) the app calls `/api` on its own server, as with `npm start` and `npm run app`. When the API is on another domain and has a password, the app asks for it once and keeps it in the browser's localStorage.
 
-## PostgreSQL
+## Database (MySQL / MariaDB)
 
-The server keeps the lists in PostgreSQL (13 or newer). `data/characters.json` and `data/words.json` are only the starting data that `npm run db:import` copies in.
+The server keeps the lists in MySQL 8.0.16+ or MariaDB 10.6+ (Hostinger runs MariaDB 11.8). `data/characters.json` and `data/words.json` are only the starting data that `npm run db:import` copies in.
 
-1. Create the tables: `psql "$DATABASE_URL" -f db/schema.sql` (or paste `db/schema.sql` into your database's SQL editor).
+1. Create the tables: import `db/schema.sql` (phpMyAdmin → your database → **Import**, or `mariadb -u USER -p DATABASE < db/schema.sql`).
 2. Copy your JSON lists in, either:
-   - `DATABASE_URL=… npm run db:import` (also runs `db/schema.sql`; refuses to overwrite existing data unless you add `-- --replace`), or
-   - `npm run db:import -- --sql`, which writes `db/seed.sql` from your JSON files, to run with `psql` or paste into the SQL editor.
+   - `npm run db:import -- --sql`, which writes `db/seed.sql` from your JSON files: import it the same way, after `schema.sql`. It replaces that user's lists. Or:
+   - `DATABASE_URL=… npm run db:import`, if your computer can reach the database (also runs `db/schema.sql`; refuses to overwrite existing data unless you add `-- --replace`).
 3. Start the server with these environment variables:
-   - `DATABASE_URL` (required): e.g. `postgres://user:password@host:5432/hanzi`. Hosted databases usually need `?sslmode=require` at the end.
+   - `DATABASE_URL` (required): `mysql://user:password@host:3306/database`. On Hostinger the host is `localhost`, e.g. `mysql://u123_hanzi:password@localhost:3306/u123_hanzi`. Special characters in the password must be URL-encoded (`@` → `%40`, `#` → `%23`…).
    - `DATABASE_USER` (optional): whose lists to use, `default` if not set.
+
+### On Hostinger
+
+1. hPanel → **Databases → MySQL Databases**: create a database and a user (note the password).
+2. **phpMyAdmin** (next to the database) → **Import** `db/schema.sql`, then `db/seed.sql` (made with `npm run db:import -- --sql`).
+3. API app → **Environment variables**: `DATABASE_URL=mysql://USER:PASSWORD@localhost:3306/DATABASE` (remove `DATA_DIR` if it is still there), then redeploy. The log says `Data: MySQL …` and `Database connected`.
 
 | Table | Contents |
 |---|---|
@@ -82,17 +88,17 @@ Every row belongs to a user (`app_user` table), so accounts can be added later: 
 
 ### Local database for testing
 
-Needs Docker Desktop (running). The database is on port 5433 (user, password and database name: `hanzi`).
+Needs Docker Desktop (running). MariaDB 11.8, like Hostinger, on port 3307 (user, password and database name: `hanzi`).
 
 ```sh
 cp .env.example .env.local   # first time: DATABASE_URL for npm start, npm run app and npm run db:import
-npm run db:up                # start PostgreSQL (docker-compose.yml); tables come from db/schema.sql
+npm run db:up                # start MariaDB (docker-compose.yml); tables come from db/schema.sql
 npm run db:import            # first time: copy data/*.json into it
-npm start                    # the log says "Data: PostgreSQL …"
+npm start                    # the log says "Data: MySQL …"
 ```
 
-- **http://localhost:8080/?pgsql=db&username=hanzi&db=hanzi** is Adminer, a database admin page (also started by `npm run db:up`). The password is `hanzi`. This link selects PostgreSQL; from http://localhost:8080 you must change System from MySQL to PostgreSQL yourself, or the login fails.
-- `npm run db:psql` opens a SQL prompt, `npm run db:down` stops the database (the data is kept).
+- **http://localhost:8080/?server=db&username=hanzi&db=hanzi** is Adminer, a database admin page (also started by `npm run db:up`). The password is `hanzi`.
+- `npm run db:sql` opens a SQL prompt, `npm run db:down` stops the database (the data is kept).
 - `npm run db:reset` deletes the database and creates it again empty. Run `npm run db:import` afterwards.
 
 ## Pages
@@ -112,8 +118,8 @@ data/words.json               starting words
 server/server.ts              local API: /api/characters, /api/words (GET/POST/DELETE), /api/lookup/:word
 server/cedict.ts              CC-CEDICT word dictionary (downloaded once into .cache/)
 server/data-files.ts          reading/writing data/*.json (db:import, add-components)
-server/store.ts               the lists in PostgreSQL (DATABASE_URL)
-db/schema.sql                 PostgreSQL tables (npm run db:import copies the JSON lists in)
+server/store.ts               the lists in MySQL / MariaDB (DATABASE_URL)
+db/schema.sql                 MySQL / MariaDB tables (npm run db:import copies the JSON lists in)
 scripts/                      npm run add-components (adds missing components as characters)
 src/app/
   app.ts, app.routes.ts       shell (header + tabs) and routes

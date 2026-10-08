@@ -1,4 +1,4 @@
-/* API that reads and writes your characters and words in PostgreSQL (DATABASE_URL, see store.ts and
+/* API that reads and writes your characters and words in MySQL / MariaDB (DATABASE_URL, see store.ts and
  * db/schema.sql).
  *
  *   GET    /api/characters             → the list           (same routes for /api/words)
@@ -18,7 +18,7 @@ import { CHARACTERS, ListFile, ROOT, WORDS } from './data-files.ts';
 import { ListStore, createStores } from './store.ts';
 
 const DIST = join(ROOT, 'dist', 'hanzi-workshop', 'browser');
-/** PostgreSQL (see store.ts). */
+/** MySQL / MariaDB (see store.ts). */
 const stores = (() => {
   try {
     return createStores();
