@@ -1,13 +1,14 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { inject, signal } from '@angular/core';
+import { effect, inject, signal, untracked } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { AuthService } from './auth.service';
 
 export interface SaveResult<T> {
   entry: T;
   created: boolean;
 }
 
-/** A list stored in data/<name>.json, read and written through server/server.ts (/api/<name>). */
+/** The logged-in user's list, read and written through server/server.ts (/api/<name>). */
 export abstract class ApiListStore<T> {
   private readonly http = inject(HttpClient);
 
@@ -20,7 +21,18 @@ export abstract class ApiListStore<T> {
     private readonly keyOf: (item: T) => string,
     private readonly clean: (raw: unknown) => T,
   ) {
-    this.reload();
+    // Each user has their own list: load it on login, empty it on logout.
+    const auth = inject(AuthService);
+    effect(() => {
+      const user = auth.user();
+      untracked(() => (user ? this.reload() : this.clear()));
+    });
+  }
+
+  private clear(): void {
+    this.list.set([]);
+    this.loaded.set(false);
+    this.error.set(null);
   }
 
   async reload(): Promise<void> {
@@ -29,6 +41,7 @@ export abstract class ApiListStore<T> {
       this.list.set(list.map(this.clean));
       this.error.set(null);
     } catch (err) {
+      if (err instanceof HttpErrorResponse && err.status === 401) return; // back to the login screen
       const url = err instanceof HttpErrorResponse && err.url ? err.url : this.url;
       this.error.set(
         `Could not reach the server (${url}): ${errorMessage(err)}. ` +

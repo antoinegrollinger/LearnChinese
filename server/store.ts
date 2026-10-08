@@ -1,8 +1,8 @@
-/* The lists are kept in MySQL / MariaDB (tables in db/schema.sql).
+/* The lists are kept in MySQL / MariaDB (tables in db/schema.sql), one set per user (app_user.id,
+ * from the session: see auth.ts).
  *
  *   DATABASE_URL   required: mysql://user:password@host:3306/dbname
  *                  (on Hostinger: mysql://u123_user:password@localhost:3306/u123_db)
- *   DATABASE_USER  whose lists to use until there is a login system (default: "default")
  *
  * "npm run db:import" creates the tables and copies data/*.json in. A character's components are
  * kept in the components and character_components tables (see db/schema.sql).
@@ -11,21 +11,22 @@ import mysql from 'mysql2/promise';
 import { CharacterEntry, CharacterPart, cleanEntry } from '../src/app/core/character.model.ts';
 import { WordEntry, cleanWord } from '../src/app/core/word.model.ts';
 
-/** One user's list. */
+/** A list; user is the app_user.id whose list it is. */
 export interface ListStore<T> {
-  all(): Promise<T[]>;
+  all(user: number): Promise<T[]>;
   /** Adds the entry at the end, or replaces the one with the same key. Returns true if added. */
-  save(entry: T): Promise<boolean>;
+  save(user: number, entry: T): Promise<boolean>;
   /** Returns false if there was nothing to delete. */
-  remove(key: string): Promise<boolean>;
+  remove(user: number, key: string): Promise<boolean>;
 }
 
 export interface Stores {
+  pool: mysql.Pool;
   characters: ListStore<CharacterEntry>;
   words: ListStore<WordEntry>;
   /** For the startup log. */
   description: string;
-  /** Connects and finds the user: fails if the database can't be reached or has no tables. */
+  /** Fails if the database can't be reached or has no tables. */
   check(): Promise<void>;
 }
 
@@ -126,24 +127,23 @@ async function upsert<T>(db: Db, table: Table<T>, user: number, entry: T) {
   return { id: result.insertId, created: true };
 }
 
-function tableStore<T>(pool: mysql.Pool, table: Table<T>, userId: () => Promise<number>): ListStore<T> {
+function tableStore<T>(pool: mysql.Pool, table: Table<T>): ListStore<T> {
   const key = table.columns[0];
   return {
-    async all() {
+    async all(user) {
       const [rows] = await pool.query<Rows>(
         `SELECT ${table.columns.join(', ')} FROM ${table.name} WHERE user_id = ? ORDER BY position, ${key}`,
-        [await userId()],
+        [user],
       );
       return rows.map(table.fromRow);
     },
-    async save(entry) {
-      const user = await userId();
+    async save(user, entry) {
       return userTransaction(pool, user, async (db) => (await upsert(db, table, user, entry)).created);
     },
-    async remove(value) {
+    async remove(user, value) {
       const [result] = await pool.query<Result>(
         `DELETE FROM ${table.name} WHERE user_id = ? AND ${key} = ?`,
-        [await userId(), value],
+        [user, value],
       );
       return result.affectedRows > 0;
     },
@@ -175,11 +175,11 @@ export function componentsOf(
 export const partOverride = (value?: string, general?: string | null): string | null =>
   (value ?? null) === (general ?? null) ? null : (value ?? '');
 
-function charactersStore(pool: mysql.Pool, userId: () => Promise<number>): ListStore<CharacterEntry> {
-  const generic = tableStore(pool, CHARACTERS_TABLE, userId);
+function charactersStore(pool: mysql.Pool): ListStore<CharacterEntry> {
+  const generic = tableStore(pool, CHARACTERS_TABLE);
   return {
-    async all() {
-      const characters = await generic.all();
+    async all(user) {
+      const characters = await generic.all(user);
       // All the user's component links at once, grouped by character below.
       const [links] = await pool.query<Rows>(
         `SELECT ch.hanzi AS of_hanzi, co.hanzi, l.role, l.strokes,
@@ -189,7 +189,7 @@ function charactersStore(pool: mysql.Pool, userId: () => Promise<number>): ListS
          JOIN components co ON co.id = l.component_id
          WHERE ch.user_id = ?
          ORDER BY l.character_id, l.position`,
-        [await userId()],
+        [user],
       );
       const parts = new Map<string, unknown[]>();
       for (const { of_hanzi, hanzi, ...part } of links) {
@@ -198,8 +198,7 @@ function charactersStore(pool: mysql.Pool, userId: () => Promise<number>): ListS
       // cleanEntry() puts the parts in shape and drops empty values ('' = none).
       return characters.map((c) => cleanEntry({ ...c, components: parts.get(c.character) ?? [] }));
     },
-    async save(entry) {
-      const user = await userId();
+    async save(user, entry) {
       return userTransaction(pool, user, async (db) => {
         const { id, created } = await upsert(db, CHARACTERS_TABLE, user, entry);
         await db.query(`DELETE FROM character_components WHERE character_id = ?`, [id]);
@@ -243,7 +242,7 @@ async function saveLink(db: Db, user: number, characterId: number, position: num
   );
 }
 
-/** Id of the user, created if missing. */
+/** Id of the user with this username ("default", for npm run db:import), created if missing. */
 export async function userIdOf(db: Db, username: string): Promise<number> {
   await db.query(`INSERT IGNORE INTO app_user (username) VALUES (?)`, [username]);
   const [[row]] = await db.query<Rows>(`SELECT id FROM app_user WHERE username = ?`, [username]);
@@ -261,20 +260,12 @@ export function createStores(): Stores {
       'DATABASE_URL is not set. Locally: cp .env.example .env.local and npm run db:up (see README).',
     );
   }
-  const username = process.env['DATABASE_USER'] || 'default';
   const pool = mysql.createPool({ uri: url, connectionLimit: 5, charset: 'utf8mb4' });
-  let id: Promise<number> | null = null;
-  const userId = () => {
-    id ??= userIdOf(pool, username).catch((err) => {
-      id = null; // try again on the next request
-      throw err;
-    });
-    return id;
-  };
   return {
-    characters: charactersStore(pool, userId),
-    words: tableStore(pool, WORDS_TABLE, userId),
-    description: `MySQL ${safeUrl(url)} (user "${username}")`,
-    check: async () => void (await userId()),
+    pool,
+    characters: charactersStore(pool),
+    words: tableStore(pool, WORDS_TABLE),
+    description: `MySQL ${safeUrl(url)}`,
+    check: async () => void (await pool.query(`SELECT 1 FROM sessions LIMIT 1`)),
   };
 }

@@ -35,13 +35,13 @@ An internet connection is needed: the stroke data (Hanzi Writer) and the diction
 | Node version | **22.x** or 24.x |
 | Build command | `npm run build` |
 | Entry file | `server.js` (it starts `dist/server/server.mjs`) |
-| Environment variables | `APP_PASSWORD`: **set one**, otherwise anyone can edit or delete your data. The browser asks for it (any user name).<br>`DATABASE_URL`: **required**, your MySQL database (see [Database](#database-mysql--mariadb)). |
+| Environment variables | `DATABASE_URL`: **required**, your MySQL database (see [Database](#database-mysql--mariadb)).<br>`OWNER_EMAIL`: your email address, so your account gets the imported lists (see [Accounts](#accounts)). |
 
 Environment variables read by the server:
 
 - `PORT` is set by the host. Without it, the server listens on `localhost:8642`.
-- `DATABASE_URL` and `DATABASE_USER`: see [Database](#database-mysql--mariadb). Without `DATABASE_URL` the server stops with an error.
-- `APP_PASSWORD` enables password protection (HTTP Basic auth). It is only safe over HTTPS.
+- `DATABASE_URL`: see [Database](#database-mysql--mariadb). Without it the server stops with an error.
+- `OWNER_EMAIL` (optional): see [Accounts](#accounts).
 - `CORS_ORIGINS`: only when the app and the API are on different domains (see below). Comma-separated, e.g. `https://example.com,https://www.example.com`.
 
 ### App and API on separate domains (e.g. `example.com` + `api.example.com`)
@@ -49,7 +49,7 @@ Environment variables read by the server:
 - **API** (`api.example.com`): a Node.js Web App as above, with `CORS_ORIGINS` set to the app's address(es).
 - **App** (`example.com`): plain static hosting. Upload the contents of `dist/hanzi-workshop/browser/` to `public_html/` (the included `.htaccess` sends routes like `/study/马` to `index.html`). In the uploaded `config.json`, set `"apiUrl": "https://api.example.com"`. You can change it later without rebuilding. If the host builds the app from git, set the environment variable `API_URL=https://api.example.com` instead: `npm run build` writes it into `config.json`.
 
-With `"apiUrl": ""` (the default) the app calls `/api` on its own server, as with `npm start` and `npm run app`. When the API is on another domain and has a password, the app asks for it once and keeps it in the browser's localStorage.
+With `"apiUrl": ""` (the default) the app calls `/api` on its own server, as with `npm start` and `npm run app`. The login works the same way on one or two domains.
 
 ## Database (MySQL / MariaDB)
 
@@ -61,13 +61,13 @@ The server keeps the lists in MySQL 8.0.16+ or MariaDB 10.6+ (Hostinger runs Mar
    - `DATABASE_URL=… npm run db:import`, if your computer can reach the database (also runs `db/schema.sql`; refuses to overwrite existing data unless you add `-- --replace`).
 3. Start the server with these environment variables:
    - `DATABASE_URL` (required): `mysql://user:password@host:3306/database`. On Hostinger the host is `localhost`, e.g. `mysql://u123_hanzi:password@localhost:3306/u123_hanzi`. Special characters in the password must be URL-encoded (`@` → `%40`, `#` → `%23`…).
-   - `DATABASE_USER` (optional): whose lists to use, `default` if not set.
 
 ### On Hostinger
 
 1. hPanel → **Databases → MySQL Databases**: create a database and a user (note the password).
 2. **phpMyAdmin** (next to the database) → **Import** `db/schema.sql`, then `db/seed.sql` (made with `npm run db:import -- --sql`).
-3. API app → **Environment variables**: `DATABASE_URL=mysql://USER:PASSWORD@localhost:3306/DATABASE` (remove `DATA_DIR` if it is still there), then redeploy. The log says `Data: MySQL …` and `Database connected`.
+3. API app → **Environment variables**: `DATABASE_URL=mysql://USER:PASSWORD@localhost:3306/DATABASE` and `OWNER_EMAIL=you@example.com` (remove `DATA_DIR` and `APP_PASSWORD` if they are still there), then redeploy. The log says `Data: MySQL …` and `Database connected`.
+4. Open the app and **Create an account** with your `OWNER_EMAIL`: it gets the imported lists.
 
 | Table | Contents |
 |---|---|
@@ -82,7 +82,18 @@ Every table has a numeric `id`, and links use these ids. A hanzi (or word) appea
 
 Editing a component's meaning on the Add page changes it for that character only. To change it everywhere, edit the `components` table (e.g. in Adminer).
 
-Every row belongs to a user (`app_user` table), so accounts can be added later: a login decides the user for each request, and each person gets their own characters and words. Until then, all requests use `DATABASE_USER`. `npm run db:import -- --user anna` imports the JSON lists for another user.
+Every row belongs to a user (`app_user` table): each account has its own characters, components and words.
+
+## Accounts
+
+The app opens on a login screen. **Create an account** with an email address and a password (at least 8 characters, letters and a digit or symbol); each account has its own lists, starting empty.
+
+- **Your existing lists** belong to the `default` user (what `npm run db:import` fills). Set `OWNER_EMAIL` to your email address on the server, then create your account with that address: it takes over these lists. This happens once; afterwards `OWNER_EMAIL` does nothing. Create your account soon after deploying, since until then anyone registering with that address would get the lists.
+- **Sessions:** logging in creates a session (table `sessions`) valid for 30 days. The browser keeps only a random token (localStorage `hanzi-workshop-session`) and sends it as `Authorization: Bearer …`; the database keeps only its SHA-256 hash. **Log out** ends that session; the other devices stay logged in. To log someone out everywhere: `DELETE FROM sessions WHERE user_id = …`.
+- **Passwords** are stored as salted scrypt hashes (`app_user.password_hash`), never shown, logged or kept in the browser. After 10 wrong passwords for one email (or 50 from one address), logging in is blocked for 15 minutes.
+- Email addresses are checked (format and length) in the form and again by the server, and compared in lower case.
+- Not included yet: email confirmation and "forgot password".
+- Review scores are still kept per browser (localStorage), not per account.
 
 `npm run add-components` still works on the JSON files only: run `npm run db:import -- --replace` afterwards to copy the result into the database (this replaces what is there).
 

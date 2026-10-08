@@ -1,25 +1,50 @@
--- Hanzi Workshop: MySQL / MariaDB schema (MariaDB 10.6+ or MySQL 8.0.16+; Hostinger runs MariaDB).
+-- Hanzi Workshop: MariaDB schema (MariaDB 10.6+, which Hostinger runs; on MySQL 8 the upgrade
+-- statements below need a fresh database).
 -- Same data as data/characters.json and data/words.json, with one list per user.
 -- Safe to run again: it only creates what is missing.
 --
 --   mariadb -u USER -p DATABASE < db/schema.sql       (or import it in phpMyAdmin)
 --
 -- Every table has a numeric id; links between tables use these ids. The hanzi (or word) is unique
--- per user. Until there is a login system every request uses one user, "default" (or
--- DATABASE_USER, see server/store.ts). Accounts later only add rows to app_user.
+-- per user. Each account (app_user, unique email) has its own lists; logging in creates a row in
+-- sessions (see server/auth.ts). The "default" user holds the data imported by npm run db:import,
+-- until the account with OWNER_EMAIL takes it over.
 --
 -- utf8mb4_bin: compares characters exactly, so different characters are never treated as equal.
 
 CREATE TABLE IF NOT EXISTS app_user (
   id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  username      VARCHAR(64)  NOT NULL UNIQUE,
+  email         VARCHAR(254) UNIQUE,         -- lower case; NULL for the "default" user
+  username      VARCHAR(64)  UNIQUE,         -- only for the "default" user (npm run db:import)
   display_name  VARCHAR(255),
-  -- For the future login system (e.g. an argon2 or bcrypt hash). NULL = can't log in.
+  -- "scrypt$N$r$p$salt$hash" (server/auth.ts): never the password itself. NULL = can't log in.
   password_hash VARCHAR(255),
-  created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  last_login_at TIMESTAMP NULL
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin;
 
+-- Upgrade from the version without accounts.
+ALTER TABLE app_user
+  ADD COLUMN IF NOT EXISTS email VARCHAR(254) UNIQUE AFTER id,
+  ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP NULL,
+  MODIFY username VARCHAR(64) NULL;
+
 INSERT IGNORE INTO app_user (username, display_name) VALUES ('default', 'Default');
+
+-- One row per login. The token is only sent to the browser; this table keeps its SHA-256 hash, so
+-- someone who reads the database still can't use a session.
+CREATE TABLE IF NOT EXISTS sessions (
+  id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  user_id      BIGINT UNSIGNED NOT NULL,
+  token_hash   CHAR(64) NOT NULL,            -- hex SHA-256 of the token
+  created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  last_seen_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  expires_at   TIMESTAMP NOT NULL,
+  user_agent   VARCHAR(255),
+  UNIQUE KEY sessions_token (token_hash),
+  KEY sessions_user (user_id),
+  CONSTRAINT sessions_user FOREIGN KEY (user_id) REFERENCES app_user (id) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin;
 
 -- One row per character in data/characters.json (CharacterEntry in src/app/core/character.model.ts).
 CREATE TABLE IF NOT EXISTS characters (

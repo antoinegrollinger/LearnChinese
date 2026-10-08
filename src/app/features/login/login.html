@@ -1,0 +1,77 @@
+<section class="view centered">
+  <form class="login-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <h2>{{ title() }}</h2>
+
+    @if (expired() && mode() === 'login') {
+      <p class="banner">Your session has ended. Please log in again.</p>
+    }
+
+    <label>
+      Email address
+      <input
+        type="email"
+        formControlName="email"
+        autocomplete="email"
+        inputmode="email"
+        autocapitalize="none"
+        spellcheck="false"
+        placeholder="name@example.com"
+        [attr.aria-invalid]="!!fieldError('email')"
+        aria-describedby="email-error"
+      />
+      @if (fieldError('email'); as e) {
+        <span class="field-error" id="email-error">{{ e }}</span>
+      }
+    </label>
+
+    <label>
+      Password
+      <input
+        type="password"
+        formControlName="password"
+        [attr.autocomplete]="mode() === 'login' ? 'current-password' : 'new-password'"
+        [attr.aria-invalid]="!!fieldError('password')"
+        aria-describedby="password-error"
+      />
+      @if (fieldError('password'); as e) {
+        <span class="field-error" id="password-error">{{ e }}</span>
+      } @else if (mode() === 'register') {
+        <span class="muted">At least {{ passwordMin }} characters, with letters and a digit or symbol.</span>
+      }
+    </label>
+
+    @if (mode() === 'register') {
+      <label>
+        Repeat the password
+        <input
+          type="password"
+          formControlName="confirm"
+          autocomplete="new-password"
+          [attr.aria-invalid]="!!fieldError('confirm')"
+          aria-describedby="confirm-error"
+        />
+        @if (fieldError('confirm'); as e) {
+          <span class="field-error" id="confirm-error">{{ e }}</span>
+        }
+      </label>
+    }
+
+    @if (serverError(); as e) {
+      <p class="message error" role="alert">{{ e }}</p>
+    }
+
+    <button type="submit" class="primary" [disabled]="busy()">
+      {{ busy() ? 'Please wait…' : title() }}
+    </button>
+
+    <p class="muted switch">
+      @if (mode() === 'login') {
+        No account yet?
+        <button type="button" class="link" (click)="switchMode('register')">Create one</button>
+      } @else {
+        Already have an account?
+        <button type="button" class="link" (click)="switchMode('login')">Log in</button>
+      }
+    </p>
+  </form>
+</section>

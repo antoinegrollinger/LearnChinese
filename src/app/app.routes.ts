@@ -1,5 +1,7 @@
 import { Routes, UrlMatcher } from '@angular/router';
+import { loggedIn, loggedOut } from './core/auth.guard';
 import { Add } from './features/add/add';
+import { Login } from './features/login/login';
 import { Review } from './features/review/review';
 import { Study } from './features/study/study';
 import { Words } from './features/words/words';
@@ -12,7 +14,7 @@ function withOptionalParam(prefix: string, name: string): UrlMatcher {
   };
 }
 
-export const routes: Routes = [
+const pages: Routes = [
   {
     matcher: withOptionalParam('study', 'character'),
     component: Study,
@@ -25,5 +27,10 @@ export const routes: Routes = [
     component: Words,
     title: 'Words · Hanzi Workshop',
   },
-  { path: '**', redirectTo: 'study' },
+];
+
+export const routes: Routes = [
+  { path: 'login', component: Login, canActivate: [loggedOut], title: 'Log in · Hanzi Workshop' },
+  // Everything else needs a login.
+  { path: '', canActivateChild: [loggedIn], children: [...pages, { path: '**', redirectTo: 'study' }] },
 ];
