@@ -23,6 +23,7 @@ import { ThemeToggle } from './shared/theme-toggle';
         <nav class="tabs" appSlidingThumb>
           <a class="button" routerLink="/study" routerLinkActive="active">Study</a>
           <a class="button" routerLink="/review" routerLinkActive="active">Review</a>
+          <a class="button" routerLink="/paper" routerLinkActive="active">Train on paper</a>
           <a class="button" routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
           <a class="button" routerLink="/add" routerLinkActive="active">Add</a>
           <a class="button" routerLink="/friends" routerLinkActive="active">Friends</a>

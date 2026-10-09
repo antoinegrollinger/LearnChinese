@@ -1,0 +1,228 @@
+<section class="view paper">
+  <div class="paper-setup">
+    <h2>Train on paper</h2>
+    <p class="muted">
+      Print practice sheets: each character with its model, shadows to trace and boxes to fill.
+    </p>
+
+    <label>
+      <span>Characters <span class="muted">(in order; repeat one to practise it more)</span></span>
+      <textarea
+        lang="zh"
+        rows="3"
+        class="paper-text"
+        placeholder="你好认识你很高兴"
+        [value]="text()"
+        (input)="text.set($any($event.target).value)"
+      ></textarea>
+    </label>
+    <div class="paper-count">
+      <span class="muted">
+        {{ sequence().length }} character{{ sequence().length === 1 ? '' : 's' }}
+        @if (pages().length) {
+          · {{ pages().length }} page{{ pages().length === 1 ? '' : 's' }}
+        }
+        @if (loading()) {
+          · loading…
+        }
+      </span>
+      @if (text()) {
+        <button type="button" (click)="text.set('')">Clear</button>
+      }
+    </div>
+    @if (missing().length) {
+      <p class="warning">No stroke data for {{ missing().join(' ') }}: left out.</p>
+    }
+
+    @if (characters.list().length || words.list().length) {
+      <details class="paper-pick">
+        <summary>Add from your characters and words</summary>
+        <div class="label-groups">
+          @if (characters.list().length) {
+            <button type="button" (click)="appendAllCharacters()">
+              All my characters ({{ characters.list().length }})
+            </button>
+          }
+          @for (g of labelGroups(); track g.name) {
+            <button type="button" [title]="g.text" (click)="append(g.text)">
+              <span class="label-dot" [style.background]="g.color"></span> {{ g.name }}
+            </button>
+          }
+        </div>
+        @if (characters.list().length) {
+          <p class="muted">Characters:</p>
+          <div class="paper-chips" lang="zh">
+            @for (c of characters.list(); track c.character) {
+              <button type="button" [title]="c.meaning ?? ''" (click)="append(c.character)">
+                {{ c.character }}
+              </button>
+            }
+          </div>
+        }
+        @if (words.list().length) {
+          <p class="muted">Words:</p>
+          <div class="paper-chips" lang="zh">
+            @for (w of words.list(); track w.word) {
+              <button type="button" [title]="w.meaning ?? ''" (click)="append(w.word)">
+                {{ w.word }}
+              </button>
+            }
+          </div>
+        }
+      </details>
+    } @else if (characters.loaded()) {
+      <p class="muted">
+        Type any characters above, or <a routerLink="/add">add some to your list</a> to pick them
+        here.
+      </p>
+    }
+
+    <fieldset class="paper-options">
+      <legend>Layout</legend>
+      <label class="check">
+        <input
+          type="checkbox"
+          [checked]="options().shadows > 0"
+          (change)="setShadows($any($event.target).checked)"
+        />
+        Grey shadows to trace
+        @if (options().shadows > 0) {
+          <select
+            aria-label="Number of shadows"
+            (change)="set('shadows', +$any($event.target).value)"
+          >
+            @for (n of shadowCounts(); track n) {
+              <option [value]="n" [selected]="n === options().shadows">{{ n }}</option>
+            }
+          </select>
+        }
+      </label>
+      <label class="check">
+        <input
+          type="checkbox"
+          [checked]="options().strokeOrder"
+          (change)="set('strokeOrder', $any($event.target).checked)"
+        />
+        Stroke order above each row
+      </label>
+      <label class="check">
+        <input
+          type="checkbox"
+          [checked]="options().pinyin"
+          (change)="set('pinyin', $any($event.target).checked)"
+        />
+        Pinyin
+      </label>
+
+      <div class="paper-field">
+        <span>Box size</span>
+        <div class="layout-toggle segmented" appSlidingThumb role="group" aria-label="Box size">
+          @for (s of sizes; track s.boxes) {
+            <button
+              type="button"
+              [class.active]="options().boxesPerRow === s.boxes"
+              [attr.aria-pressed]="options().boxesPerRow === s.boxes"
+              (click)="setBoxes(s.boxes)"
+            >
+              {{ s.name }}
+            </button>
+          }
+        </div>
+      </div>
+      <label class="paper-field">
+        <span>Guide lines</span>
+        <select (change)="set('grid', $any($event.target).value)">
+          @for (g of grids; track g[0]) {
+            <option [value]="g[0]" [selected]="g[0] === options().grid">{{ g[1] }}</option>
+          }
+        </select>
+      </label>
+      <label class="paper-field">
+        <span>Rows per character</span>
+        <select (change)="set('rowsPerCharacter', +$any($event.target).value)">
+          @for (n of [1, 2, 3, 4]; track n) {
+            <option [value]="n" [selected]="n === options().rowsPerCharacter">
+              {{ n }}{{ n > 1 ? ' (the next ones without shadows)' : '' }}
+            </option>
+          }
+        </select>
+      </label>
+      <label class="paper-field">
+        <span>Title</span>
+        <input
+          [value]="options().title"
+          maxlength="80"
+          (input)="set('title', $any($event.target).value)"
+        />
+      </label>
+    </fieldset>
+
+    <button
+      type="button"
+      class="primary"
+      [disabled]="!pages().length || loading() || downloading()"
+      (click)="download()"
+    >
+      {{ downloading() ? 'Making the PDF…' : '⬇ Download the PDF' }}
+    </button>
+    @if (error(); as e) {
+      <p class="message error">{{ e }}</p>
+    }
+  </div>
+
+  <div class="paper-preview" aria-label="Preview">
+    @for (p of pages(); track $index) {
+      <svg
+        class="sheet-page"
+        role="img"
+        [attr.aria-label]="'Page ' + ($index + 1)"
+        [attr.viewBox]="'0 0 ' + page.width + ' ' + page.height"
+      >
+        <rect [attr.width]="page.width" [attr.height]="page.height" fill="#fff" />
+        @for (op of p.ops; track $index) {
+          @switch (op.kind) {
+            @case ('line') {
+              <line
+                [attr.x1]="op.x1"
+                [attr.y1]="op.y1"
+                [attr.x2]="op.x2"
+                [attr.y2]="op.y2"
+                [attr.stroke]="op.color"
+                [attr.stroke-width]="op.width"
+              />
+            }
+            @case ('glyph') {
+              <g [attr.transform]="glyphTransform(op)">
+                @for (d of op.strokes; track $index) {
+                  <path [attr.d]="d" [attr.fill]="op.colors[$index]" />
+                }
+              </g>
+            }
+            @case ('text') {
+              <text
+                [attr.x]="op.x"
+                [attr.y]="op.y"
+                [attr.font-size]="op.size"
+                [attr.fill]="op.color"
+                [attr.text-anchor]="op.anchor"
+                [attr.font-family]="font"
+              >
+                {{ op.text }}
+              </text>
+            }
+          }
+        }
+      </svg>
+    } @empty {
+      <div class="sheet-page sheet-empty">
+        <p class="muted">
+          @if (loading()) {
+            Loading the strokes…
+          } @else {
+            Type or pick characters: the preview of the sheets shows here.
+          }
+        </p>
+      </div>
+    }
+  </div>
+</section>

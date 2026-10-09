@@ -130,6 +130,12 @@ const pages: Routes = [
       },
     ],
   },
+  // Train on paper: printable practice sheets (PDF).
+  {
+    path: 'paper',
+    loadComponent: () => import('./features/paper/paper').then((m) => m.Paper),
+    title: 'Train on paper · Hanzi Workshop',
+  },
   {
     path: 'friends',
     loadComponent: () => import('./features/friends/friends').then((m) => m.Friends),
