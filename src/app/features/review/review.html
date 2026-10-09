@@ -39,18 +39,18 @@
         </div>
 
         @if (groups().length) {
-          <p class="muted">By label: click to add its characters, again to remove them.</p>
+          <p class="muted">By label: click to add its {{ one() }}s, again to remove them.</p>
           <div class="label-groups">
             @for (g of groups(); track g.key) {
               <button
                 type="button"
-                [class.active]="g.selected === g.characters.length"
-                [class.partial]="g.selected > 0 && g.selected < g.characters.length"
-                [attr.aria-pressed]="g.selected === g.characters.length"
+                [class.active]="g.selected === g.items.length"
+                [class.partial]="g.selected > 0 && g.selected < g.items.length"
+                [attr.aria-pressed]="g.selected === g.items.length"
                 (click)="toggleGroup(g)"
               >
                 <span class="label-dot" [style.background]="g.color"></span>
-                {{ g.name }} ({{ g.selected }}/{{ g.characters.length }})
+                {{ g.name }} ({{ g.selected }}/{{ g.items.length }})
               </button>
             }
           </div>
@@ -271,6 +271,7 @@
             [character]="currentChar()"
             [showOutline]="false"
             [hideCharacter]="true"
+            [drawing]="!done()"
             (loadError)="onWriterError()"
           />
         }

@@ -2,19 +2,29 @@ import { Injectable, computed, inject } from '@angular/core';
 import { ApiListStore } from './api-list.store';
 import { Label, cleanLabel, labelColor } from './character.model';
 import { CharactersService } from './characters.service';
+import { WordsService } from './words.service';
 
-/** Your labels with their colours (/api/labels). A character's label is also stored when it is saved. */
+/**
+ * Your labels with their colours (/api/labels), shared by characters and words. A character's or
+ * word's label is also stored when it is saved.
+ */
 @Injectable({ providedIn: 'root' })
 export class LabelsService extends ApiListStore<Label> {
   private readonly characters = inject(CharactersService);
+  private readonly words = inject(WordsService);
 
   constructor() {
     super('/api/labels', (label) => label.name, cleanLabel);
   }
 
-  /** Every label name, sorted: the stored ones and those of your characters (including just saved). */
+  /** Every label name, sorted: the stored ones and those of your characters and words (including
+   *  just saved). */
   readonly names = computed(() =>
-    sortLabels([...this.list().map((l) => l.name), ...this.characters.list().map((c) => c.label)]),
+    sortLabels([
+      ...this.list().map((l) => l.name),
+      ...this.characters.list().map((c) => c.label),
+      ...this.words.list().map((w) => w.label),
+    ]),
   );
 
   private readonly colors = computed(

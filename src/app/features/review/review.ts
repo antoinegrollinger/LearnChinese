@@ -79,12 +79,12 @@ interface ReviewItem {
   character?: CharacterEntry;
 }
 
-/** The characters of one label ('' = without a label), for selecting them all at once. */
+/** The characters or words of one label ('' = without a label), for selecting them all at once. */
 interface LabelGroup {
   key: string;
   name: string;
   color: string;
-  characters: string[];
+  items: string[];
   /** How many of them are selected. */
   selected: number;
 }
@@ -96,7 +96,7 @@ interface Attempts {
 }
 
 /**
- * Pick what to review (characters or words; all, some, or the characters of some labels) and the
+ * Pick what to review (characters or words; all, some, or those of some labels) and the
  * mode, then for each one, in random order: write it from its pinyin and meaning (a word character
  * by character), or give its pinyin. Missed ones come back soon. The session is complete when
  * each one has been done without a mistake.
@@ -168,7 +168,12 @@ export class Review {
   /** Your characters or your words, in list order. */
   protected readonly items = computed<ReviewItem[]>(() =>
     this.kind() === 'words'
-      ? this.words.list().map((w) => ({ text: w.word, pinyin: w.pinyin, meaning: w.meaning }))
+      ? this.words.list().map((w) => ({
+          text: w.word,
+          pinyin: w.pinyin,
+          meaning: w.meaning,
+          label: w.label,
+        }))
       : this.characters.list().map((c) => ({
           text: c.character,
           pinyin: c.pinyin,
@@ -196,26 +201,25 @@ export class Review {
     return this.items().filter((item) => selected.has(item.text));
   });
 
-  /** Characters: one group per label, then those without a label (only when some have one). */
+  /** One group per label, then those without a label (only when some have one). */
   protected readonly groups = computed<LabelGroup[]>(() => {
-    if (this.kind() !== 'characters') return [];
-    const list = this.characters.list();
+    const list = this.items();
     const selected = this.selected();
     const group = (key: string, name: string, color: string): LabelGroup => {
-      const characters = list.filter((c) => (c.label ?? '') === key).map((c) => c.character);
+      const items = list.filter((item) => (item.label ?? '') === key).map((item) => item.text);
       return {
         key,
         name,
         color,
-        characters,
-        selected: characters.filter((c) => selected.has(c)).length,
+        items,
+        selected: items.filter((text) => selected.has(text)).length,
       };
     };
     const groups = this.labels.names().map((name) => group(name, name, this.labels.colorOf(name)));
-    const labelled = groups.filter((g) => g.characters.length);
+    const labelled = groups.filter((g) => g.items.length);
     if (!labelled.length) return [];
     const unlabelled = group('', 'No label', 'var(--muted)');
-    return unlabelled.characters.length ? [...labelled, unlabelled] : labelled;
+    return unlabelled.items.length ? [...labelled, unlabelled] : labelled;
   });
 
   protected readonly allValidated = computed(
@@ -339,13 +343,13 @@ export class Review {
     this.selected.set(new Set());
   }
 
-  /** Adds the label's characters, or removes them when they are all selected already. */
+  /** Adds the label's characters or words, or removes them when they are all selected already. */
   protected toggleGroup(group: LabelGroup): void {
     const selected = new Set(this.selected());
-    const all = group.selected === group.characters.length;
-    for (const c of group.characters) {
-      if (all) selected.delete(c);
-      else selected.add(c);
+    const all = group.selected === group.items.length;
+    for (const text of group.items) {
+      if (all) selected.delete(text);
+      else selected.add(text);
     }
     this.selected.set(selected);
   }
@@ -538,6 +542,8 @@ export class Review {
     const card = this.card();
     if (this.done() || !card) return;
     this.done.set(true);
+    // Writing done: the grid stops catching touches, so a swipe on it scrolls to the answer.
+    if (this.mode() === 'write' && !solutionShown) this.writer()?.stopDrawing();
     // The practice stats (Study page) are about writing characters.
     if (this.mode() === 'write' && this.kind() === 'characters') {
       this.statsService.record(card.text, mistakes);

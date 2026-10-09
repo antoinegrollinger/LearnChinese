@@ -42,7 +42,7 @@ import { LabelsService, sortLabels } from '../core/labels.service';
       @if (value(); as label) {
         <input
           type="color"
-          title="Colour of {{ label }} (for all its characters)"
+          title="Colour of {{ label }} (for all its characters and words)"
           [value]="labels.colorOf(label)"
           [disabled]="disabled()"
           (change)="setColor(label, $any($event.target).value)"

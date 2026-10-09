@@ -2,17 +2,53 @@
   <aside class="sidebar">
     <input
       type="search"
-      placeholder="Search your words…"
+      placeholder="Search: 妈妈, mama, mum…"
       [value]="query()"
       (input)="query.set($any($event.target).value)"
     />
-    <p class="muted">
-      {{ words.list().length }} word(s) · <a routerLink="/add/word">+ Add a word</a>
-      @if (words.list().length) {
-        · <a routerLink="/review/words">Review them →</a>
-      }
-    </p>
-    <ul class="word-list">
+    @if (labelFilters().labels.length) {
+      <select
+        class="label-filter"
+        title="Show only the words with this label"
+        (change)="setLabelFilter($any($event.target).value)"
+      >
+        <option value="all" [selected]="labelFilter() === null">
+          All labels ({{ labelFilters().all }})
+        </option>
+        <option value="none" [selected]="labelFilter() === ''">
+          No label ({{ labelFilters().none }})
+        </option>
+        @for (l of labelFilters().labels; track l.name) {
+          <option [value]="'=' + l.name" [selected]="labelFilter() === l.name">
+            {{ l.name }} ({{ l.count }})
+          </option>
+        }
+      </select>
+    }
+    <div
+      class="layout-toggle segmented"
+      appSlidingThumb
+      role="group"
+      aria-label="Show the words as"
+    >
+      <button
+        type="button"
+        [class.active]="layout() === 'grid'"
+        [attr.aria-pressed]="layout() === 'grid'"
+        (click)="setLayout('grid')"
+      >
+        ▦ Grid
+      </button>
+      <button
+        type="button"
+        [class.active]="layout() === 'list'"
+        [attr.aria-pressed]="layout() === 'list'"
+        (click)="setLayout('list')"
+      >
+        ☰ List
+      </button>
+    </div>
+    <ul class="word-list" [class.as-grid]="layout() === 'grid'">
       @for (w of visible(); track w.word) {
         <li>
           <button
@@ -20,16 +56,25 @@
             class="word-tile"
             [class.active]="w.word === current()?.word"
             [class.just-saved]="w.word === justSaved()"
+            [title]="(w.meaning ?? '') + (w.label ? ' · ' + w.label : '')"
             (click)="select(w)"
           >
             <span class="word-hz" lang="zh">{{ w.word }}</span>
             <app-pinyin [text]="w.pinyin" />
-            <span class="word-meaning">{{ w.meaning }}</span>
+            @if (layout() === 'list') {
+              <span class="word-meaning">{{ w.meaning }}</span>
+            }
+            @if (w.label) {
+              <span class="label-dot" [style.background]="labels.colorOf(w.label)"></span>
+              <span class="label-tip" [style.--label-color]="labels.colorOf(w.label)">{{
+                w.label
+              }}</span>
+            }
           </button>
         </li>
       } @empty {
         <li class="muted">
-          {{ words.list().length ? 'No word matches your search.' : 'No words yet.' }}
+          {{ words.list().length ? 'No word matches your search or label.' : 'No words yet.' }}
         </li>
       }
     </ul>
@@ -42,7 +87,7 @@
     <article class="card word-card">
       <div class="word-card-top">
         <div class="word-big" lang="zh">{{ w.word }}</div>
-        <div class="buttons toolbar">
+        <div class="buttons">
           <button type="button" title="Pronounce" (click)="speak()">🔊</button>
           <a class="button" [routerLink]="['/add/word', w.word]" title="Edit this word">✎ Edit</a>
           <button type="button" class="danger" title="Delete this word" (click)="deleteCurrent()">
@@ -54,6 +99,14 @@
       @if (w.meaning) {
         <div class="meaning">{{ w.meaning }}</div>
       }
+      <div class="label-row">
+        <span class="muted">Label</span>
+        <app-label-picker
+          [value]="w.label"
+          [disabled]="savingLabel()"
+          (changed)="setLabel($event)"
+        />
+      </div>
 
       <h3>Characters</h3>
       <ul class="composition">
@@ -78,8 +131,7 @@
     </article>
   } @else if (words.loaded()) {
     <p class="muted">
-      No words yet. <a routerLink="/add/word">Add your first one</a>: compose it from your
-      characters and look up its meaning.
+      No words yet: add your first one with the <strong>+</strong> button (bottom right).
     </p>
   }
 </section>

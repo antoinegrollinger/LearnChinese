@@ -7,7 +7,7 @@
  *   POST   /api/characters             → add or update one character (body: CharacterEntry)
  *   DELETE /api/characters/:character  → delete one character
  *   GET    /api/labels                 → the labels ({ name, color }); same POST and DELETE routes
- *                                         (a character's label is also created when it is saved)
+ *                                         (a character's or word's label is also created when it is saved)
  *   GET    /api/reviews                → completed review sessions, newest first
  *   POST   /api/reviews                → save one (body: ReviewSession) → { entry, created }
  *   DELETE /api/reviews/:id            → delete one

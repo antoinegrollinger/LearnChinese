@@ -101,25 +101,31 @@ function reviewsSql(reviews: ReviewRow[]): string {
   );
 }
 
-/** The labels table, and each labelled character's label_id (run after the characters). */
-function labelsSql(characters: CharacterEntry[], labels: Label[]): string {
+/** The labels table, and each labelled character's and word's label_id (run after both lists). */
+function labelsSql(characters: CharacterEntry[], words: WordEntry[], labels: Label[]): string {
   const colors = new Map(labels.map((l) => [l.name, l.color]));
-  const byLabel = new Map<string, string[]>(labels.map((l) => [l.name, []]));
-  for (const c of characters) {
-    if (c.label) byLabel.set(c.label, [...(byLabel.get(c.label) ?? []), c.character]);
-  }
+  const names = new Set(labels.map((l) => l.name));
+  for (const item of [...characters, ...words]) if (item.label) names.add(item.label);
+  /** One UPDATE per label: its rows in this table get its id. */
+  const updates = (table: string, column: string, items: [string, string | undefined][]) =>
+    [...names].flatMap((name) => {
+      const keys = items.filter(([, label]) => label === name).map(([key]) => key);
+      return keys.length
+        ? [
+            `UPDATE ${table} SET label_id = ` +
+              `(SELECT id FROM labels WHERE user_id = @user AND name = ${quote(name)})\n` +
+              `  WHERE user_id = @user AND ${column} IN (${keys.map(quote).join(', ')});`,
+          ]
+        : [];
+    });
   return [
     insertSql(
       'labels',
       ['user_id', 'name', 'color'],
-      [...byLabel.keys()].map((name) => ['@user', quote(name), quote(colors.get(name))]),
+      [...names].map((name) => ['@user', quote(name), quote(colors.get(name))]),
     ),
-    ...[...byLabel].filter(([, hanzi]) => hanzi.length).map(
-      ([name, hanzi]) =>
-        `UPDATE characters SET label_id = ` +
-        `(SELECT id FROM labels WHERE user_id = @user AND name = ${quote(name)})\n` +
-        `  WHERE user_id = @user AND hanzi IN (${hanzi.map(quote).join(', ')});`,
-    ),
+    ...updates('characters', 'hanzi', characters.map((c) => [c.character, c.label])),
+    ...updates('words', 'word', words.map((w) => [w.word, w.label])),
   ]
     .filter(Boolean)
     .join('\n');
@@ -150,9 +156,9 @@ export function seedSql(characters: CharacterEntry[], words: WordEntry[], option
       `DELETE FROM words WHERE user_id = @user;` +
       (reviews ? `\nDELETE FROM review_sessions WHERE user_id = @user;` : ''),
     listSql(CHARACTERS_TABLE, characters),
-    labelsSql(characters, labels),
     componentsSql(characters),
     listSql(WORDS_TABLE, words),
+    labelsSql(characters, words, labels),
     reviews ? reviewsSql(reviews) : '',
     shareReviews === undefined
       ? ''

@@ -375,8 +375,18 @@ h3 {
   box-shadow: 0 2px 6px rgb(0 0 0 / 0.2);
 }
 .tile:hover .label-tip,
-.tile:focus-visible .label-tip {
+.tile:focus-visible .label-tip,
+.word-tile:hover .label-tip,
+.word-tile:focus-visible .label-tip {
   display: block;
+}
+/* The hovered tile is lifted (transform), which keeps the label inside its own layer: put that
+   layer above the next tiles, or they are drawn over the label. */
+.tile:hover,
+.tile:focus-visible,
+.word-tile:hover,
+.word-tile:focus-visible {
+  z-index: 6;
 }
 .label-picker input[type='color'] {
   width: 34px;
@@ -502,6 +512,11 @@ app-stroke-svg {
 }
 .mi-grid {
   max-width: 100%;
+  /* Swipes scroll the page (no double-tap zoom)… */
+  touch-action: manipulation;
+}
+/* …except while you draw on it (practice, review): then touches draw. */
+.mi-grid.drawing {
   touch-action: none;
 }
 .mi-cell svg {
@@ -1403,6 +1418,17 @@ fieldset {
 .word-tile .word-hz { font-size: 1.4rem; grid-row: span 2; align-self: center; }
 .word-tile .word-meaning { font-size: 0.8rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .word-tile.active { border-color: var(--accent); background: var(--bg); }
+/* The label: a dot (top right of a tile, end of a row), its name on hover. */
+.word-tile { position: relative; }
+.word-tile:has(.label-dot) { padding-right: 22px; }
+.word-tile .label-dot { position: absolute; top: 50%; margin-top: -4.5px; right: 8px; }
+.word-list.as-grid .word-tile .label-dot { top: 5px; margin-top: 0; right: 5px; }
+.word-list.as-grid .word-tile:has(.label-dot) { padding-right: 4px; }
+/* Grid layout: one tile per word, like the characters (the meaning is in the tooltip). */
+.word-list.as-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); align-content: start; }
+.word-list.as-grid .word-tile { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px; text-align: center; }
+.word-list.as-grid .word-hz { font-size: 1.3rem; line-height: 1.2; grid-row: auto; }
+.word-list.as-grid app-pinyin { font-size: 0.75rem; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* The word card (Study, Words tab) */
 .word-card { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .word-card h3 { margin: 14px 0 6px; }

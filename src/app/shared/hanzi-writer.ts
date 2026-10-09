@@ -21,7 +21,12 @@ const cssVar = (name: string) =>
 @Component({
   selector: 'app-hanzi-writer',
   template: '',
-  host: { class: 'mi-grid', '[style.width.px]': 'size()', '[style.height.px]': 'size()' },
+  host: {
+    class: 'mi-grid',
+    '[class.drawing]': 'drawing()',
+    '[style.width.px]': 'size()',
+    '[style.height.px]': 'size()',
+  },
 })
 export class HanziWriterView {
   readonly character = input.required<string>();
@@ -29,6 +34,11 @@ export class HanziWriterView {
   readonly showOutline = input(true);
   /** Hides the character itself (used in Review). */
   readonly hideCharacter = input(false);
+  /**
+   * You are drawing on it (practice, review): touches draw instead of scrolling the page. Off, a
+   * swipe on the character scrolls as anywhere else.
+   */
+  readonly drawing = input(false);
   readonly loadError = output<void>();
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -67,6 +77,11 @@ export class HanziWriterView {
 
   quiz(options: Partial<QuizOptions>): void {
     this.writer?.quiz(options);
+  }
+
+  /** Ends the drawing (touches scroll the page again) and leaves the character as it is. */
+  stopDrawing(): void {
+    this.writer?.cancelQuiz();
   }
 
   cancelQuiz(): void {

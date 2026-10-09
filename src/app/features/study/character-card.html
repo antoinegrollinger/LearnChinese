@@ -4,6 +4,7 @@
       <app-hanzi-writer
         [character]="entry().character"
         [showOutline]="showOutline()"
+        [drawing]="practicing()"
         (loadError)="
           message.set({ text: 'Stroke data not found (internet connection?)', kind: 'error' })
         "

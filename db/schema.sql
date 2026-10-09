@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   CONSTRAINT sessions_user FOREIGN KEY (user_id) REFERENCES app_user (id) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin;
 
--- The user's labels for grouping characters ("HSK 1", "food"…), offered in a dropdown.
+-- The user's labels for grouping characters and words ("HSK 1", "food"…), offered in a dropdown.
 CREATE TABLE IF NOT EXISTS labels (
   id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   user_id    BIGINT UNSIGNED NOT NULL,
@@ -135,14 +135,22 @@ CREATE TABLE IF NOT EXISTS words (
   position   INT NOT NULL,
   pinyin     VARCHAR(255),                 -- "ma1ma5" or "māma"
   meaning    TEXT,
+  label_id   BIGINT UNSIGNED,              -- optional; "label" (its name) in the JSON
   notes      TEXT,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY words_user_word (user_id, word),
   KEY words_user_position (user_id, position),
   CONSTRAINT words_user FOREIGN KEY (user_id) REFERENCES app_user (id) ON DELETE CASCADE,
-  CONSTRAINT words_word_not_empty CHECK (word <> '')
+  CONSTRAINT words_word_not_empty CHECK (word <> ''),
+  CONSTRAINT words_label FOREIGN KEY (label_id) REFERENCES labels (id) ON DELETE SET NULL
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin;
+
+-- Upgrade from the version without word labels.
+ALTER TABLE words
+  ADD COLUMN IF NOT EXISTS label_id BIGINT UNSIGNED AFTER meaning,
+  ADD CONSTRAINT words_label FOREIGN KEY IF NOT EXISTS (label_id)
+    REFERENCES labels (id) ON DELETE SET NULL;
 
 -- One row per completed review session (ReviewSession in src/app/core/review.model.ts). The
 -- characters are kept by hanzi, so the history stays when a character is deleted.

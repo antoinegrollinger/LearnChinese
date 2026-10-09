@@ -96,6 +96,8 @@
   @if (current(); as entry) {
     <app-character-card [entry]="entry" (deleteRequested)="deleteCurrent()" />
   } @else if (characters.loaded()) {
-    <p class="muted">No characters yet. Add your first one in the Add tab.</p>
+    <p class="muted">
+      No characters yet: add your first one with the <strong>+</strong> button (bottom right).
+    </p>
   }
 </section>

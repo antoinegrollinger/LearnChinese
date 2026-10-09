@@ -5,8 +5,8 @@
  *                  (on Hostinger: mysql://u123_user:password@localhost:3306/u123_db)
  *
  * "npm run db:import" creates the tables and copies data/*.json in. A character's components are
- * kept in the components and character_components tables, its label in the labels table (see
- * db/schema.sql).
+ * kept in the components and character_components tables, its label (and a word's) in the labels
+ * table (see db/schema.sql).
  */
 import mysql from 'mysql2/promise';
 import {
@@ -254,6 +254,32 @@ async function labelIdOf(db: Db, user: number, name: string): Promise<number> {
   return result.insertId;
 }
 
+/** The words table, with each word's label from the labels table. */
+function wordsStore(pool: mysql.Pool): ListStore<WordEntry> {
+  const generic = tableStore(pool, WORDS_TABLE);
+  return {
+    async all(user) {
+      const words = await generic.all(user);
+      const [labelled] = await pool.query<Rows>(
+        `SELECT w.word, lb.name FROM words w JOIN labels lb ON lb.id = w.label_id
+         WHERE w.user_id = ?`,
+        [user],
+      );
+      const labels = new Map(labelled.map((r) => [r['word'] as string, r['name'] as string]));
+      return words.map((w) => cleanWord({ ...w, label: labels.get(w.word) }));
+    },
+    async save(user, entry) {
+      return userTransaction(pool, user, async (db) => {
+        const { id, created } = await upsert(db, WORDS_TABLE, user, entry);
+        const labelId = entry.label ? await labelIdOf(db, user, entry.label) : null;
+        await db.query(`UPDATE words SET label_id = ? WHERE id = ?`, [labelId, id]);
+        return created;
+      });
+    },
+    remove: generic.remove,
+  };
+}
+
 function labelsStore(pool: mysql.Pool): ListStore<Label> {
   return {
     async all(user) {
@@ -272,7 +298,7 @@ function labelsStore(pool: mysql.Pool): ListStore<Label> {
       return result.affectedRows === 1; // 1 = inserted, 2 = updated, 0 = unchanged
     },
     async remove(user, name) {
-      // Its characters keep no label (ON DELETE SET NULL).
+      // Its characters and words keep no label (ON DELETE SET NULL).
       const [result] = await pool.query<Result>(`DELETE FROM labels WHERE user_id = ? AND name = ?`, [
         user,
         name,
@@ -379,7 +405,7 @@ export function createStores(): Stores {
   return {
     pool,
     characters: charactersStore(pool),
-    words: tableStore(pool, WORDS_TABLE),
+    words: wordsStore(pool),
     labels: labelsStore(pool),
     reviews: reviewsStore(pool),
     description: `MySQL ${safeUrl(url)}`,

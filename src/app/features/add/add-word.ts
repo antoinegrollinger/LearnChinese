@@ -13,6 +13,7 @@ import {
   joinPinyin,
   meaningOf,
 } from '../../core/words.service';
+import { LabelPicker } from '../../shared/label-picker';
 import { Pinyin } from '../../shared/pinyin';
 
 /**
@@ -21,7 +22,7 @@ import { Pinyin } from '../../shared/pinyin';
  */
 @Component({
   selector: 'app-add-word',
-  imports: [ReactiveFormsModule, Pinyin, RouterLink],
+  imports: [ReactiveFormsModule, Pinyin, RouterLink, LabelPicker],
   templateUrl: './add-word.html',
 })
 export class AddWord {
@@ -36,7 +37,13 @@ export class AddWord {
   protected readonly toPinyin = toPinyin;
   protected readonly meaningOf = meaningOf;
 
-  protected readonly form = this.fb.group({ word: '', pinyin: '', meaning: '', notes: '' });
+  protected readonly form = this.fb.group({
+    word: '',
+    pinyin: '',
+    meaning: '',
+    label: '',
+    notes: '',
+  });
   protected readonly value = toSignal(this.form.valueChanges, { initialValue: this.form.value });
 
   /** Word being edited (already saved). */
@@ -156,6 +163,7 @@ export class AddWord {
       word: entry.word,
       pinyin: entry.pinyin ?? '',
       meaning: entry.meaning ?? '',
+      label: entry.label ?? '',
       notes: entry.notes ?? '',
     });
     this.status.set({ text: '' });

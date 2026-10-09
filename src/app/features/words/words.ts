@@ -13,13 +13,19 @@ import { CharactersService, errorMessage } from '../../core/characters.service';
 import { stripTones, toPinyin } from '../../core/pinyin';
 import { speak } from '../../core/speech';
 import { WordEntry } from '../../core/word.model';
+import { LabelsService } from '../../core/labels.service';
 import { WordsService } from '../../core/words.service';
+import { readSetting, writeSetting } from '../../core/settings';
+import { LabelPicker } from '../../shared/label-picker';
 import { Pinyin } from '../../shared/pinyin';
+import { SlidingThumb } from '../../shared/sliding-thumb';
+
+const LAYOUT_KEY = 'hanzi-workshop-words-layout';
 
 /** The Words tab of Study: your words, and the card of the one selected (/study/words/:word). */
 @Component({
   selector: 'app-words',
-  imports: [Pinyin, RouterLink],
+  imports: [Pinyin, RouterLink, SlidingThumb, LabelPicker],
   templateUrl: './words.html',
   host: { '(document:keydown)': 'onKey($event)' },
 })
@@ -30,8 +36,16 @@ export class Words {
   private readonly router = inject(Router);
   protected readonly words = inject(WordsService);
   private readonly characters = inject(CharactersService);
+  protected readonly labels = inject(LabelsService);
 
   protected readonly query = signal('');
+  /** null: all words, '': those without a label, otherwise that label. */
+  protected readonly labelFilter = signal<string | null>(null);
+  protected readonly savingLabel = signal(false);
+  /** The word list as tiles or as rows (like the Characters tab); remembered in this browser. */
+  protected readonly layout = signal<'grid' | 'list'>(
+    readSetting(LAYOUT_KEY) === 'grid' ? 'grid' : 'list',
+  );
   protected readonly toPinyin = toPinyin;
 
   /** Short message at the bottom of the page ("Added 妈妈 ✓", "Deleted 妈妈"). */
@@ -43,11 +57,29 @@ export class Words {
     string | undefined;
   protected readonly justSaved = computed(() => (this.savedMessage ? this.word() : undefined));
 
+  /** The label dropdown: each label with its number of words. */
+  protected readonly labelFilters = computed(() => {
+    const list = this.words.list();
+    const count = (label: string) => list.filter((w) => (w.label ?? '') === label).length;
+    return {
+      all: list.length,
+      none: count(''),
+      labels: this.labels.names().map((name) => ({ name, count: count(name) })),
+    };
+  });
+
+  /** Option of the label dropdown: "all", "none" or "=<label>". */
+  protected setLabelFilter(value: string): void {
+    this.labelFilter.set(value === 'all' ? null : value === 'none' ? '' : value.slice(1));
+  }
+
   protected readonly visible = computed(() => {
     const q = stripTones(this.query().trim()).toLowerCase();
+    const label = this.labelFilter();
     return this.words.list().filter((w) => {
+      if (label !== null && (w.label ?? '') !== label) return false;
       if (!q) return true;
-      return stripTones([w.word, w.pinyin, toPinyin(w.pinyin), w.meaning].join(' '))
+      return stripTones([w.word, w.pinyin, toPinyin(w.pinyin), w.meaning, w.label].join(' '))
         .toLowerCase()
         .includes(q);
     });
@@ -76,6 +108,11 @@ export class Words {
     });
   }
 
+  protected setLayout(layout: 'grid' | 'list'): void {
+    this.layout.set(layout);
+    writeSetting(LAYOUT_KEY, layout);
+  }
+
   private showToast(text: string, kind?: 'error'): void {
     clearTimeout(this.toastTimer);
     this.toast.set({ text, kind });
@@ -84,6 +121,21 @@ export class Words {
 
   protected select(w: WordEntry): void {
     this.router.navigate(['/study/words', w.word], { replaceUrl: true });
+  }
+
+  /** Saves the selected word with this label ('' = none). */
+  protected async setLabel(label: string): Promise<void> {
+    const entry = this.current();
+    if (!entry || (entry.label ?? '') === label) return;
+    this.savingLabel.set(true);
+    try {
+      await this.words.save({ ...entry, label: label || undefined });
+      this.showToast(label ? `Label: ${label} ✓` : 'Label removed ✓');
+    } catch (err) {
+      this.showToast(`Could not save the label: ${errorMessage(err)}`, 'error');
+    } finally {
+      this.savingLabel.set(false);
+    }
   }
 
   protected speak(): void {

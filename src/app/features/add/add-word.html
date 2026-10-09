@@ -128,6 +128,10 @@
       <span class="pinyin-preview"><app-pinyin [text]="value().pinyin" /></span>
     </div>
     <label>Meaning <input formControlName="meaning" placeholder="mum" /></label>
+    <label>
+      <span>Label <span class="muted">(optional, to group and filter your words)</span></span>
+      <app-label-picker [value]="value().label" (changed)="form.controls.label.setValue($event)" />
+    </label>
     <label>Notes <textarea formControlName="notes" rows="2"></textarea></label>
 
     <div class="buttons form-actions">
