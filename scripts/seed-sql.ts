@@ -70,6 +70,35 @@ export interface SeedOptions {
   createUser: boolean;
   /** The labels with their colours (also those no character uses). Default: the characters' labels. */
   labels?: Label[];
+  /** The review history, as stored (db-export.ts). When given, it replaces the user's. */
+  reviews?: ReviewRow[];
+  /** Whether friends see the reviews (app_user.share_reviews). Unchanged when missing. */
+  shareReviews?: boolean;
+}
+
+/** A review_sessions row; dates as stored ("2026-10-09 17:15:00"), results as JSON text. */
+export interface ReviewRow {
+  kind: string;
+  mode: string;
+  startedAt: string;
+  finishedAt: string;
+  results: string;
+}
+
+/** The review_sessions rows, oldest first. */
+function reviewsSql(reviews: ReviewRow[]): string {
+  return insertSql(
+    'review_sessions',
+    ['user_id', 'kind', 'mode', 'started_at', 'finished_at', 'results'],
+    reviews.map((r) => [
+      '@user',
+      quote(r.kind),
+      quote(r.mode),
+      quote(r.startedAt),
+      quote(r.finishedAt),
+      quote(r.results),
+    ]),
+  );
 }
 
 /** The labels table, and each labelled character's label_id (run after the characters). */
@@ -96,13 +125,17 @@ function labelsSql(characters: CharacterEntry[], labels: Label[]): string {
     .join('\n');
 }
 
-/** One transaction that replaces the user's characters, labels, components and words with these. */
+/**
+ * One transaction that replaces the user's characters, labels, components and words with these
+ * (and their review history and sharing setting, when given).
+ */
 export function seedSql(characters: CharacterEntry[], words: WordEntry[], options: SeedOptions): string {
-  const { username, title, createUser, labels = [] } = options;
+  const { username, title, createUser, labels = [], reviews, shareReviews } = options;
   const name = quote(username);
+  const replaced = `characters, labels, components, words${reviews ? ' and review history' : ''}`;
   return [
     `-- ${title}\n` +
-      `-- Replaces the characters, labels, components and words of user ${name}. Run db/schema.sql first.` +
+      `-- Replaces the ${replaced} of user ${name}. Run db/schema.sql first.` +
       (createUser
         ? ''
         : `\n-- The account ${name} must exist (create it in the app first). If it doesn't, this stops\n` +
@@ -114,11 +147,16 @@ export function seedSql(characters: CharacterEntry[], words: WordEntry[], option
     `DELETE FROM characters WHERE user_id = @user; -- and their character_components\n` +
       `DELETE FROM components WHERE user_id = @user;\n` +
       `DELETE FROM labels WHERE user_id = @user;\n` +
-      `DELETE FROM words WHERE user_id = @user;`,
+      `DELETE FROM words WHERE user_id = @user;` +
+      (reviews ? `\nDELETE FROM review_sessions WHERE user_id = @user;` : ''),
     listSql(CHARACTERS_TABLE, characters),
     labelsSql(characters, labels),
     componentsSql(characters),
     listSql(WORDS_TABLE, words),
+    reviews ? reviewsSql(reviews) : '',
+    shareReviews === undefined
+      ? ''
+      : `UPDATE app_user SET share_reviews = ${shareReviews ? 'TRUE' : 'FALSE'} WHERE id = @user;`,
     `COMMIT;`,
     ``,
   ]

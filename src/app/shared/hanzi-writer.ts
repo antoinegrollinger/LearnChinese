@@ -9,6 +9,7 @@ import {
   untracked,
 } from '@angular/core';
 import HanziWriter, { QuizOptions } from 'hanzi-writer';
+import { ThemeService } from '../core/theme.service';
 
 const cssVar = (name: string) =>
   getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -31,6 +32,7 @@ export class HanziWriterView {
   readonly loadError = output<void>();
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly themes = inject(ThemeService);
   private writer?: HanziWriter;
 
   constructor() {
@@ -42,6 +44,12 @@ export class HanziWriterView {
       const character = this.character();
       if (!this.writer) return;
       untracked(() => this.create(character));
+    });
+
+    // Light ↔ dark: the new colours, without restarting the animation or the drawing.
+    effect(() => {
+      this.themes.theme();
+      untracked(() => this.applyColors());
     });
 
     effect(() => {
@@ -88,6 +96,21 @@ export class HanziWriterView {
       showCharacter: !this.hideCharacter(),
       onLoadCharDataError: () => this.loadError.emit(),
     });
+  }
+
+  /** The writer's colours, from the theme's CSS variables (at once, like the rest of the page). */
+  private applyColors(): void {
+    const w = this.writer;
+    if (!w) return;
+    const now = { duration: 0 };
+    const ink = cssVar('--ink');
+    w.updateColor('strokeColor', ink, now);
+    // The radical's strokes (女 in 妈) have their own colour, copied from strokeColor when the
+    // writer was created: without this they keep the other theme's ink.
+    w.updateColor('radicalColor', ink, now);
+    w.updateColor('outlineColor', cssVar('--outline'), now);
+    w.updateColor('drawingColor', cssVar('--drawing'), now);
+    w.updateColor('highlightColor', cssVar('--tone4'), now);
   }
 
   private applyDisplay(): void {

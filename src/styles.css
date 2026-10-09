@@ -1,10 +1,24 @@
 /* ---------- Theme ---------- */
+/* "Liquid glass": translucent, blurred surfaces over a soft coloured background (see the end of
+ * this file). --surface is the glass fill; --surface-solid is used where it must stay opaque. */
 :root {
-  --bg: #f7f2e9;
-  --surface: #fffdf8;
+  --bg: #f3ede4;
+  --surface: rgb(255 255 255 / 0.52);
+  --surface-strong: rgb(255 255 255 / 0.78);
+  --surface-solid: #fffdf8;
+  --canvas: rgb(255 253 248 / 0.88);
+  --field: rgb(255 255 255 / 0.55);
   --text: #2b2622;
   --muted: #7a6f64;
-  --border: #e4d9c6;
+  --border: rgb(110 80 50 / 0.16);
+  --glass-rim: rgb(255 255 255 / 0.7);
+  --glass-sheen: inset 0 1px 0 rgb(255 255 255 / 0.85), inset 0 -1px 0 rgb(255 255 255 / 0.25);
+  --glass-shadow: 0 10px 30px rgb(80 50 20 / 0.1), 0 1px 3px rgb(80 50 20 / 0.06);
+  --glass-blur: blur(22px) saturate(180%);
+  --glow-1: rgb(255 128 100 / 0.38);
+  --glow-2: rgb(110 160 255 / 0.32);
+  --glow-3: rgb(90 200 160 / 0.3);
+  --glow-4: rgb(255 196 110 / 0.34);
   --ink: #2b2622;
   --outline: #e2d8c8;
   --drawing: #c0392b;
@@ -18,13 +32,26 @@
   color-scheme: light;
 }
 
+/* Dark: from the system, unless you chose light (the toggle in the header: data-theme on <html>), */
+/* or because you chose dark. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --bg: #1b1917;
-    --surface: #262320;
+    --bg: #131113;
+    --surface: rgb(44 40 42 / 0.5);
+    --surface-strong: rgb(70 64 66 / 0.7);
+    --surface-solid: #262320;
+    --canvas: rgb(32 29 28 / 0.9);
+    --field: rgb(0 0 0 / 0.22);
     --text: #ece6dc;
     --muted: #a59b8f;
-    --border: #3b3631;
+    --border: rgb(255 255 255 / 0.1);
+    --glass-rim: rgb(255 255 255 / 0.14);
+    --glass-sheen: inset 0 1px 0 rgb(255 255 255 / 0.12), inset 0 -1px 0 rgb(255 255 255 / 0.03);
+    --glass-shadow: 0 12px 36px rgb(0 0 0 / 0.45), 0 1px 3px rgb(0 0 0 / 0.3);
+    --glow-1: rgb(255 90 70 / 0.22);
+    --glow-2: rgb(80 120 255 / 0.22);
+    --glow-3: rgb(40 170 130 / 0.18);
+    --glow-4: rgb(230 150 60 / 0.16);
     --ink: #ece6dc;
     --outline: #45403a;
     --drawing: #ff6b5b;
@@ -36,6 +63,34 @@
     --tone4: #5c9dff;
     color-scheme: dark;
   }
+}
+:root[data-theme='dark'] {
+  --bg: #131113;
+  --surface: rgb(44 40 42 / 0.5);
+  --surface-strong: rgb(70 64 66 / 0.7);
+  --surface-solid: #262320;
+  --canvas: rgb(32 29 28 / 0.9);
+  --field: rgb(0 0 0 / 0.22);
+  --text: #ece6dc;
+  --muted: #a59b8f;
+  --border: rgb(255 255 255 / 0.1);
+  --glass-rim: rgb(255 255 255 / 0.14);
+  --glass-sheen: inset 0 1px 0 rgb(255 255 255 / 0.12), inset 0 -1px 0 rgb(255 255 255 / 0.03);
+  --glass-shadow: 0 12px 36px rgb(0 0 0 / 0.45), 0 1px 3px rgb(0 0 0 / 0.3);
+  --glow-1: rgb(255 90 70 / 0.22);
+  --glow-2: rgb(80 120 255 / 0.22);
+  --glow-3: rgb(40 170 130 / 0.18);
+  --glow-4: rgb(230 150 60 / 0.16);
+  --ink: #ece6dc;
+  --outline: #45403a;
+  --drawing: #ff6b5b;
+  --accent: #ff6b5b;
+  --grid: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cg stroke='%23604a38' stroke-width='0.5' stroke-dasharray='2 2' fill='none'%3E%3Cpath d='M0 0L100 100M100 0L0 100M50 0V100M0 50H100'/%3E%3C/g%3E%3C/svg%3E");
+  --tone1: #ff6b6b;
+  --tone2: #ffa94d;
+  --tone3: #51cf66;
+  --tone4: #5c9dff;
+  color-scheme: dark;
 }
 
 * {
@@ -1420,4 +1475,528 @@ button.link {
   align-items: center;
   gap: 8px;
   font-size: 0.9rem;
+}
+
+/* ===================================================================================== */
+/* ---------- Liquid glass ----------                                                    */
+/* Translucent, blurred surfaces with a light rim, over a soft coloured background.       */
+/* Fallbacks at the end: solid surfaces (reduced transparency, no backdrop-filter) and    */
+/* no motion (reduced motion).                                                            */
+/* ===================================================================================== */
+
+html {
+  min-height: 100%;
+}
+body {
+  min-height: 100vh;
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+/* The coloured light behind the glass (fixed, also on iOS where background-attachment isn't). */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(55% 45% at 8% 0%, var(--glow-1), transparent 70%),
+    radial-gradient(50% 45% at 100% 8%, var(--glow-2), transparent 70%),
+    radial-gradient(55% 50% at 85% 100%, var(--glow-3), transparent 70%),
+    radial-gradient(45% 45% at 0% 95%, var(--glow-4), transparent 70%),
+    var(--bg);
+}
+::selection {
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+/* ----- Glass surfaces ----- */
+.header,
+.card,
+.login-form,
+.session,
+.people > li,
+.bell-panel,
+.share-setting,
+.community-settings,
+.session-stats div,
+.page-tabs,
+.review-setup,
+.review,
+.review-complete,
+.lookup,
+.toast,
+.banner {
+  background: var(--surface);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-rim);
+  box-shadow: var(--glass-sheen), var(--glass-shadow);
+}
+
+.card,
+.login-form {
+  border-radius: 26px;
+  padding: 22px;
+}
+.review-setup,
+.review,
+.review-complete {
+  padding: 20px 22px;
+  border-radius: 26px;
+}
+.session,
+.people > li,
+.share-setting,
+.community-settings,
+.lookup {
+  border-radius: 18px;
+}
+.session-stats div {
+  border-radius: 16px;
+}
+fieldset {
+  border-color: var(--border);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 50%, transparent);
+}
+.banner {
+  border-radius: 14px;
+  border-color: color-mix(in srgb, var(--tone4) 45%, transparent);
+  background: color-mix(in srgb, var(--tone4) 12%, var(--surface));
+}
+.banner.error {
+  border-color: color-mix(in srgb, var(--tone1) 45%, transparent);
+  background: color-mix(in srgb, var(--tone1) 12%, var(--surface));
+}
+
+/* ----- Header: a floating glass bar ----- */
+.header {
+  position: sticky;
+  top: 10px;
+  z-index: 30;
+  margin: 10px 12px 0;
+  padding: 8px 10px 8px 18px;
+  border-radius: 24px;
+}
+.header h1 {
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+}
+.logo {
+  background: linear-gradient(135deg, var(--accent), var(--tone2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Segmented controls: the main navigation and the page tabs. */
+.tabs,
+.page-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 999px;
+}
+.tabs {
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.06);
+}
+.tabs a.button,
+.page-tabs a {
+  margin: 0;
+  padding: 6px 14px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted);
+  font-weight: 600;
+  text-decoration: none;
+  transform: none;
+  transition:
+    background 0.25s ease,
+    color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+/* Only the active item is glass: no blur or sheen on the others. */
+.tabs a.button,
+.page-tabs a {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+/* Light / dark toggle: a round glass button like the bell */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 8px;
+  line-height: 0;
+}
+.theme-toggle svg {
+  transition: transform 0.4s ease;
+}
+.theme-toggle:hover svg {
+  transform: rotate(-20deg);
+}
+/* Your username in the header: a quiet pill */
+.account > a {
+  padding: 6px 12px;
+  border-radius: 999px;
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+.account > a:hover,
+.account > a.active {
+  background: var(--surface-strong);
+  box-shadow: var(--glass-sheen), 0 1px 3px rgb(0 0 0 / 0.08);
+}
+.tabs a.button:hover,
+.page-tabs a:hover {
+  color: var(--text);
+  border-color: transparent;
+  background: color-mix(in srgb, var(--surface-strong) 50%, transparent);
+  transform: none;
+}
+/* The glass "thumb" on the active item */
+.tabs a.button.active,
+.page-tabs a.active {
+  color: var(--text);
+  background: var(--surface-strong);
+  border-color: var(--glass-rim);
+  box-shadow: var(--glass-sheen), 0 2px 8px rgb(0 0 0 / 0.1);
+}
+.page-tabs {
+  width: fit-content;
+  max-width: calc(100% - 40px);
+  margin: 18px 20px 0;
+  border-bottom: 1px solid var(--glass-rim);
+}
+.tab-count {
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  border: none;
+}
+@media (max-width: 700px) {
+  .header {
+    top: 6px;
+    margin: 6px 8px 0;
+    padding: 8px 8px 8px 14px;
+  }
+  /* The navigation: one row below the logo and account, swiped sideways. */
+  .tabs {
+    order: 3;
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .tabs a.button {
+    flex-shrink: 0;
+    padding: 6px 12px;
+  }
+  .page-tabs {
+    margin: 14px 16px 0;
+    max-width: calc(100% - 32px);
+  }
+}
+
+/* ----- Buttons: glass pills ----- */
+button,
+a.button {
+  border-radius: 999px;
+  padding: 7px 14px;
+  border: 1px solid var(--glass-rim);
+  background: linear-gradient(180deg, var(--surface-strong), var(--surface));
+  -webkit-backdrop-filter: blur(10px) saturate(160%);
+  backdrop-filter: blur(10px) saturate(160%);
+  box-shadow: var(--glass-sheen), 0 1px 3px rgb(0 0 0 / 0.08);
+  color: var(--text);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+button:hover:not(:disabled),
+a.button:hover {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--glass-rim));
+  box-shadow: var(--glass-sheen), 0 4px 14px rgb(0 0 0 / 0.12);
+  transform: translateY(-1px);
+}
+button:active:not(:disabled),
+a.button:active {
+  transform: scale(0.97);
+  box-shadow: var(--glass-sheen), 0 1px 2px rgb(0 0 0 / 0.1);
+}
+button.primary {
+  color: #fff;
+  border-color: color-mix(in srgb, var(--accent) 60%, white);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 78%, white),
+    var(--accent) 55%,
+    color-mix(in srgb, var(--accent) 85%, black)
+  );
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.45),
+    0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent);
+  text-shadow: 0 1px 1px rgb(0 0 0 / 0.15);
+}
+button.primary:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 60%, white);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.5),
+    0 6px 20px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+button.active,
+a.button.active {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  background: linear-gradient(
+    180deg,
+    var(--surface-strong),
+    color-mix(in srgb, var(--accent) 10%, var(--surface))
+  );
+}
+button.danger {
+  color: var(--tone1);
+}
+button.danger:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--tone1) 50%, transparent);
+}
+button:disabled {
+  opacity: 0.45;
+  border-color: var(--glass-rim);
+  box-shadow: none;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 70%, transparent);
+  outline-offset: 2px;
+}
+/* Buttons that are tiles or plain links: rounded rectangles, or no glass at all. */
+.tile,
+.word-tile,
+.review-picker .pick,
+.result,
+.mode-choice button,
+.repeat-last {
+  border-radius: 16px;
+}
+button.link,
+button.bell-dismiss,
+.char-chip .remove {
+  background: none;
+  border: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transform: none;
+}
+button.link:hover,
+button.bell-dismiss:hover {
+  box-shadow: none;
+  transform: none;
+}
+.char-chip .remove {
+  background: var(--surface-strong);
+  border: 1px solid var(--glass-rim);
+}
+
+/* ----- Fields ----- */
+input,
+select,
+textarea {
+  border-radius: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  background: var(--field);
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.04);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+  background: var(--surface-strong);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: var(--accent);
+  box-shadow: none;
+}
+input[type='color'] {
+  padding: 3px;
+}
+
+/* ----- Lists of tiles (translucent, without blur: there can be many) ----- */
+.tile,
+.word-tile,
+.review-picker .pick,
+.result,
+.char-chip,
+.session-results li,
+.mode-choice button,
+.repeat-last {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: var(--surface);
+  border: 1px solid var(--glass-rim);
+  box-shadow: var(--glass-sheen), 0 1px 3px rgb(0 0 0 / 0.05);
+}
+/* The type colour as an inner bar (a thick left border looks odd on round corners). */
+.tile {
+  border-left-width: 1px;
+  box-shadow:
+    inset 4px 0 0 var(--type-color, transparent),
+    var(--glass-sheen),
+    0 1px 3px rgb(0 0 0 / 0.05);
+}
+.tile.active,
+.word-tile.active,
+.review-picker .pick.selected,
+.mode-choice button.active {
+  background: var(--surface-strong);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent),
+    var(--glass-sheen),
+    0 4px 14px rgb(0 0 0 / 0.1);
+}
+.tile.active {
+  border-left-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  box-shadow:
+    inset 4px 0 0 var(--type-color, var(--accent)),
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent),
+    var(--glass-sheen),
+    0 4px 14px rgb(0 0 0 / 0.1);
+}
+.char-chip,
+.session-results li {
+  border-radius: 14px;
+}
+.session-results li {
+  border-left-width: 4px;
+}
+
+/* ----- Writing grids stay nearly opaque, so the strokes are crisp ----- */
+.mi-grid,
+.mi-cell {
+  background-color: var(--canvas);
+  border-color: var(--border);
+  border-radius: 14px;
+  box-shadow: var(--glass-sheen), 0 2px 10px rgb(0 0 0 / 0.06);
+}
+
+/* ----- Details ----- */
+.badge {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3), 0 2px 8px rgb(0 0 0 / 0.12);
+}
+.mode-tag {
+  border-color: var(--glass-rim);
+  background: color-mix(in srgb, var(--surface-strong) 70%, transparent);
+}
+.toast {
+  border-radius: 999px;
+  color: #fff;
+  background: color-mix(in srgb, var(--tone3) 82%, transparent);
+  border-color: rgb(255 255 255 / 0.35);
+}
+.toast.error {
+  background: color-mix(in srgb, var(--tone1) 82%, transparent);
+}
+.bell-panel {
+  border-radius: 22px;
+  /* Nearly opaque: inside the (blurred) header, its own blur can't reach the page behind it. */
+  background: color-mix(in srgb, var(--surface-solid) 94%, transparent);
+}
+.bell-header {
+  background: color-mix(in srgb, var(--surface-strong) 85%, transparent);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border-bottom-color: var(--border);
+}
+.bell-list li {
+  border-bottom-color: var(--border);
+}
+.session-progress progress {
+  border-radius: 999px;
+  overflow: hidden;
+}
+.label-tip {
+  border: 1px solid rgb(255 255 255 / 0.35);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+h2 {
+  letter-spacing: -0.015em;
+}
+/* Links: coloured text, underlined on hover. */
+a {
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.2s ease;
+}
+a:hover {
+  text-decoration-color: currentColor;
+}
+.review-setup .buttons,
+.hardest .buttons {
+  justify-content: flex-start;
+}
+
+/* ----- Fallbacks ----- */
+/* No backdrop-filter, or the system asks for less transparency: solid surfaces. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root,
+  :root:not([data-theme='light']),
+  :root[data-theme='dark'] {
+    --surface: var(--surface-solid);
+    --surface-strong: var(--surface-solid);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root,
+  :root:not([data-theme='light']),
+  :root[data-theme='dark'] {
+    --surface: var(--surface-solid);
+    --surface-strong: var(--surface-solid);
+    --canvas: var(--surface-solid);
+  }
+  body::before {
+    background: var(--bg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  button,
+  a.button,
+  input,
+  select,
+  textarea,
+  .tabs a.button,
+  .page-tabs a,
+  .theme-toggle svg {
+    transition: none;
+  }
+  button:hover:not(:disabled),
+  a.button:hover,
+  button:active:not(:disabled),
+  a.button:active {
+    transform: none;
+  }
 }

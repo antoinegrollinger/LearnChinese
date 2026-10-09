@@ -3,10 +3,11 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/auth.service';
 import { CharactersService } from './core/characters.service';
 import { NotificationBell } from './shared/notification-bell';
+import { ThemeToggle } from './shared/theme-toggle';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, NotificationBell],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, NotificationBell, ThemeToggle],
   template: `
     <header class="header">
       <h1><span class="logo">汉字</span> Workshop</h1>
@@ -20,12 +21,15 @@ import { NotificationBell } from './shared/notification-bell';
           <a class="button" routerLink="/communities" routerLinkActive="active">Communities</a>
         </nav>
         <div class="account">
+          <app-theme-toggle />
           <app-notification-bell />
           <a routerLink="/account" routerLinkActive="active" [title]="user.email">{{
             user.username ?? user.email
           }}</a>
           <button type="button" (click)="auth.logout()">Log out</button>
         </div>
+      } @else {
+        <div class="account"><app-theme-toggle /></div>
       }
     </header>
     @if (auth.user(); as user) {
