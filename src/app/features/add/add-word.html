@@ -10,7 +10,7 @@
     @if (editing(); as w) {
       <p class="banner">
         Editing {{ w }} — saving will update it in your list.
-        <a [routerLink]="['/study/words', w]">View in Study →</a>
+        <a [routerLink]="['/study/words', w]">View in My 汉字 and words →</a>
       </p>
     }
 
@@ -23,9 +23,11 @@
           placeholder="Type or pick characters below"
         />
       </label>
-      <button type="button" title="Pronounce" (click)="speak()">🔊</button>
+      <button type="button" title="Pronounce" aria-label="Pronounce" (click)="speak()">
+        <app-speaker-icon />
+      </button>
       <button type="button" [disabled]="lookupLoading()" (click)="lookUp()">
-        🔎 {{ lookupLoading() ? 'Looking up…' : 'Look up meaning' }}
+        {{ lookupLoading() ? 'Looking up…' : 'Look up meaning' }}
       </button>
     </div>
     @if (alreadySaved()) {
@@ -140,7 +142,7 @@
         <button type="button" class="danger" (click)="remove()">Delete</button>
       }
       <button type="submit" class="primary" [disabled]="saving() || !!words.error()">
-        💾 {{ editing() ? 'Save changes' : 'Save word' }}
+        {{ editing() ? 'Save changes' : 'Save word' }}
       </button>
     </div>
     <p class="message" [class]="status().kind">{{ status().text }}</p>

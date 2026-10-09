@@ -21,8 +21,10 @@ import { ThemeToggle } from './shared/theme-toggle';
       <h1><span class="logo">汉字</span> Workshop</h1>
       @if (auth.user(); as user) {
         <nav class="tabs" appSlidingThumb>
-          <a class="button" routerLink="/study" routerLinkActive="active">Study</a>
-          <a class="button" routerLink="/review" routerLinkActive="active">Review</a>
+          <a class="button" routerLink="/study" routerLinkActive="active"
+            >My <span lang="zh">汉字</span> and words</a
+          >
+          <a class="button" routerLink="/training" routerLinkActive="active">Training session</a>
           <a class="button" routerLink="/paper" routerLinkActive="active">Train on paper</a>
           <a class="button" routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
           <a class="button" routerLink="/add" routerLinkActive="active">Add</a>

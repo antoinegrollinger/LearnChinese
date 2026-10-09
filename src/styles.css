@@ -23,6 +23,8 @@
   --outline: #e2d8c8;
   --drawing: #c0392b;
   --accent: #c0392b;
+  /* Main actions (button.cta): readable white text on it. */
+  --cta: var(--accent);
   --grid: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cg stroke='%23e3bf9b' stroke-width='0.5' stroke-dasharray='2 2' fill='none'%3E%3Cpath d='M0 0L100 100M100 0L0 100M50 0V100M0 50H100'/%3E%3C/g%3E%3C/svg%3E");
   --tone1: #d63031;
   --tone2: #e17f0e;
@@ -56,6 +58,7 @@
     --outline: #45403a;
     --drawing: #ff6b5b;
     --accent: #ff6b5b;
+    --cta: #c9483b;
     --grid: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cg stroke='%23604a38' stroke-width='0.5' stroke-dasharray='2 2' fill='none'%3E%3Cpath d='M0 0L100 100M100 0L0 100M50 0V100M0 50H100'/%3E%3C/g%3E%3C/svg%3E");
     --tone1: #ff6b6b;
     --tone2: #ffa94d;
@@ -85,6 +88,7 @@
   --outline: #45403a;
   --drawing: #ff6b5b;
   --accent: #ff6b5b;
+  --cta: #c9483b;
   --grid: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cg stroke='%23604a38' stroke-width='0.5' stroke-dasharray='2 2' fill='none'%3E%3Cpath d='M0 0L100 100M100 0L0 100M50 0V100M0 50H100'/%3E%3C/g%3E%3C/svg%3E");
   --tone1: #ff6b6b;
   --tone2: #ffa94d;
@@ -738,7 +742,6 @@ app-stroke-svg {
   font-size: 4rem;
 }
 .review-setup .start {
-  align-self: flex-start;
   margin-top: 6px;
 }
 
@@ -774,8 +777,17 @@ app-stroke-svg {
   margin: 0;
 }
 .celebrate {
-  font-size: 4rem;
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--tone3);
+  color: #fff;
+  font-size: 2.4rem;
+  font-weight: 700;
   line-height: 1;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--tone3) 40%, transparent);
   animation: celebrate 0.6s ease-out;
 }
 @keyframes celebrate {
@@ -1267,8 +1279,16 @@ label.checkbox {
   background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 .bell-icon {
-  font-size: 1.2rem;
-  line-height: 1.3;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--surface-strong);
+  border: 1px solid var(--glass-rim);
+  font-size: 0.95rem;
+  line-height: 1;
 }
 .bell-body {
   flex: 1;
@@ -2891,8 +2911,21 @@ main > app-tabbed-page {
   font-size: 0.85rem;
   color: var(--muted);
 }
-.paper-setup > .primary {
-  align-self: flex-start;
+/* The Download button: pinned to the bottom of the (scrolling) panel, on a glass bar. */
+.paper-actions {
+  position: sticky;
+  bottom: -18px;
+  margin: 4px -18px -18px;
+  padding: 12px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--surface);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border-top: 1px solid var(--glass-rim);
+  border-radius: 0 0 26px 26px;
+  z-index: 1;
 }
 /* The sheets: white paper in both themes. */
 .paper-preview {
@@ -3015,4 +3048,111 @@ main > app-tabbed-page {
     margin: -12px -12px -20px;
     padding: 12px 12px 32px;
   }
+}
+
+/* Icons in buttons (Pronounce): aligned with the text, in its colour. */
+app-speaker-icon {
+  display: inline-flex;
+  vertical-align: -0.2em;
+}
+app-speaker-icon svg {
+  display: block;
+}
+
+/* ---------- Swipe to reveal an action (iOS style, touch screens: swipe-actions.ts) ---------- */
+.swipe-row {
+  position: relative;
+  --swipe-offset: 0px;
+}
+/* While moved: the content is clipped to the row (otherwise its shadow would be cut). */
+.swipe-row.swipe-active {
+  overflow: hidden;
+  border-radius: 18px;
+}
+.swipe-content {
+  transform: translateX(var(--swipe-offset));
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Vertical scrolling stays with the page; sideways moves are the swipe. */
+  touch-action: pan-y;
+}
+.swipe-row.swiping .swipe-content,
+.swipe-row.swiping .swipe-action {
+  transition: none;
+}
+/* The action fills the space the content leaves, from the right. */
+.swipe-action {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: max(0px, calc(-1 * var(--swipe-offset) - 8px));
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  overflow: hidden;
+  padding: 0;
+  border: none;
+  border-radius: 18px;
+  background: var(--tone1);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transition: width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.swipe-row.swipe-active .swipe-action {
+  display: flex;
+}
+.swipe-action:hover:not(:disabled) {
+  background: var(--tone1);
+  transform: none;
+  box-shadow: none;
+}
+@media (pointer: coarse) {
+  /* Touch screens delete by swiping: the button stays for screen readers only. */
+  .session .delete-button {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .swipe-content,
+  .swipe-action {
+    transition: none;
+  }
+}
+
+/* The main action of a page (Start the training session, Download the PDF): full width, larger,
+   and a deeper red than the accent so the white text stays readable in both themes. */
+button.cta {
+  align-self: stretch;
+  width: 100%;
+  min-height: 46px;
+  padding: 11px 20px;
+  border-radius: 16px;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  border-color: color-mix(in srgb, var(--cta) 70%, white);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--cta) 88%, white), var(--cta));
+  text-shadow: 0 1px 1px rgb(0 0 0 / 0.25);
+}
+button.cta:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--cta) 70%, white);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--cta) 80%, white), var(--cta));
+}
+button.cta:disabled {
+  opacity: 0.45;
 }

@@ -90,7 +90,7 @@ function ago(iso: string): string {
               <li [class.unread]="isNew(n)" [class.request]="n.kind !== 'info'">
                 @switch (n.kind) {
                   @case ('friend-request') {
-                    <span class="bell-icon" aria-hidden="true">👤</span>
+                    <span class="bell-icon" lang="zh" aria-hidden="true">友</span>
                     <div class="bell-body">
                       <span
                         ><strong>{{ n.username }}</strong> wants to be your friend</span
@@ -116,7 +116,7 @@ function ago(iso: string): string {
                     </div>
                   }
                   @case ('join-request') {
-                    <span class="bell-icon" aria-hidden="true">🏘</span>
+                    <span class="bell-icon" lang="zh" aria-hidden="true">群</span>
                     <div class="bell-body">
                       <span
                         ><strong>{{ n.username }}</strong> asks to join
@@ -145,7 +145,7 @@ function ago(iso: string): string {
                     </div>
                   }
                   @case ('info') {
-                    <span class="bell-icon" aria-hidden="true">{{ icon(n.type) }}</span>
+                    <span class="bell-icon" lang="zh" aria-hidden="true">{{ icon(n.type) }}</span>
                     <div class="bell-body">
                       <span>
                         {{ text(n)[0] }}
@@ -225,13 +225,8 @@ export class NotificationBell {
   }
 
   protected icon(type: InfoType): string {
-    return type === 'friend-accepted'
-      ? '🤝'
-      : type === 'join-rejected'
-        ? '🚫'
-        : type === 'removed-from-community'
-          ? '👋'
-          : '🏘';
+    // 友: friends, 群: communities.
+    return type === 'friend-accepted' ? '友' : '群';
   }
 
   protected text(n: Extract<NotificationItem, { kind: 'info' }>): [string, string] {

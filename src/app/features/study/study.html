@@ -48,7 +48,7 @@
         [attr.aria-pressed]="layout() === 'grid'"
         (click)="setLayout('grid')"
       >
-        ▦ Grid
+        Grid
       </button>
       <button
         type="button"
@@ -56,7 +56,7 @@
         [attr.aria-pressed]="layout() === 'list'"
         (click)="setLayout('list')"
       >
-        ☰ List
+        List
       </button>
     </div>
     <ul class="tiles" [class.as-list]="layout() === 'list'">

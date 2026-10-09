@@ -17,6 +17,7 @@ import { LabelsService } from '../../core/labels.service';
 import { WordsService } from '../../core/words.service';
 import { readSetting, writeSetting } from '../../core/settings';
 import { LabelPicker } from '../../shared/label-picker';
+import { SpeakerIcon } from '../../shared/speaker-icon';
 import { Pinyin } from '../../shared/pinyin';
 import { SlidingThumb } from '../../shared/sliding-thumb';
 
@@ -25,7 +26,7 @@ const LAYOUT_KEY = 'hanzi-workshop-words-layout';
 /** The Words tab of Study: your words, and the card of the one selected (/study/words/:word). */
 @Component({
   selector: 'app-words',
-  imports: [Pinyin, RouterLink, SlidingThumb, LabelPicker],
+  imports: [Pinyin, RouterLink, SlidingThumb, LabelPicker, SpeakerIcon],
   templateUrl: './words.html',
   host: { '(document:keydown)': 'onKey($event)' },
 })

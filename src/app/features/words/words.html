@@ -37,7 +37,7 @@
         [attr.aria-pressed]="layout() === 'grid'"
         (click)="setLayout('grid')"
       >
-        ▦ Grid
+        Grid
       </button>
       <button
         type="button"
@@ -45,7 +45,7 @@
         [attr.aria-pressed]="layout() === 'list'"
         (click)="setLayout('list')"
       >
-        ☰ List
+        List
       </button>
     </div>
     <ul class="word-list" [class.as-grid]="layout() === 'grid'">
@@ -88,10 +88,12 @@
       <div class="word-card-top">
         <div class="word-big" lang="zh">{{ w.word }}</div>
         <div class="buttons">
-          <button type="button" title="Pronounce" (click)="speak()">🔊</button>
-          <a class="button" [routerLink]="['/add/word', w.word]" title="Edit this word">✎ Edit</a>
+          <button type="button" title="Pronounce" aria-label="Pronounce" (click)="speak()">
+            <app-speaker-icon />
+          </button>
+          <a class="button" [routerLink]="['/add/word', w.word]" title="Edit this word">Edit</a>
           <button type="button" class="danger" title="Delete this word" (click)="deleteCurrent()">
-            🗑 Delete
+            Delete
           </button>
         </div>
       </div>

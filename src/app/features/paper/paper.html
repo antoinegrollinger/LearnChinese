@@ -157,17 +157,25 @@
       </label>
     </fieldset>
 
-    <button
-      type="button"
-      class="primary"
-      [disabled]="!pages().length || loading() || downloading()"
-      (click)="download()"
-    >
-      {{ downloading() ? 'Making the PDF…' : '⬇ Download the PDF' }}
-    </button>
-    @if (error(); as e) {
-      <p class="message error">{{ e }}</p>
-    }
+    <!-- Stays at the bottom of the panel while the settings scroll. -->
+    <div class="paper-actions">
+      <button
+        type="button"
+        class="primary cta"
+        [disabled]="!pages().length || loading() || downloading()"
+        (click)="download()"
+      >
+        {{
+          downloading()
+            ? 'Making the PDF…'
+            : 'Download the PDF' +
+              (pages().length > 1 ? ' (' + pages().length + ' pages)' : '')
+        }}
+      </button>
+      @if (error(); as e) {
+        <p class="message error">{{ e }}</p>
+      }
+    </div>
   </div>
 
   <div class="paper-preview" aria-label="Preview">

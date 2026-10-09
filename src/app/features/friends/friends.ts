@@ -79,7 +79,9 @@ export class Friends {
   protected setShare(share: boolean): void {
     this.run(async () => {
       await this.social.setShareReviews(share);
-      return share ? 'Your friends can now see your reviews ✓' : 'Your reviews are now private ✓';
+      return share
+        ? 'Your friends can now see your training sessions ✓'
+        : 'Your training sessions are now private ✓';
     });
   }
 }

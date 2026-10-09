@@ -15,6 +15,7 @@ import {
 import { ReviewsService } from '../../core/reviews.service';
 import { WordsService } from '../../core/words.service';
 import { SlidingThumb } from '../../shared/sliding-thumb';
+import { SwipeActions } from '../../shared/swipe-actions';
 
 /** A character or word of your lists, as the dashboard shows it. */
 interface Known {
@@ -36,7 +37,7 @@ const DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
 /** Your past reviews with their results; start one of them again. */
 @Component({
   selector: 'app-dashboard',
-  imports: [RouterLink, SlidingThumb],
+  imports: [RouterLink, SlidingThumb, SwipeActions],
   templateUrl: './dashboard.html',
 })
 export class Dashboard {
@@ -71,7 +72,7 @@ export class Dashboard {
 
   /** The Review tab of this kind. */
   protected readonly reviewLink = computed(() =>
-    this.kind() === 'words' ? '/review/words' : '/review',
+    this.kind() === 'words' ? '/training/words' : '/training',
   );
 
   /** The character or word, if it's still in your lists. */
@@ -104,7 +105,7 @@ export class Dashboard {
         /** Labels of its characters (as they are labelled now). */
         labels: sortLabels(entries.map((e) => e.entry?.label)),
         results: entries,
-        /** Characters still in your list, which "Review again" uses. */
+        /** Characters still in your list, which "Train again" uses. */
         available: entries.filter((e) => e.entry).length,
       };
     }),
@@ -149,7 +150,7 @@ export class Dashboard {
 
   /** Opens the Review page and starts a session with these characters or words, in this mode. */
   protected review(texts: string[], mode: ReviewMode, kind: ReviewKind): void {
-    this.router.navigate([kind === 'words' ? '/review/words' : '/review'], {
+    this.router.navigate([kind === 'words' ? '/training/words' : '/training'], {
       state: { replay: texts, mode, kind },
     });
   }
@@ -179,13 +180,22 @@ export class Dashboard {
     this.expanded.update((current) => (current === id ? null : (id ?? null)));
   }
 
-  protected async remove(session: ReviewSession): Promise<void> {
-    if (!session.id || !confirm('Delete this review from your history?')) return;
+  /** Deletes the session from your history (after confirmation, unless swiped). True if done. */
+  protected async remove(session: ReviewSession, confirmFirst = true): Promise<boolean> {
+    if (!session.id) return false;
+    if (confirmFirst && !confirm('Delete this training session from your history?')) return false;
     try {
       await this.reviews.remove(String(session.id));
       this.message.set({ text: '' });
+      return true;
     } catch (err) {
       this.message.set({ text: `Delete failed: ${errorMessage(err)}`, kind: 'error' });
+      return false;
     }
+  }
+
+  /** Touch screens: the row was swiped to Delete (the swipe is the confirmation, as on iOS). */
+  protected async removeSwiped(session: ReviewSession, swipe: SwipeActions): Promise<void> {
+    if (!(await this.remove(session, false))) swipe.close();
   }
 }

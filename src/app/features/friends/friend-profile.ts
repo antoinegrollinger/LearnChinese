@@ -72,10 +72,10 @@ export class FriendProfilePage {
     return since ? DAY_FORMAT.format(new Date(since)) : '';
   });
 
-  /** "review", "character review" or "word review", for the texts. */
+  /** "training session", "character training session" or "word training session", for the texts. */
   protected readonly reviewName = computed(() => {
     const kind = this.kind();
-    return kind === 'all' ? 'review' : `${REVIEW_KINDS[kind].one} review`;
+    return kind === 'all' ? 'training session' : `${REVIEW_KINDS[kind].one} training session`;
   });
 
   /** One row per shared session of this tab, newest first. */

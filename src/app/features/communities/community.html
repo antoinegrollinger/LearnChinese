@@ -24,7 +24,7 @@
         </h2>
         <div class="buttons">
           @if (isOwner() && !settingsOpen()) {
-            <button type="button" (click)="openSettings()">⚙ Settings</button>
+            <button type="button" (click)="openSettings()">Settings</button>
           }
           @if (c.joined) {
             <button type="button" [disabled]="busy()" (click)="leave()">Leave</button>
@@ -51,7 +51,7 @@
       <p class="muted">
         {{ c.memberCount }} member{{ c.memberCount === 1 ? '' : 's' }} ·
         <span [class.friends-inside]="c.friendCount > 0">{{ c.friendCount }} of your friends</span>
-        · {{ c.joinPolicy === 'approval' ? '🔒 New members need approval' : 'Anyone can join' }}
+        · {{ c.joinPolicy === 'approval' ? 'New members need approval' : 'Anyone can join' }}
       </p>
       <p class="message" [class]="status().kind" role="status">{{ status().text }}</p>
 
@@ -139,7 +139,7 @@
           <p class="muted">
             {{
               c.joinPolicy === 'approval'
-                ? 'No one is waiting. New requests also appear in your notifications 🔔.'
+                ? 'No one is waiting. New requests also appear in your notifications.'
                 : 'Anyone can join, so there are no requests to answer.'
             }}
           </p>

@@ -22,7 +22,7 @@
           <dd>{{ p.words }}</dd>
         </div>
         <div>
-          <dt>Reviews</dt>
+          <dt>Sessions</dt>
           <dd>{{ p.sharesReviews ? rows().length : '—' }}</dd>
         </div>
         <div>
@@ -32,7 +32,7 @@
       </dl>
 
       @if (!p.sharesReviews) {
-        <p class="muted">{{ p.username }} doesn't share their reviews.</p>
+        <p class="muted">{{ p.username }} doesn't share their training sessions.</p>
       } @else if (!rows().length) {
         <p class="muted">{{ p.username }} hasn't finished a {{ reviewName() }} yet.</p>
       } @else {
@@ -44,7 +44,7 @@
               ? 'characters and words'
               : kindInfo[kind() === 'words' ? 'words' : 'characters'].name.toLowerCase()
           }}
-          reviewed in {{ totals().time }}. Read only.
+          trained in {{ totals().time }}. Read only.
         </p>
         <ul class="sessions">
           @for (row of rows(); track row.session.id) {
@@ -58,7 +58,6 @@
                         <span lang="zh">{{ kindInfo[row.session.kind].icon }}</span>
                         {{ kindInfo[row.session.kind].name }} ·
                       }
-                      {{ modeInfo[row.session.mode].icon }}
                       {{ modeInfo[row.session.mode].name }}</span
                     ></strong
                   >

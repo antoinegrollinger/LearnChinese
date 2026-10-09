@@ -13,8 +13,8 @@ export interface ReviewResult {
 export type ReviewMode = 'write' | 'pinyin';
 
 export const REVIEW_MODES: Record<ReviewMode, { name: string; icon: string }> = {
-  write: { name: 'Write the character', icon: '✍' },
-  pinyin: { name: 'Give the pinyin', icon: '🔤' },
+  write: { name: 'Write the character', icon: '写' },
+  pinyin: { name: 'Give the pinyin', icon: '拼' },
 };
 
 export const reviewMode = (value: unknown): ReviewMode => (value === 'pinyin' ? 'pinyin' : 'write');

@@ -53,7 +53,7 @@
     @if (editing(); as ch) {
       <p class="banner">
         Editing {{ ch }} — saving will update it in your list.
-        <a [routerLink]="['/study', ch]">View in Study →</a>
+        <a [routerLink]="['/study', ch]">View in My 汉字 and words →</a>
       </p>
     }
 
@@ -152,7 +152,7 @@
         <button type="button" class="danger" (click)="remove()">Delete</button>
       }
       <button type="submit" class="primary" [disabled]="saving() || !!characters.error()">
-        💾 {{ editing() ? 'Save changes' : 'Save' }}
+        {{ editing() ? 'Save changes' : 'Save' }}
       </button>
     </div>
     <p class="message" [class]="status().kind">{{ status().text }}</p>

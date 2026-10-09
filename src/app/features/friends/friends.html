@@ -41,10 +41,10 @@
           (change)="setShare($any($event.target).checked)"
         />
         <span>
-          <strong>Share my reviews with my friends</strong>
+          <strong>Share my training sessions with my friends</strong>
           <span class="muted"
-            >They can then see your review history (read only). They always see how many characters
-            and words you have.</span
+            >They can then see your training history (read only). They always see how many
+            characters and words you have.</span
           >
         </span>
       </label>
@@ -95,8 +95,8 @@
                 {{ f.words }} word{{ f.words === 1 ? '' : 's' }} ·
                 {{
                   f.reviews === null
-                    ? 'reviews private'
-                    : f.reviews + ' review' + (f.reviews === 1 ? '' : 's')
+                    ? 'sessions private'
+                    : f.reviews + ' training session' + (f.reviews === 1 ? '' : 's')
                 }}
                 · friends since {{ date(f.since) }}</span
               >

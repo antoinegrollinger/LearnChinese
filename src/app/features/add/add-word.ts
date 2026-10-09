@@ -14,6 +14,7 @@ import {
   meaningOf,
 } from '../../core/words.service';
 import { LabelPicker } from '../../shared/label-picker';
+import { SpeakerIcon } from '../../shared/speaker-icon';
 import { Pinyin } from '../../shared/pinyin';
 
 /**
@@ -22,7 +23,7 @@ import { Pinyin } from '../../shared/pinyin';
  */
 @Component({
   selector: 'app-add-word',
-  imports: [ReactiveFormsModule, Pinyin, RouterLink, LabelPicker],
+  imports: [ReactiveFormsModule, Pinyin, RouterLink, LabelPicker, SpeakerIcon],
   templateUrl: './add-word.html',
 })
 export class AddWord {

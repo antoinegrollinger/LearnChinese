@@ -29,8 +29,8 @@ const STUDY_TABS: PageTab[] = [
   { name: 'Words', icon: '词', path: '/study/words', count: 'words' },
 ];
 const REVIEW_TABS: PageTab[] = [
-  { name: 'Characters', icon: '字', path: '/review', count: 'characters' },
-  { name: 'Words', icon: '词', path: '/review/words', count: 'words' },
+  { name: 'Characters', icon: '字', path: '/training', count: 'characters' },
+  { name: 'Words', icon: '词', path: '/training/words', count: 'words' },
 ];
 const DASHBOARD_TABS: PageTab[] = [
   { name: 'Characters', icon: '字', path: '/dashboard', count: 'character-reviews' },
@@ -47,22 +47,22 @@ const ADD_TABS: PageTab[] = [
 ];
 
 const pages: Routes = [
-  // Study: a tab for your characters (/study, /study/:character), one for your words
+  // My 汉字 and words (Study): a tab for your characters (/study, /study/:character), one for your words
   // (/study/words, /study/words/:word).
   {
     path: 'study',
     component: TabbedPage,
-    data: { tabs: STUDY_TABS, label: 'Study', addButton: true },
+    data: { tabs: STUDY_TABS, label: 'My 汉字 and words', addButton: true },
     children: [
       {
         matcher: withOptionalParam('words', 'word'),
         component: Words,
-        title: 'Words · Study · Hanzi Workshop',
+        title: 'Words · My 汉字 and words · Hanzi Workshop',
       },
       {
         matcher: optionalParamExcept('words', 'character'),
         component: Study,
-        title: 'Characters · Study · Hanzi Workshop',
+        title: 'Characters · My 汉字 and words · Hanzi Workshop',
       },
     ],
   },
@@ -89,23 +89,26 @@ const pages: Routes = [
   // The words used to have their own page.
   { path: 'words', redirectTo: 'study/words' },
   { path: 'words/:word', redirectTo: 'study/words/:word' },
-  // Review: a tab for your characters (/review), one for your words (/review/words).
+  // Training session: a tab for your characters (/training), one for your words
+  // (/training/words). It used to be called Review (/review).
+  { path: 'review', redirectTo: 'training' },
+  { path: 'review/words', redirectTo: 'training/words' },
   {
-    path: 'review',
+    path: 'training',
     component: TabbedPage,
-    data: { tabs: REVIEW_TABS, label: 'Review' },
+    data: { tabs: REVIEW_TABS, label: 'Training session' },
     children: [
       {
         path: 'words',
         component: Review,
         data: { kind: 'words' },
-        title: 'Words · Review · Hanzi Workshop',
+        title: 'Words · Training session · Hanzi Workshop',
       },
       {
         path: '',
         component: Review,
         data: { kind: 'characters' },
-        title: 'Characters · Review · Hanzi Workshop',
+        title: 'Characters · Training session · Hanzi Workshop',
       },
     ],
   },
@@ -145,7 +148,7 @@ const pages: Routes = [
   {
     path: 'friends/:username',
     component: TabbedPage,
-    data: { tabs: FRIEND_TABS, label: 'Their reviews' },
+    data: { tabs: FRIEND_TABS, label: 'Their training sessions' },
     children: [
       {
         path: 'characters',

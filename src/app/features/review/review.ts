@@ -33,6 +33,7 @@ import { speak } from '../../core/speech';
 import { StatsService } from '../../core/stats.service';
 import { WordsService } from '../../core/words.service';
 import { HanziWriterView } from '../../shared/hanzi-writer';
+import { SpeakerIcon } from '../../shared/speaker-icon';
 import { Pinyin } from '../../shared/pinyin';
 import { PartsSummary } from '../study/parts-summary';
 
@@ -66,7 +67,7 @@ const MODE_KEY = 'hanzi-workshop-review-mode';
 
 /** The Review tab of each kind. */
 export const reviewUrl = (kind: ReviewKind): string =>
-  kind === 'words' ? '/review/words' : '/review';
+  kind === 'words' ? '/training/words' : '/training';
 
 /** A character or a word, as the review shows it. */
 interface ReviewItem {
@@ -103,7 +104,7 @@ interface Attempts {
  */
 @Component({
   selector: 'app-review',
-  imports: [HanziWriterView, Pinyin, PartsSummary, RouterLink],
+  imports: [HanziWriterView, Pinyin, PartsSummary, RouterLink, SpeakerIcon],
   templateUrl: './review.html',
 })
 export class Review {
@@ -123,7 +124,7 @@ export class Review {
   ][];
   protected readonly modeInfo = REVIEW_MODES;
   protected readonly kindInfo = REVIEW_KINDS;
-  /** Characters to review straight away, and how, from the dashboard ("Review again"). */
+  /** Characters to review straight away, and how, from the dashboard ("Train again"). */
   private replay = this.router.currentNavigation()?.extras.state as
     { replay?: string[]; mode?: ReviewMode; kind?: ReviewKind } | undefined;
 
@@ -284,7 +285,7 @@ export class Review {
     const list = this.reviewList();
     const seen = list.filter((item) => stats[item.text]);
     const perfect = seen.filter((item) => stats[item.text].perfect > 0).length;
-    return `${seen.length}/${list.length} characters reviewed · ${perfect} written without mistakes at least once`;
+    return `${seen.length}/${list.length} characters trained · ${perfect} written without mistakes at least once`;
   });
 
   constructor() {
@@ -566,7 +567,7 @@ export class Review {
           }
         : mistakes
           ? { text: `Done with ${mistakes} mistake(s).` }
-          : { text: 'Perfect! 🎉', kind: 'ok' },
+          : { text: 'Perfect!', kind: 'ok' },
     );
   }
 

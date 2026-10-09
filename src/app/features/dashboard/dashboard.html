@@ -1,7 +1,7 @@
 <section class="view centered">
   <div class="dashboard">
     <div class="dashboard-header">
-      <h2>Your {{ kindInfo[kind()].one }} reviews</h2>
+      <h2>Your {{ kindInfo[kind()].one }} training sessions</h2>
       <div class="buttons">
         @if (lastReview(); as last) {
           <button
@@ -10,11 +10,13 @@
             [disabled]="!last.available"
             (click)="reviewSession(last.session)"
           >
-            ↻ Repeat the last review ({{ kindInfo[last.session.kind].icon }}
-            {{ modeInfo[last.session.mode].icon }} {{ last.available }})
+            ↻ Repeat the last training session ({{
+              modeInfo[last.session.mode].name.toLowerCase()
+            }}, {{ last.available }} {{ kindInfo[last.session.kind].one
+            }}{{ last.available === 1 ? '' : 's' }})
           </button>
         }
-        <a class="button" [routerLink]="reviewLink()">New review</a>
+        <a class="button" [routerLink]="reviewLink()">New training session</a>
       </div>
     </div>
 
@@ -24,11 +26,16 @@
       <p class="muted">Loading…</p>
     } @else if (!kindSessions().length) {
       <p class="muted">
-        No {{ kindInfo[kind()].one }} reviews yet. Finish a
-        <a [routerLink]="reviewLink()">review</a> to see it here.
+        No {{ kindInfo[kind()].one }} training sessions yet. Finish a
+        <a [routerLink]="reviewLink()">training session</a> to see it here.
       </p>
     } @else {
-      <div class="filters segmented" appSlidingThumb role="group" aria-label="Show the reviews of">
+      <div
+        class="filters segmented"
+        appSlidingThumb
+        role="group"
+        aria-label="Show the training sessions of"
+      >
         <button
           type="button"
           [class.active]="modeFilter() === 'all'"
@@ -44,7 +51,7 @@
             [attr.aria-pressed]="modeFilter() === m[0]"
             (click)="modeFilter.set(m[0])"
           >
-            {{ m[1].icon }} {{ m[1].name }}
+            {{ m[1].name }}
           </button>
         }
       </div>
@@ -52,13 +59,15 @@
 
     @if (kindSessions().length && !rows().length) {
       <p class="muted">
-        No {{ kindInfo[kind()].one }} reviews{{ modeFilter() === 'all' ? '' : ' in this mode' }}
+        No {{ kindInfo[kind()].one }} training sessions{{
+          modeFilter() === 'all' ? '' : ' in this mode'
+        }}
         yet.
       </p>
     } @else if (rows().length) {
       <dl class="session-stats">
         <div>
-          <dt>Reviews</dt>
+          <dt>Sessions</dt>
           <dd>{{ totals().sessions }}</dd>
         </div>
         <div>
@@ -98,7 +107,7 @@
           <div class="buttons">
             @for (m of modes; track m[0]) {
               <button type="button" (click)="reviewHardest(m[0])">
-                Review these: {{ m[1].icon }} {{ m[1].name.toLowerCase() }}
+                Train on these: {{ m[1].name.toLowerCase() }}
               </button>
             }
           </div>
@@ -108,101 +117,126 @@
       <h3>History</h3>
       <ul class="sessions">
         @for (row of rows(); track row.session.id) {
-          <li class="session">
-            <div class="session-top">
-              <div class="session-info">
-                <strong
-                  >{{ row.date }}
-                  <span class="mode-tag" [title]="modeInfo[row.session.mode].name"
-                    >{{ modeInfo[row.session.mode].icon }}
-                    {{ modeInfo[row.session.mode].name }}</span
-                  ></strong
-                >
-                <span class="muted">
-                  {{ row.stats.count }} {{ kindInfo[row.session.kind].one
-                  }}{{ row.stats.count === 1 ? '' : 's' }} · {{ row.stats.firstTry }}/{{
-                    row.stats.count
-                  }}
-                  first try ({{ row.firstTryRate }}%) · {{ row.stats.mistakes }} mistake{{
-                    row.stats.mistakes === 1 ? '' : 's'
-                  }}
-                  ·
-                  {{ formatDuration(row.stats.seconds) }}
-                </span>
-                @if (row.labels.length) {
-                  <span class="session-labels">
-                    @for (l of row.labels; track l) {
-                      <span class="session-label">
-                        <span class="label-dot" [style.background]="labels.colorOf(l)"></span>
-                        {{ l }}
-                      </span>
-                    }
-                  </span>
-                }
-              </div>
-              <div class="buttons toolbar">
-                <button
-                  type="button"
-                  class="primary"
-                  [disabled]="!row.available"
-                  [title]="
-                    row.available < row.stats.count
-                      ? row.stats.count - row.available + ' of them are no longer in your list'
-                      : ''
-                  "
-                  (click)="reviewSession(row.session)"
-                >
-                  ↻ Review again
-                </button>
-                <button
-                  type="button"
-                  [attr.aria-expanded]="expanded() === row.session.id"
-                  (click)="toggle(row.session.id)"
-                >
-                  {{ expanded() === row.session.id ? 'Hide' : 'Details' }}
-                </button>
-                <button
-                  type="button"
-                  class="danger"
-                  title="Delete from your history"
-                  (click)="remove(row.session)"
-                >
-                  🗑
-                </button>
-              </div>
-            </div>
-            @if (expanded() === row.session.id) {
-              <ul class="session-results" [class.words]="row.session.kind === 'words'" lang="zh">
-                @for (r of row.results; track r.character) {
-                  <li
-                    [class.first-try]="r.tries === 1"
-                    [class.gone]="!r.entry"
-                    [title]="
-                      r.entry
-                        ? toPinyin(r.entry.pinyin) + ' — ' + (r.entry.meaning ?? '')
-                        : 'No longer in your list'
-                    "
+          <li
+            appSwipeActions
+            #swipe="appSwipeActions"
+            (fullSwipe)="removeSwiped(row.session, swipe)"
+          >
+            <div class="session swipe-content">
+              <div class="session-top">
+                <div class="session-info">
+                  <strong
+                    >{{ row.date }}
+                    <span class="mode-tag" [title]="modeInfo[row.session.mode].name">{{
+                      modeInfo[row.session.mode].name
+                    }}</span></strong
                   >
-                    <span class="result-char">{{ r.character }}</span>
-                    <small
-                      >{{ r.tries === 1 ? '✓' : '×' + r.tries }}
-                      @if (r.mistakes) {
-                        · {{ r.mistakes }} err
+                  <span class="muted">
+                    {{ row.stats.count }} {{ kindInfo[row.session.kind].one
+                    }}{{ row.stats.count === 1 ? '' : 's' }} · {{ row.stats.firstTry }}/{{
+                      row.stats.count
+                    }}
+                    first try ({{ row.firstTryRate }}%) · {{ row.stats.mistakes }} mistake{{
+                      row.stats.mistakes === 1 ? '' : 's'
+                    }}
+                    ·
+                    {{ formatDuration(row.stats.seconds) }}
+                  </span>
+                  @if (row.labels.length) {
+                    <span class="session-labels">
+                      @for (l of row.labels; track l) {
+                        <span class="session-label">
+                          <span class="label-dot" [style.background]="labels.colorOf(l)"></span>
+                          {{ l }}
+                        </span>
                       }
-                    </small>
-                  </li>
-                }
-              </ul>
-            } @else {
-              <p class="session-preview" lang="zh">
-                @for (r of row.results.slice(0, 24); track r.character) {
-                  <span [class.missed-once]="r.tries > 1">{{ r.character }}</span>
-                }
-                @if (row.results.length > 24) {
-                  <span class="muted">+{{ row.results.length - 24 }}</span>
-                }
-              </p>
-            }
+                    </span>
+                  }
+                </div>
+                <div class="buttons toolbar">
+                  <button
+                    type="button"
+                    class="primary"
+                    [disabled]="!row.available"
+                    [title]="
+                      row.available < row.stats.count
+                        ? row.stats.count - row.available + ' of them are no longer in your list'
+                        : ''
+                    "
+                    (click)="reviewSession(row.session)"
+                  >
+                    ↻ Train again
+                  </button>
+                  <button
+                    type="button"
+                    [attr.aria-expanded]="expanded() === row.session.id"
+                    (click)="toggle(row.session.id)"
+                  >
+                    {{ expanded() === row.session.id ? 'Hide' : 'Details' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="danger delete-button"
+                    title="Delete from your history"
+                    (click)="remove(row.session)"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+              @if (expanded() === row.session.id) {
+                <ul class="session-results" [class.words]="row.session.kind === 'words'" lang="zh">
+                  @for (r of row.results; track r.character) {
+                    <li
+                      [class.first-try]="r.tries === 1"
+                      [class.gone]="!r.entry"
+                      [title]="
+                        r.entry
+                          ? toPinyin(r.entry.pinyin) + ' — ' + (r.entry.meaning ?? '')
+                          : 'No longer in your list'
+                      "
+                    >
+                      <span class="result-char">{{ r.character }}</span>
+                      <small
+                        >{{ r.tries === 1 ? '✓' : '×' + r.tries }}
+                        @if (r.mistakes) {
+                          · {{ r.mistakes }} err
+                        }
+                      </small>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <p class="session-preview" lang="zh">
+                  @for (r of row.results.slice(0, 24); track r.character) {
+                    <span [class.missed-once]="r.tries > 1">{{ r.character }}</span>
+                  }
+                  @if (row.results.length > 24) {
+                    <span class="muted">+{{ row.results.length - 24 }}</span>
+                  }
+                </p>
+              }
+            </div>
+            <!-- Touch screens: revealed by swiping the row to the left (iOS style). -->
+            <button
+              type="button"
+              class="swipe-action"
+              tabindex="-1"
+              aria-hidden="true"
+              (click)="removeSwiped(row.session, swipe)"
+            >
+              <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                <path
+                  d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              Delete
+            </button>
           </li>
         }
       </ul>

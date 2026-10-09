@@ -15,8 +15,8 @@
           >.
         </p>
         <div class="buttons">
-          <button type="button" class="primary" (click)="open('contact')">✉ Contact</button>
-          <button type="button" (click)="open('bug')">🐞 Report a bug</button>
+          <button type="button" class="primary" (click)="open('contact')">Contact</button>
+          <button type="button" (click)="open('bug')">Report a bug</button>
         </div>
       </header>
 
@@ -26,7 +26,7 @@
           <li>
             <span class="feature-icon" lang="zh" aria-hidden="true">字</span>
             <div>
-              <strong>Study characters</strong>
+              <strong>My <span lang="zh">汉字</span> and words</strong>
               <p>Stroke order, writing practice, meaning and sound components.</p>
             </div>
           </li>
@@ -38,24 +38,24 @@
             </div>
           </li>
           <li>
-            <span class="feature-icon" aria-hidden="true">✍</span>
+            <span class="feature-icon" lang="zh" aria-hidden="true">写</span>
             <div>
-              <strong>Review</strong>
+              <strong>Training sessions</strong>
               <p>Write them, or give their pinyin, until each one is right.</p>
             </div>
           </li>
           <li>
-            <span class="feature-icon" aria-hidden="true">📈</span>
+            <span class="feature-icon" lang="zh" aria-hidden="true">进</span>
             <div>
               <strong>Follow your progress</strong>
-              <p>Past reviews, hardest characters, and labels to group them.</p>
+              <p>Past training sessions, hardest characters, and labels to group them.</p>
             </div>
           </li>
           <li>
-            <span class="feature-icon" aria-hidden="true">👥</span>
+            <span class="feature-icon" lang="zh" aria-hidden="true">友</span>
             <div>
               <strong>Learn with others</strong>
-              <p>Friends, communities, and reviews you choose to share.</p>
+              <p>Friends, communities, and training sessions you choose to share.</p>
             </div>
           </li>
         </ul>
@@ -87,7 +87,7 @@
           [attr.aria-selected]="kind() === 'contact'"
           (click)="setKind('contact')"
         >
-          ✉ Contact
+          Contact
         </button>
         <button
           type="button"
@@ -96,7 +96,7 @@
           [attr.aria-selected]="kind() === 'bug'"
           (click)="setKind('bug')"
         >
-          🐞 Report a bug
+          Report a bug
         </button>
       </div>
 
@@ -142,7 +142,7 @@
           {{ kind() === 'bug' ? 'What went wrong, in a few words' : 'Subject' }}
           <input
             [maxLength]="limits.subject"
-            [placeholder]="kind() === 'bug' ? 'e.g. The review does not start' : ''"
+            [placeholder]="kind() === 'bug' ? 'e.g. The training session does not start' : ''"
             [value]="draft().subject"
             [attr.aria-invalid]="!!errors().subject"
             (input)="update('subject', $any($event.target).value)"
@@ -175,7 +175,7 @@
             <textarea
               rows="3"
               [maxLength]="limits.steps"
-              placeholder="1. Open Review&#10;2. Choose Words&#10;3. …"
+              placeholder="1. Open Training session&#10;2. Choose Words&#10;3. …"
               [value]="draft().steps"
               (input)="update('steps', $any($event.target).value)"
             ></textarea>

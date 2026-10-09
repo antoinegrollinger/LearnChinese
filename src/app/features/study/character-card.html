@@ -10,7 +10,7 @@
         "
       />
       <div class="buttons">
-        <button type="button" (click)="animate()">▶ Animate</button>
+        <button type="button" (click)="animate()">Animate</button>
         <button
           type="button"
           [class.active]="practicing()"
@@ -20,7 +20,7 @@
           "
           (click)="togglePractice()"
         >
-          ✍ Practice
+          Practice
         </button>
         @if (practicing()) {
           <!-- On while the outline to trace is shown; off to write from memory. -->
@@ -36,9 +36,11 @@
             Outline
           </button>
         }
-        <button type="button" title="Pronounce" (click)="speak()">🔊</button>
+        <button type="button" title="Pronounce" aria-label="Pronounce" (click)="speak()">
+          <app-speaker-icon />
+        </button>
         <a class="button" [routerLink]="['/add', entry().character]" title="Edit this character"
-          >✎ Edit</a
+          >Edit</a
         >
         <button
           type="button"
@@ -46,7 +48,7 @@
           title="Delete this character"
           (click)="deleteRequested.emit()"
         >
-          🗑 Delete
+          Delete
         </button>
       </div>
       <p class="message" [class]="message().kind">{{ message().text }}</p>

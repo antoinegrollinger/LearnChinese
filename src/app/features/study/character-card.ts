@@ -20,13 +20,14 @@ import { WordsService } from '../../core/words.service';
 import { StrokeDataService, partColors } from '../../core/stroke-data.service';
 import { HanziWriterView } from '../../shared/hanzi-writer';
 import { LabelPicker } from '../../shared/label-picker';
+import { SpeakerIcon } from '../../shared/speaker-icon';
 import { Pinyin } from '../../shared/pinyin';
 import { StrokeSvg } from '../../shared/stroke-svg';
 import { PartsSummary } from './parts-summary';
 
 @Component({
   selector: 'app-character-card',
-  imports: [HanziWriterView, Pinyin, StrokeSvg, RouterLink, PartsSummary, LabelPicker],
+  imports: [HanziWriterView, Pinyin, StrokeSvg, RouterLink, PartsSummary, LabelPicker, SpeakerIcon],
   templateUrl: './character-card.html',
 })
 export class CharacterCard {
@@ -130,9 +131,7 @@ export class CharacterCard {
         }),
       onComplete: ({ totalMistakes }) => {
         this.message.set({
-          text: totalMistakes
-            ? `Done with ${totalMistakes} mistake(s).`
-            : 'Perfect, no mistakes! 🎉',
+          text: totalMistakes ? `Done with ${totalMistakes} mistake(s).` : 'Perfect, no mistakes!',
           kind: 'ok',
         });
         this.statsService.record(character, totalMistakes);

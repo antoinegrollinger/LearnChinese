@@ -2,8 +2,8 @@
   @if (!started()) {
     <div class="review-setup">
       <div class="setup-header">
-        <h2>Choose the {{ one() }}s to review</h2>
-        <a [routerLink]="dashboardLink()">Past reviews →</a>
+        <h2>Choose the {{ one() }}s for your training session</h2>
+        <a [routerLink]="dashboardLink()">Past training sessions →</a>
       </div>
 
       @if (lastReview(); as last) {
@@ -14,8 +14,9 @@
           [title]="last.available ? '' : 'None of them is in your lists any more'"
           (click)="repeatLast()"
         >
-          ↻ Repeat the last review ({{ modeInfo[last.session.mode].icon }} {{ last.available }}
-          {{ kindInfo[last.session.kind].one }}{{ last.available === 1 ? '' : 's' }})
+          ↻ Repeat the last training session ({{ modeInfo[last.session.mode].name.toLowerCase() }},
+          {{ last.available }} {{ kindInfo[last.session.kind].one
+          }}{{ last.available === 1 ? '' : 's' }})
           <span class="muted" lang="zh">{{ last.preview }}</span>
         </button>
       }
@@ -83,7 +84,7 @@
         </ul>
 
         <p class="muted">Mode:</p>
-        <div class="mode-choice" role="radiogroup" aria-label="Review mode">
+        <div class="mode-choice" role="radiogroup" aria-label="Training mode">
           @for (m of modes; track m[0]) {
             <button
               type="button"
@@ -106,18 +107,18 @@
 
         <button
           type="button"
-          class="primary start"
+          class="primary cta start"
           [disabled]="!reviewList().length"
           (click)="start()"
         >
-          Start review ({{ reviewList().length }} {{ one()
+          Start the training session ({{ reviewList().length }} {{ one()
           }}{{ reviewList().length === 1 ? '' : 's' }})
         </button>
       }
     </div>
   } @else if (complete()) {
     <div class="review-complete" role="status">
-      <div class="celebrate" aria-hidden="true">🎉</div>
+      <div class="celebrate" aria-hidden="true">✓</div>
       <h2>Session complete!</h2>
       <p>
         {{ mode() === 'pinyin' ? 'You gave the pinyin of' : 'You wrote' }} all {{ summary().count }}
@@ -155,10 +156,10 @@
         <p class="muted">Every {{ one() }} right on the first try. Perfect session!</p>
       }
       <div class="buttons">
-        <button type="button" class="primary" (click)="start()">↻ Review again</button>
+        <button type="button" class="primary" (click)="start()">↻ Train again</button>
         @if (summary().missed.length) {
           <button type="button" (click)="reviewMissed()">
-            Review the {{ summary().missed.length }} harder one{{
+            Train on the {{ summary().missed.length }} harder one{{
               summary().missed.length === 1 ? '' : 's'
             }}
           </button>
@@ -211,7 +212,7 @@
             (input)="answer.set($any($event.target).value)"
           />
           <button type="submit" class="primary">
-            {{ !done() ? 'Check' : allValidated() ? 'See results 🎉' : 'Next →' }}
+            {{ !done() ? 'Check' : allValidated() ? 'See results' : 'Next →' }}
           </button>
         </form>
         @if (!done()) {
@@ -226,7 +227,7 @@
             <button type="button" (click)="solution()">Show answer</button>
             <button type="button" (click)="next()">Skip →</button>
           } @else {
-            <button type="button" title="Pronounce" (click)="speak()">🔊 Pronounce</button>
+            <button type="button" (click)="speak()"><app-speaker-icon /> Pronounce</button>
           }
         </div>
         <p class="message" [class]="message().kind">{{ message().text }}</p>
@@ -279,9 +280,11 @@
         <div class="buttons toolbar">
           <button type="button" [disabled]="done()" (click)="hint()">Hint (outline)</button>
           <button type="button" [disabled]="done()" (click)="solution()">Show solution</button>
-          <button type="button" title="Pronounce" (click)="speak()">🔊</button>
+          <button type="button" title="Pronounce" aria-label="Pronounce" (click)="speak()">
+            <app-speaker-icon />
+          </button>
           <button type="button" class="primary" (click)="next()">
-            {{ !done() ? 'Skip →' : allValidated() ? 'See results 🎉' : 'Next →' }}
+            {{ !done() ? 'Skip →' : allValidated() ? 'See results' : 'Next →' }}
           </button>
         </div>
         <p class="message" [class]="message().kind">{{ message().text }}</p>
