@@ -2,6 +2,7 @@ import { Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
+import { AddFab } from './add-fab';
 import { SlidingThumb } from './sliding-thumb';
 import { CharactersService } from '../core/characters.service';
 import { ReviewsService } from '../core/reviews.service';
@@ -29,7 +30,7 @@ export interface PageTab {
  */
 @Component({
   selector: 'app-tabbed-page',
-  imports: [RouterOutlet, RouterLink, SlidingThumb],
+  imports: [RouterOutlet, RouterLink, SlidingThumb, AddFab],
   template: `
     <nav class="page-tabs" appSlidingThumb [attr.aria-label]="label">
       @for (tab of tabs(); track tab.path) {
@@ -46,6 +47,9 @@ export interface PageTab {
       }
     </nav>
     <router-outlet />
+    @if (addButton) {
+      <app-add-fab />
+    }
   `,
 })
 export class TabbedPage {
@@ -57,6 +61,8 @@ export class TabbedPage {
   private readonly route = inject(ActivatedRoute);
   private readonly templates: PageTab[] = this.route.snapshot.data['tabs'] ?? [];
   protected readonly label: string = this.route.snapshot.data['label'] ?? '';
+  /** Route data "addButton": the floating "+" to add a character or a word (Study). */
+  protected readonly addButton: boolean = !!this.route.snapshot.data['addButton'];
   /** The page's route parameters (they change when the page is reused, e.g. another friend). */
   private readonly params = toSignal(this.route.params, {
     initialValue: this.route.snapshot.params,

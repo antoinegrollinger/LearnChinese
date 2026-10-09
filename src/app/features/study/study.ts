@@ -1,4 +1,13 @@
-import { Component, afterNextRender, computed, inject, input, signal } from '@angular/core';
+import {
+  Component,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { CharacterEntry } from '../../core/character.model';
 import { CharactersService, errorMessage } from '../../core/characters.service';
@@ -6,13 +15,14 @@ import { DEFAULT_TYPE, TYPES, typeOf } from '../../core/config';
 import { LabelsService } from '../../core/labels.service';
 import { stripTones, toPinyin } from '../../core/pinyin';
 import { readSetting, writeSetting } from '../../core/settings';
+import { SlidingThumb } from '../../shared/sliding-thumb';
 import { CharacterCard } from './character-card';
 
 const LAYOUT_KEY = 'hanzi-workshop-study-layout';
 
 @Component({
   selector: 'app-study',
-  imports: [CharacterCard],
+  imports: [CharacterCard, SlidingThumb],
   templateUrl: './study.html',
   host: { '(document:keydown)': 'onKey($event)' },
 })
@@ -46,10 +56,15 @@ export class Study {
 
   constructor() {
     if (this.savedMessage) this.showToast(this.savedMessage);
-    // Bring the selected (e.g. newly added) character into view in the list.
-    afterNextRender(() =>
-      document.querySelector('.tile.active')?.scrollIntoView({ block: 'nearest' }),
-    );
+    // The selected character stays in view in the (scrolling) list, e.g. with ← →.
+    const injector = inject(Injector);
+    effect(() => {
+      this.current();
+      afterNextRender(
+        () => document.querySelector('.tile.active')?.scrollIntoView({ block: 'nearest' }),
+        { injector },
+      );
+    });
   }
 
   protected setLayout(layout: 'grid' | 'list'): void {

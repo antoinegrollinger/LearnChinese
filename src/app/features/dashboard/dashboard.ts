@@ -14,6 +14,7 @@ import {
 } from '../../core/review.model';
 import { ReviewsService } from '../../core/reviews.service';
 import { WordsService } from '../../core/words.service';
+import { SlidingThumb } from '../../shared/sliding-thumb';
 
 /** A character or word of your lists, as the dashboard shows it. */
 interface Known {
@@ -35,7 +36,7 @@ const DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
 /** Your past reviews with their results; start one of them again. */
 @Component({
   selector: 'app-dashboard',
-  imports: [RouterLink],
+  imports: [RouterLink, SlidingThumb],
   templateUrl: './dashboard.html',
 })
 export class Dashboard {

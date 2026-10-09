@@ -486,6 +486,8 @@ app-character-card {
   flex-direction: column;
   align-items: center;
   gap: 10px;
+  /* A steady width: the grid doesn't move when a button (Outline) appears under it. */
+  width: min(100%, 36rem);
 }
 
 app-hanzi-writer,
@@ -1497,16 +1499,18 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-/* The whole app is at least the height of the window (not more: the header's margin stays inside),
-   and the page fills what's left under the header. */
+/* App shell: the app is exactly the height of the window and doesn't scroll as a whole; the
+   header stays, the page fills what's left and scrolls inside (see "App shell" at the end). */
 app-root {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
 }
 main {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
@@ -2032,6 +2036,127 @@ a:hover {
   justify-content: flex-start;
 }
 
+/* ----- Button rows ----- */
+/* Segmented controls (one choice: type filter, Grid / List, review modes): a recessed tray with
+   plain choices; the chosen one sits on the sliding glass thumb (SlidingThumb, below). */
+.segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 3px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--glass-rim) 60%, transparent);
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.06);
+}
+/* In the narrow Study sidebar: full rows, each choice stretching to fill its row. */
+.sidebar .filters.segmented {
+  width: auto;
+}
+.sidebar .filters.segmented > button {
+  flex: 1 1 auto;
+  padding-inline: 8px;
+  white-space: nowrap;
+}
+.layout-toggle.segmented {
+  width: auto;
+  flex-wrap: nowrap;
+  border-radius: 999px;
+}
+.segmented > button {
+  padding: 4px 11px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.layout-toggle.segmented > button {
+  flex: 1;
+}
+.segmented > button:hover:not(:disabled) {
+  color: var(--text);
+  border-color: transparent;
+  background: color-mix(in srgb, var(--surface-strong) 50%, transparent);
+  box-shadow: none;
+  transform: none;
+}
+.segmented > button.active,
+.segmented > button.active:hover:not(:disabled) {
+  color: var(--text);
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+.segmented > button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+/* Toolbars (actions on a card: Animate · Practice · Outline…, a review's Hint · Solution…):
+   one glass capsule holding plain buttons, each lighting up under the pointer; the main action
+   keeps its colour. */
+.buttons.toolbar {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 4px;
+  border-radius: 24px;
+  background: var(--surface);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-rim);
+  box-shadow: var(--glass-sheen), 0 4px 16px rgb(0 0 0 / 0.08);
+}
+.toolbar > button:not(.primary),
+.toolbar > a.button {
+  padding: 7px 13px;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.toolbar > button:not(.primary):hover:not(:disabled),
+.toolbar > a.button:hover {
+  background: var(--surface-strong);
+  border-color: var(--glass-rim);
+  box-shadow: var(--glass-sheen), 0 1px 3px rgb(0 0 0 / 0.08);
+  transform: none;
+}
+.toolbar > button.primary {
+  padding: 7px 15px;
+}
+.toolbar > button:active:not(:disabled),
+.toolbar > a.button:active {
+  transform: scale(0.95);
+}
+/* A toggle that is on (Outline hidden, Practice running…) */
+.toolbar > button.active:not(.primary) {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-strong));
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.toolbar > button.danger:hover:not(:disabled) {
+  color: var(--tone1);
+  background: color-mix(in srgb, var(--tone1) 12%, var(--surface-strong));
+  border-color: color-mix(in srgb, var(--tone1) 30%, transparent);
+}
+
+/* Chips you can pick several of (labels on the Review page): the picked ones are tinted glass. */
+.label-groups button.active {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-strong));
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
 /* ----- Motion, iOS style ----- */
 /* Segmented controls (SlidingThumb): the glass thumb slides to the selected item with a little
    spring, under the items; the selected item itself is then transparent. */
@@ -2080,11 +2205,11 @@ a:hover {
 /* A new page: fades in and zooms in a little. The page's component is the element inserted next to
    the router outlet (main's, and the tab's inside Study, Review…). */
 main > :not(router-outlet, app-login),
-app-tabbed-page > :not(router-outlet, nav) {
+app-tabbed-page > :not(router-outlet, nav, app-add-fab) {
   display: block;
 }
 main > :not(router-outlet),
-app-tabbed-page > :not(router-outlet, nav) {
+app-tabbed-page > :not(router-outlet, nav, app-add-fab) {
   /* backwards: nothing stays applied after it (a transform would move fixed toasts). */
   transform-origin: 50% 0;
   animation: page-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
@@ -2142,7 +2267,7 @@ main > app-tabbed-page {
     transition: none;
   }
   main > :not(router-outlet),
-  app-tabbed-page > :not(router-outlet, nav) {
+  app-tabbed-page > :not(router-outlet, nav, app-add-fab) {
     animation: none;
   }
   .tabs a.button:active,
@@ -2154,5 +2279,554 @@ main > app-tabbed-page {
   button:active:not(:disabled),
   a.button:active {
     transform: none;
+  }
+}
+
+/* ---------- Forms: Add a character, Add a word ---------- */
+/* One glass card with a title, grouped sections (like iOS settings), small labels above full-width
+   fields, and the actions at the end. */
+.entry-form {
+  flex: 0 1 780px;
+  width: 100%;
+  max-width: 780px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.form-title {
+  margin: 0;
+  font-size: 1.4rem;
+}
+.entry-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.entry-form label .muted {
+  font-weight: 400;
+  font-size: inherit;
+}
+.entry-form :is(input, select, textarea) {
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--text);
+}
+.entry-form textarea {
+  resize: vertical;
+}
+.entry-form .row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.entry-form .grow {
+  flex: 1;
+  min-width: 200px;
+}
+.entry-form .pinyin-preview {
+  min-width: 4em;
+  padding-bottom: 6px;
+}
+/* Sections: a grouped panel with a small title inside (the legend). */
+.entry-form fieldset {
+  margin: 0;
+  min-width: 0;
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface-strong) 45%, transparent);
+}
+.entry-form legend {
+  float: left;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.entry-form fieldset > .muted {
+  margin: 0;
+}
+.entry-form fieldset .buttons {
+  justify-content: flex-start;
+}
+/* The character and the word: large, with an ordinary placeholder. */
+.entry-form input.big {
+  width: 84px;
+  height: 64px;
+  font-size: 2rem;
+}
+.entry-form .word-input {
+  font-size: 1.8rem;
+  letter-spacing: 0.06em;
+  padding: 8px 14px;
+}
+.entry-form :is(.word-input, input.big)::placeholder {
+  font-size: 1rem;
+  letter-spacing: normal;
+}
+/* Pinyin: its tone-coloured preview sits inside the field, on the right (the field stays full width). */
+.entry-form .row:has(> .pinyin-preview) {
+  position: relative;
+}
+.entry-form .pinyin-preview {
+  position: absolute;
+  right: 14px;
+  bottom: 9px;
+  min-width: 0;
+  padding: 0;
+  font-size: 1.1rem;
+  pointer-events: none;
+}
+.entry-form .row:has(> .pinyin-preview) input {
+  padding-right: 9em;
+}
+/* Buttons next to a large field (🔊, Look up, Fill from dictionary): centred on the field. */
+.entry-form .row > button {
+  margin-bottom: 10px;
+}
+.entry-form .row:has(input.big) > button {
+  margin-bottom: 13px;
+}
+/* The label picker as wide as the other fields. */
+.entry-form .label-picker {
+  width: 100%;
+}
+.entry-form .label-picker select {
+  flex: 1;
+}
+/* Components: one line each (字 · role · pinyin · meaning · strokes · ×), two on phones. */
+.entry-form .component-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1.3fr) 86px auto;
+  grid-template-areas: 'char role pinyin meaning strokes remove';
+  gap: 6px;
+  align-items: center;
+}
+.entry-form .component-row > input,
+.entry-form .component-row > select {
+  min-width: 0;
+  width: 100%;
+}
+.entry-form .component-row [formcontrolname='character'] {
+  grid-area: char;
+  padding-inline: 6px;
+}
+/* The suggestion arrow (list of your characters) would leave no room for the character. */
+.entry-form .component-row [formcontrolname='character']::-webkit-calendar-picker-indicator {
+  display: none !important;
+}
+.entry-form .component-row [formcontrolname='role'] {
+  grid-area: role;
+}
+.entry-form .component-row [formcontrolname='pinyin'] {
+  grid-area: pinyin;
+}
+.entry-form .component-row [formcontrolname='meaning'] {
+  grid-area: meaning;
+}
+.entry-form .component-row [formcontrolname='strokes'] {
+  grid-area: strokes;
+}
+.entry-form .component-row > button {
+  grid-area: remove;
+}
+/* ✓ (one of your characters): a small badge on the character's field. */
+.entry-form .component-row .known-part {
+  position: absolute;
+  left: 46px;
+  top: -6px;
+  width: 22px;
+  height: 22px;
+  font-size: 0.75rem;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.2);
+}
+@media (max-width: 700px) {
+  .entry-form .component-row {
+    grid-template-columns: 64px minmax(0, 1fr) minmax(0, 1fr) 80px;
+    grid-template-areas:
+      'char role role remove'
+      'pinyin meaning meaning strokes';
+  }
+  .entry-form .component-row > button {
+    justify-self: end;
+  }
+  .entry-form .component-row > input,
+  .entry-form .component-row > select {
+    padding-inline: 8px;
+  }
+  .entry-form .component-row + .component-row {
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+}
+
+/* Actions: at the end, after a thin line; the main one last. */
+.entry-form .form-actions {
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 2px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.entry-form .form-actions + .message:empty {
+  display: none;
+}
+@media (max-width: 700px) {
+  .entry-form .grow {
+    min-width: 0;
+    flex-basis: 100%;
+  }
+}
+
+/* ---------- About ---------- */
+/* Two columns on wide screens: what it is (left), the forms (right, staying in view). */
+.about {
+  width: 100%;
+  max-width: 1180px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+.about-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.about .feedback {
+  position: sticky;
+  top: 0;
+}
+@media (max-width: 960px) {
+  .about {
+    max-width: 780px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .about .feedback {
+    position: static;
+  }
+}
+.about .card p {
+  margin: 0;
+  line-height: 1.55;
+}
+.about .card h3 {
+  margin-top: 0;
+}
+.about-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.about-hero h2 {
+  margin: 0;
+  font-size: 1.6rem;
+  letter-spacing: -0.02em;
+}
+.about-hero .lead {
+  font-size: 1.05rem;
+}
+.about-hero .buttons {
+  justify-content: flex-start;
+  margin-top: 4px;
+}
+.about-mark {
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1;
+  background: linear-gradient(135deg, var(--accent), var(--tone2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+/* What you can do: a compact grid (two per row when there is room). */
+.feature-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px 18px;
+}
+.feature-list li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.feature-list strong {
+  font-size: 0.95rem;
+}
+.about .feature-list p {
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+.feature-icon {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  font-size: 1.1rem;
+  background: var(--surface-strong);
+  border: 1px solid var(--glass-rim);
+  box-shadow: var(--glass-sheen);
+}
+.about .credits {
+  margin: 0;
+  padding: 0 6px;
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+/* The contact / bug report card: the switch, then the form (no second card inside). */
+.feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scroll-margin-top: 16px;
+}
+.feedback-switch {
+  align-self: flex-start;
+  border-radius: 999px;
+  flex-wrap: nowrap;
+}
+.feedback-switch > button {
+  font-size: 0.9rem;
+  padding: 6px 14px;
+}
+.feedback-form {
+  /* Not the Add forms' 780px basis: in this column card it would be a height. */
+  flex: none;
+  max-width: none;
+}
+.bug-context {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.bug-context summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.bug-context dl {
+  margin: 8px 0 0;
+  display: grid;
+  gap: 4px;
+}
+.bug-context dl > div {
+  display: grid;
+  grid-template-columns: 6em 1fr;
+  gap: 8px;
+}
+.bug-context dt {
+  font-weight: 600;
+}
+.bug-context dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+/* The trap for bots: out of sight for people. */
+.website-field {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+/* ---------- Floating "+" (Study): unfolds into Add a character / Add a word ---------- */
+.add-fab {
+  position: fixed;
+  /* Well inside the corner (and clear of the iPhone's rounded edges and home bar). */
+  right: calc(40px + env(safe-area-inset-right));
+  bottom: calc(40px + env(safe-area-inset-bottom));
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+.add-fab-button {
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  /* Opaque: no frosted blur needed. */
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  border-color: color-mix(in srgb, var(--accent) 60%, white);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 78%, white),
+    var(--accent) 55%,
+    color-mix(in srgb, var(--accent) 85%, black)
+  );
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.45),
+    0 8px 24px color-mix(in srgb, var(--accent) 40%, transparent),
+    0 2px 6px rgb(0 0 0 / 0.15);
+}
+.add-fab-button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 60%, white);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.5),
+    0 10px 30px color-mix(in srgb, var(--accent) 50%, transparent),
+    0 2px 6px rgb(0 0 0 / 0.15);
+}
+/* + turns into × */
+.add-fab-button svg {
+  transition: transform 0.35s cubic-bezier(0.32, 1.25, 0.5, 1);
+}
+.add-fab.open .add-fab-button svg {
+  transform: rotate(135deg);
+}
+.add-fab-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+.add-fab-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px 9px 10px;
+  border-radius: 999px;
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  background: var(--surface-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-rim);
+  box-shadow: var(--glass-sheen), var(--glass-shadow);
+  /* Folded: small, transparent and hidden (no frost left behind), near the button. */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(14px) scale(0.85);
+  transform-origin: right bottom;
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    transform 0.35s cubic-bezier(0.32, 1.25, 0.5, 1),
+    visibility 0s linear 0.35s,
+    background 0.2s ease;
+}
+.add-fab-item:hover {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-strong));
+}
+.add-fab-icon {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 1rem;
+  background: var(--accent);
+}
+.add-fab-item:nth-child(2) .add-fab-icon {
+  background: var(--tone4);
+}
+/* Unfolded: the choices spring out, the nearest one first. */
+.add-fab.open .add-fab-item {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  pointer-events: auto;
+  transition:
+    opacity 0.2s ease,
+    transform 0.35s cubic-bezier(0.32, 1.25, 0.5, 1),
+    visibility 0s,
+    background 0.2s ease;
+}
+.add-fab.open .add-fab-item:nth-child(1) {
+  transition-delay: 0.05s, 0.05s, 0s, 0s;
+}
+@media (max-width: 700px) {
+  .add-fab {
+    right: calc(24px + env(safe-area-inset-right));
+    bottom: calc(28px + env(safe-area-inset-bottom));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .add-fab-item,
+  .add-fab-button svg {
+    transition: none;
+  }
+}
+
+/* ---------- App shell: pages fill the height and scroll inside ---------- */
+/* Each page (main's, and the tab's in a tabbed page) takes the space left and scrolls on its own. */
+main > :not(router-outlet),
+app-tabbed-page > :not(router-outlet, nav, app-add-fab) {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+/* A tabbed page: its tabs stay, its tab's page scrolls. */
+main > app-tabbed-page {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.page-tabs {
+  flex: none;
+}
+
+/* Study (characters, words): the sidebar list and the card scroll separately; the search and
+   filters above the list stay. On phones the page scrolls as one (too narrow for two columns). */
+@media (min-width: 701px) {
+  app-study,
+  app-words {
+    overflow: hidden;
+  }
+  app-study > .view,
+  app-words > .view {
+    height: 100%;
+    min-height: 0;
+  }
+  app-study .sidebar,
+  app-words .sidebar {
+    min-height: 0;
+  }
+  app-study .tiles,
+  app-words .word-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    align-content: start;
+    /* Room for the tiles' shadows and the label tags, which the scrolling would cut off. */
+    margin: -4px;
+    padding: 4px 6px 12px 4px;
+    scrollbar-gutter: stable;
+  }
+  app-character-card,
+  app-words .word-card {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  app-character-card {
+    border-radius: 26px;
   }
 }

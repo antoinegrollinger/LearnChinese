@@ -6,7 +6,7 @@
       [value]="query()"
       (input)="query.set($any($event.target).value)"
     />
-    <div class="filters">
+    <div class="filters segmented" appSlidingThumb role="group" aria-label="Character type">
       @for (f of filters(); track f.key) {
         <button
           type="button"
@@ -36,7 +36,12 @@
         }
       </select>
     }
-    <div class="layout-toggle" role="group" aria-label="Show the characters as">
+    <div
+      class="layout-toggle segmented"
+      appSlidingThumb
+      role="group"
+      aria-label="Show the characters as"
+    >
       <button
         type="button"
         [class.active]="layout() === 'grid'"

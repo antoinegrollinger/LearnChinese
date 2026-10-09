@@ -1,0 +1,236 @@
+<section class="view centered">
+  <div class="about">
+    <!-- Left (one column on phones): what it is, who made it, thanks -->
+    <div class="about-info">
+      <header class="card about-hero">
+        <div class="about-mark" lang="zh" aria-hidden="true">汉字</div>
+        <h2>About Hanzi Workshop</h2>
+        <p class="lead">
+          Learn Chinese characters by understanding how they are built: the part that gives their
+          meaning, the part that gives their sound, and the order of their strokes.
+        </p>
+        <p>
+          Made by <strong>Antoine Grollinger</strong>. Questions, ideas and feedback are welcome at
+          <a [href]="'mailto:' + email">{{ email }}</a
+          >.
+        </p>
+        <div class="buttons">
+          <button type="button" class="primary" (click)="open('contact')">✉ Contact</button>
+          <button type="button" (click)="open('bug')">🐞 Report a bug</button>
+        </div>
+      </header>
+
+      <section class="card">
+        <h3>What you can do</h3>
+        <ul class="feature-list">
+          <li>
+            <span class="feature-icon" lang="zh" aria-hidden="true">字</span>
+            <div>
+              <strong>Study characters</strong>
+              <p>Stroke order, writing practice, meaning and sound components.</p>
+            </div>
+          </li>
+          <li>
+            <span class="feature-icon" lang="zh" aria-hidden="true">词</span>
+            <div>
+              <strong>Collect words</strong>
+              <p>Built from your characters, with meanings from CC-CEDICT.</p>
+            </div>
+          </li>
+          <li>
+            <span class="feature-icon" aria-hidden="true">✍</span>
+            <div>
+              <strong>Review</strong>
+              <p>Write them, or give their pinyin, until each one is right.</p>
+            </div>
+          </li>
+          <li>
+            <span class="feature-icon" aria-hidden="true">📈</span>
+            <div>
+              <strong>Follow your progress</strong>
+              <p>Past reviews, hardest characters, and labels to group them.</p>
+            </div>
+          </li>
+          <li>
+            <span class="feature-icon" aria-hidden="true">👥</span>
+            <div>
+              <strong>Learn with others</strong>
+              <p>Friends, communities, and reviews you choose to share.</p>
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <p class="credits muted">
+        Thanks to
+        <a href="https://hanziwriter.org" target="_blank" rel="noopener">Hanzi Writer</a>,
+        <a href="https://github.com/skishore/makemeahanzi" target="_blank" rel="noopener"
+          >Make Me a Hanzi</a
+        >, <a href="https://cc-cedict.org" target="_blank" rel="noopener">CC-CEDICT</a> (CC BY-SA
+        4.0), <a href="https://github.com/nieldlr/hanzi" target="_blank" rel="noopener">hanzi</a>
+        and
+        <a
+          href="https://github.com/drkameleon/complete-hsk-vocabulary"
+          target="_blank"
+          rel="noopener"
+          >Complete HSK Vocabulary</a
+        >. Hanzi Workshop is open source, under the Apache 2.0 license.
+      </p>
+    </div>
+
+    <section class="card feedback" id="feedback">
+      <div class="segmented feedback-switch" appSlidingThumb role="tablist" aria-label="Form">
+        <button
+          type="button"
+          role="tab"
+          [class.active]="kind() === 'contact'"
+          [attr.aria-selected]="kind() === 'contact'"
+          (click)="setKind('contact')"
+        >
+          ✉ Contact
+        </button>
+        <button
+          type="button"
+          role="tab"
+          [class.active]="kind() === 'bug'"
+          [attr.aria-selected]="kind() === 'bug'"
+          (click)="setKind('bug')"
+        >
+          🐞 Report a bug
+        </button>
+      </div>
+
+      <form class="entry-form feedback-form" novalidate (submit)="$event.preventDefault(); send()">
+        <h2 class="form-title">{{ kind() === 'bug' ? 'Report a bug' : 'Contact' }}</h2>
+        <p class="muted">
+          @if (kind() === 'bug') {
+            Something doesn't work as it should? Tell what happened: it will be looked into.
+          } @else {
+            Send a message to Antoine Grollinger. You will get an answer by email.
+          }
+        </p>
+
+        @if (kind() === 'contact') {
+          <div class="row">
+            <label class="grow">
+              <span>Name <span class="muted">(optional)</span></span>
+              <input
+                autocomplete="name"
+                [maxLength]="limits.name"
+                [value]="draft().name"
+                (input)="update('name', $any($event.target).value)"
+              />
+            </label>
+            <label class="grow">
+              Email address
+              <input
+                type="email"
+                autocomplete="email"
+                [maxLength]="limits.email"
+                [value]="draft().email"
+                [attr.aria-invalid]="!!errors().email"
+                (input)="update('email', $any($event.target).value)"
+              />
+              @if (errors().email; as e) {
+                <span class="field-error">{{ e }}</span>
+              }
+            </label>
+          </div>
+        }
+
+        <label>
+          {{ kind() === 'bug' ? 'What went wrong, in a few words' : 'Subject' }}
+          <input
+            [maxLength]="limits.subject"
+            [placeholder]="kind() === 'bug' ? 'e.g. The review does not start' : ''"
+            [value]="draft().subject"
+            [attr.aria-invalid]="!!errors().subject"
+            (input)="update('subject', $any($event.target).value)"
+          />
+          @if (errors().subject; as e) {
+            <span class="field-error">{{ e }}</span>
+          }
+        </label>
+
+        <label>
+          {{ kind() === 'bug' ? 'What happened' : 'Message' }}
+          <textarea
+            rows="6"
+            [maxLength]="limits.message"
+            [placeholder]="
+              kind() === 'bug' ? 'What you did, what you expected, and what happened instead.' : ''
+            "
+            [value]="draft().message"
+            [attr.aria-invalid]="!!errors().message"
+            (input)="update('message', $any($event.target).value)"
+          ></textarea>
+          @if (errors().message; as e) {
+            <span class="field-error">{{ e }}</span>
+          }
+        </label>
+
+        @if (kind() === 'bug') {
+          <label>
+            <span>Steps to make it happen again <span class="muted">(optional)</span></span>
+            <textarea
+              rows="3"
+              [maxLength]="limits.steps"
+              placeholder="1. Open Review&#10;2. Choose Words&#10;3. …"
+              [value]="draft().steps"
+              (input)="update('steps', $any($event.target).value)"
+            ></textarea>
+          </label>
+          <label>
+            <span
+              >Email address
+              <span class="muted">(optional, if you would like an answer)</span></span
+            >
+            <input
+              type="email"
+              autocomplete="email"
+              [maxLength]="limits.email"
+              [value]="draft().email"
+              [attr.aria-invalid]="!!errors().email"
+              (input)="update('email', $any($event.target).value)"
+            />
+            @if (errors().email; as e) {
+              <span class="field-error">{{ e }}</span>
+            }
+          </label>
+          <details class="bug-context">
+            <summary>Also sent with your report</summary>
+            <dl>
+              @for (c of context(); track c.name) {
+                <div>
+                  <dt>{{ c.name }}</dt>
+                  <dd>{{ c.value }}</dd>
+                </div>
+              }
+            </dl>
+          </details>
+        }
+
+        <!-- Left empty by people; bots that fill in every field are ignored. -->
+        <input
+          class="website-field"
+          name="website"
+          tabindex="-1"
+          autocomplete="off"
+          aria-hidden="true"
+          [value]="draft().website"
+          (input)="update('website', $any($event.target).value)"
+        />
+
+        <div class="buttons form-actions">
+          @if (!loggedIn()) {
+            <a class="button" routerLink="/login">Back to log in</a>
+          }
+          <button type="submit" class="primary" [disabled]="sending()">
+            {{ sending() ? 'Sending…' : kind() === 'bug' ? 'Send the report' : 'Send the message' }}
+          </button>
+        </div>
+        <p class="message" [class]="status().kind" role="status">{{ status().text }}</p>
+      </form>
+    </section>
+  </div>
+</section>

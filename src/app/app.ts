@@ -27,6 +27,7 @@ import { ThemeToggle } from './shared/theme-toggle';
           <a class="button" routerLink="/add" routerLinkActive="active">Add</a>
           <a class="button" routerLink="/friends" routerLinkActive="active">Friends</a>
           <a class="button" routerLink="/communities" routerLinkActive="active">Communities</a>
+          <a class="button" routerLink="/about" routerLinkActive="active">About</a>
         </nav>
         <div class="account">
           <app-theme-toggle />
@@ -58,7 +59,10 @@ import { ThemeToggle } from './shared/theme-toggle';
           </button>
         </div>
       } @else {
-        <div class="account"><app-theme-toggle /></div>
+        <div class="account">
+          <a routerLink="/about" routerLinkActive="active">About</a>
+          <app-theme-toggle />
+        </div>
       }
     </header>
     @if (auth.user(); as user) {

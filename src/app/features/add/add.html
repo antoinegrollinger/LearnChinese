@@ -1,10 +1,12 @@
 <section class="view centered">
-  <form class="add-form" [formGroup]="form" autocomplete="off" (ngSubmit)="save()">
+  <form class="card add-form entry-form" [formGroup]="form" autocomplete="off" (ngSubmit)="save()">
+    <h2 class="form-title">{{ editing() ? 'Edit ' + editing() : 'Add a character' }}</h2>
+
     <fieldset>
       <legend>Find a character by pinyin</legend>
       <input
         type="search"
-        placeholder="ma, ma3, mǎ, nv3… or paste a character"
+        placeholder="ma, mǎ, nv3… or a character"
         [value]="searchQuery()"
         (input)="search($any($event.target).value)"
         (keydown.enter)="$event.preventDefault()"
@@ -67,7 +69,7 @@
       </button>
     </div>
     <div class="row">
-      <label>Pinyin <input formControlName="pinyin" placeholder="ma1 or mā" /></label>
+      <label class="grow">Pinyin <input formControlName="pinyin" placeholder="ma1 or mā" /></label>
       <span class="pinyin-preview"><app-pinyin [text]="pinyinPreview()" /></span>
     </div>
     <label>Meaning <input formControlName="meaning" placeholder="mother" /></label>
@@ -81,7 +83,7 @@
       </select>
     </label>
     <label>
-      Label <span class="muted">(optional, to group and filter your characters)</span>
+      <span>Label <span class="muted">(optional, to group and filter your characters)</span></span>
       <app-label-picker [value]="value().label" (changed)="form.controls.label.setValue($event)" />
     </label>
 
@@ -144,7 +146,7 @@
     </label>
     <label>Notes <textarea formControlName="notes" rows="2"></textarea></label>
 
-    <div class="buttons">
+    <div class="buttons form-actions">
       <button type="button" (click)="clear()">New</button>
       @if (editing()) {
         <button type="button" class="danger" (click)="remove()">Delete</button>

@@ -218,7 +218,7 @@
           <span class="muted typed-preview" aria-live="polite">{{ toPinyin(answer()) }}</span>
         }
 
-        <div class="buttons">
+        <div class="buttons toolbar">
           @if (!done()) {
             <button type="button" [disabled]="meaningShown()" (click)="hint()">
               Hint (meaning)
@@ -275,7 +275,7 @@
           />
         }
 
-        <div class="buttons">
+        <div class="buttons toolbar">
           <button type="button" [disabled]="done()" (click)="hint()">Hint (outline)</button>
           <button type="button" [disabled]="done()" (click)="solution()">Show solution</button>
           <button type="button" title="Pronounce" (click)="speak()">🔊</button>

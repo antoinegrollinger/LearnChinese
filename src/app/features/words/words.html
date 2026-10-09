@@ -42,7 +42,7 @@
     <article class="card word-card">
       <div class="word-card-top">
         <div class="word-big" lang="zh">{{ w.word }}</div>
-        <div class="buttons">
+        <div class="buttons toolbar">
           <button type="button" title="Pronounce" (click)="speak()">🔊</button>
           <a class="button" [routerLink]="['/add/word', w.word]" title="Edit this word">✎ Edit</a>
           <button type="button" class="danger" title="Delete this word" (click)="deleteCurrent()">

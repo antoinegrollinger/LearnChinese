@@ -256,6 +256,26 @@ CREATE TABLE IF NOT EXISTS notifications (
   CONSTRAINT notifications_actor FOREIGN KEY (actor_id) REFERENCES app_user (id) ON DELETE SET NULL
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin;
 
+-- Messages from the About page: contact messages and bug reports (FeedbackMessage in
+-- src/app/core/feedback.model.ts). Anyone can send one, logged in or not (user_id then NULL).
+--   SELECT created_at, kind, email, subject, message FROM feedback ORDER BY created_at DESC;
+CREATE TABLE IF NOT EXISTS feedback (
+  id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  kind       VARCHAR(16) NOT NULL,         -- 'contact' or 'bug'
+  user_id    BIGINT UNSIGNED,
+  name       VARCHAR(100),
+  email      VARCHAR(254),
+  subject    VARCHAR(150) NOT NULL,
+  message    TEXT NOT NULL,
+  steps      TEXT,                         -- bug: how to make it happen again
+  page       VARCHAR(500),                 -- bug: the page the person came from
+  context    VARCHAR(1000),                -- bug: browser, screen size, theme
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY feedback_created (created_at),
+  CONSTRAINT feedback_user FOREIGN KEY (user_id) REFERENCES app_user (id) ON DELETE SET NULL,
+  CONSTRAINT feedback_kind CHECK (kind IN ('contact', 'bug'))
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin;
+
 -- A character with its components by name, for browsing (e.g. in phpMyAdmin or Adminer):
 --   SELECT * FROM character_components_view WHERE hanzi = '妈';
 CREATE OR REPLACE VIEW character_components_view AS

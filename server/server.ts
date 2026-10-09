@@ -1,6 +1,6 @@
 /* API that reads and writes each user's characters and words in MySQL / MariaDB (DATABASE_URL, see
- * store.ts and db/schema.sql). Every route except /api/auth/register and /api/auth/login needs
- * "Authorization: Bearer <token>" from a login (see auth.ts).
+ * store.ts and db/schema.sql). Every route except /api/auth/register, /api/auth/login and
+ * /api/feedback needs "Authorization: Bearer <token>" from a login (see auth.ts).
  *
  *   /api/auth/register, /login, /logout, /me                     accounts and sessions (see auth.ts)
  *   GET    /api/characters             → the list           (same routes for /api/words)
@@ -33,6 +33,8 @@
  *   POST   /api/notifications/read     → marks the updates as read
  *   DELETE /api/notifications/:id      → dismisses one update
  *
+ *   POST   /api/feedback               → About page: contact message or bug report (no login needed)
+ *
  *   GET    /api/lookup/:word           → CC-CEDICT entries for a word (see cedict.ts)
  *
  * During development (npm start) Angular's dev server forwards /api to this server (proxy.conf.json).
@@ -47,6 +49,7 @@ import { AuthError, createAuth } from './auth.ts';
 import { CHARACTERS, ListFile, ROOT, WORDS } from './data-files.ts';
 import { Label, cleanLabel } from '../src/app/core/character.model.ts';
 import { cleanReview } from '../src/app/core/review.model.ts';
+import { createFeedback } from './feedback.ts';
 import { createSocial } from './social.ts';
 import { ListStore, createStores } from './store.ts';
 
@@ -62,6 +65,7 @@ const stores = (() => {
 })();
 const auth = createAuth(stores.pool);
 const social = createSocial(stores.pool, stores.reviews);
+const feedback = createFeedback(stores.pool);
 /** The labels are only in the database (no JSON file). */
 const LABELS: ListFile<Label> = { name: 'labels', key: 'name', clean: cleanLabel };
 /** Set by the host in production (a port number or a socket path); 8642 on your computer. */
@@ -312,6 +316,12 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, url: URL): P
   // "", "api", "characters", ":character" (and "accept", "join"… for friends and communities)
   const [, , resource, param, action] = url.pathname.split('/');
   if (resource === 'auth') return handleAuth(req, res, param);
+  // The About page's forms: for everyone (with the account, when logged in).
+  if (resource === 'feedback' && !param && req.method === 'POST') {
+    const sender = await auth.userOf(bearerToken(req));
+    await feedback.submit(await readJson(req), sender, clientIp(req));
+    return sendJson(res, 200, { ok: true });
+  }
 
   // Everything else: only for a logged-in user, on their own data.
   const user = await auth.userOf(bearerToken(req));
@@ -394,6 +404,7 @@ const onListening = () => {
   const cleanup = () => {
     auth.cleanup().catch(() => {});
     social.cleanup().catch(() => {});
+    feedback.cleanup();
   };
   setInterval(cleanup, 3600 * 1000).unref();
   cleanup();

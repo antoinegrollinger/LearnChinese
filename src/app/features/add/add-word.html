@@ -1,6 +1,12 @@
 <section class="view centered">
-  <!-- Editor -->
-  <form class="card word-editor add-word" [formGroup]="form" autocomplete="off" (ngSubmit)="save()">
+  <form
+    class="card word-editor add-word entry-form"
+    [formGroup]="form"
+    autocomplete="off"
+    (ngSubmit)="save()"
+  >
+    <h2 class="form-title">{{ editing() ? 'Edit ' + editing() : 'Add a word' }}</h2>
+
     @if (editing(); as w) {
       <p class="banner">
         Editing {{ w }} — saving will update it in your list.
@@ -18,7 +24,7 @@
         />
       </label>
       <button type="button" title="Pronounce" (click)="speak()">🔊</button>
-      <button type="button" class="primary" [disabled]="lookupLoading()" (click)="lookUp()">
+      <button type="button" [disabled]="lookupLoading()" (click)="lookUp()">
         🔎 {{ lookupLoading() ? 'Looking up…' : 'Look up meaning' }}
       </button>
     </div>
@@ -116,13 +122,15 @@
     }
 
     <div class="row">
-      <label>Pinyin <input formControlName="pinyin" placeholder="ma1ma5 or māma" /></label>
+      <label class="grow"
+        >Pinyin <input formControlName="pinyin" placeholder="ma1ma5 or māma"
+      /></label>
       <span class="pinyin-preview"><app-pinyin [text]="value().pinyin" /></span>
     </div>
     <label>Meaning <input formControlName="meaning" placeholder="mum" /></label>
     <label>Notes <textarea formControlName="notes" rows="2"></textarea></label>
 
-    <div class="buttons">
+    <div class="buttons form-actions">
       <button type="button" (click)="clear()">New</button>
       @if (editing()) {
         <button type="button" class="danger" (click)="remove()">Delete</button>

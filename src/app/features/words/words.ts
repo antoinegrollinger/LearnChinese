@@ -1,4 +1,13 @@
-import { Component, afterNextRender, computed, inject, input, signal } from '@angular/core';
+import {
+  Component,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CharactersService, errorMessage } from '../../core/characters.service';
 import { stripTones, toPinyin } from '../../core/pinyin';
@@ -56,10 +65,15 @@ export class Words {
 
   constructor() {
     if (this.savedMessage) this.showToast(this.savedMessage);
-    // Bring the selected (e.g. newly added) word into view in the list.
-    afterNextRender(() =>
-      document.querySelector('.word-tile.active')?.scrollIntoView({ block: 'nearest' }),
-    );
+    // The selected word stays in view in the (scrolling) list, e.g. with ← →.
+    const injector = inject(Injector);
+    effect(() => {
+      this.current();
+      afterNextRender(
+        () => document.querySelector('.word-tile.active')?.scrollIntoView({ block: 'nearest' }),
+        { injector },
+      );
+    });
   }
 
   private showToast(text: string, kind?: 'error'): void {

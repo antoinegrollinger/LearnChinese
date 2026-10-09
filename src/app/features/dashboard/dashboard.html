@@ -28,7 +28,7 @@
         <a [routerLink]="reviewLink()">review</a> to see it here.
       </p>
     } @else {
-      <div class="filters" role="group" aria-label="Show the reviews of">
+      <div class="filters segmented" appSlidingThumb role="group" aria-label="Show the reviews of">
         <button
           type="button"
           [class.active]="modeFilter() === 'all'"
@@ -140,7 +140,7 @@
                   </span>
                 }
               </div>
-              <div class="buttons">
+              <div class="buttons toolbar">
                 <button
                   type="button"
                   class="primary"

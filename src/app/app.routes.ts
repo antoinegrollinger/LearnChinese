@@ -1,5 +1,5 @@
 import { Routes, UrlMatcher, UrlSegment } from '@angular/router';
-import { loggedIn, loggedOut } from './core/auth.guard';
+import { anyone, loggedIn, loggedOut } from './core/auth.guard';
 import { Account } from './features/account/account';
 import { Login } from './features/login/login';
 import { Review } from './features/review/review';
@@ -52,7 +52,7 @@ const pages: Routes = [
   {
     path: 'study',
     component: TabbedPage,
-    data: { tabs: STUDY_TABS, label: 'Study' },
+    data: { tabs: STUDY_TABS, label: 'Study', addButton: true },
     children: [
       {
         matcher: withOptionalParam('words', 'word'),
@@ -179,6 +179,13 @@ const pages: Routes = [
 
 export const routes: Routes = [
   { path: 'login', component: Login, canActivate: [loggedOut], title: 'Log in · Hanzi Workshop' },
+  // For everyone, logged in or not (contact and bug report forms).
+  {
+    path: 'about',
+    canActivate: [anyone],
+    loadComponent: () => import('./features/about/about').then((m) => m.About),
+    title: 'About · Hanzi Workshop',
+  },
   // Everything else needs a login.
   {
     path: '',

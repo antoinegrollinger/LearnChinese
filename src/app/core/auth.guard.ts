@@ -9,6 +9,12 @@ export const loggedIn: CanActivateFn = async (_route, state) => {
   return router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
 };
 
+/** Pages for everyone (About): the saved session is restored first, so they know who you are. */
+export const anyone: CanActivateFn = async () => {
+  await inject(AuthService).restore();
+  return true;
+};
+
 /** The login screen: skipped when already logged in. */
 export const loggedOut: CanActivateFn = async () => {
   const router = inject(Router);

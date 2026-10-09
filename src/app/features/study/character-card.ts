@@ -41,6 +41,7 @@ export class CharacterCard {
   private readonly writer = viewChild.required(HanziWriterView);
 
   protected readonly roles = ROLES;
+  /** Practice mode: the faint outline to trace over (hide it to write from memory). */
   protected readonly showOutline = signal(true);
   /** Practice mode stays on when you move to another character (← → or the list). */
   protected readonly practicing = signal(false);
@@ -92,9 +93,22 @@ export class CharacterCard {
   }
 
   protected animate(): void {
-    this.practicing.set(false);
-    this.message.set({ text: '' });
+    this.leavePractice();
     this.writer().animate();
+  }
+
+  /** The Practice button: starts practising, or stops (the character is shown again). */
+  protected togglePractice(): void {
+    if (!this.practicing()) return this.practice();
+    this.leavePractice();
+    this.writer().cancelQuiz();
+  }
+
+  private leavePractice(): void {
+    this.practicing.set(false);
+    // The Outline button is only there while practising: out of it, the outline is back.
+    this.showOutline.set(true);
+    this.message.set({ text: '' });
   }
 
   protected practice(): void {
