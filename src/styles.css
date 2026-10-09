@@ -328,10 +328,12 @@ h3 {
 }
 /* List layout: one row per character. */
 .tiles.as-list {
-  grid-template-columns: 1fr;
+  /* minmax(0, …): a long meaning is cut short instead of widening the list. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 4px;
 }
 .tiles.as-list .tile {
+  min-width: 0;
   flex-direction: row;
   align-items: baseline;
   gap: 8px;
@@ -346,6 +348,7 @@ h3 {
   flex-shrink: 0;
 }
 .tile-meaning {
+  flex: 1;
   font-size: 0.85rem;
   min-width: 0;
   overflow: hidden;
