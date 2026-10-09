@@ -1,0 +1,28 @@
+<div
+  class="add-fab-menu"
+  role="menu"
+  id="add-fab-menu"
+  [attr.aria-label]="'Add' | t"
+  [attr.inert]="open() ? null : ''"
+>
+  <a class="add-fab-item" role="menuitem" routerLink="/add" (click)="close()">
+    <span class="add-fab-icon" lang="zh" aria-hidden="true">字</span> {{ 'Add a character' | t }}
+  </a>
+  <a class="add-fab-item" role="menuitem" routerLink="/add/word" (click)="close()">
+    <span class="add-fab-icon" lang="zh" aria-hidden="true">词</span> {{ 'Add a word' | t }}
+  </a>
+</div>
+<button
+  type="button"
+  class="add-fab-button"
+  aria-haspopup="menu"
+  aria-controls="add-fab-menu"
+  [attr.aria-expanded]="open()"
+  [attr.aria-label]="(open() ? 'Close' : 'Add a character or a word') | t"
+  [title]="(open() ? 'Close' : 'Add a character or a word') | t"
+  (click)="toggleMenu()"
+>
+  <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
+  </svg>
+</button>

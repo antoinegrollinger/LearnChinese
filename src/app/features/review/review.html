@@ -36,7 +36,7 @@
               {{ 'first.' | t }}
             } @else {
               {{ 'No characters yet. Add some on the' | t }}
-              <a routerLink="/add">{{ 'Add' | t }}</a> {{ 'page first.' | t }}
+              <a routerLink="/add">{{ 'Add a 汉字/Word' | t }}</a> {{ 'page first.' | t }}
             }
           </p>
         } @else {
@@ -219,7 +219,9 @@
         <span class="muted"
           >{{ kindInfo[kind()].name | t }} · {{ modeInfo[mode()].icon }}
           {{ modeName(mode(), kind()) }} ·
-          {{ '{done}/{total} validated' | t: { done: validated().size, total: reviewList().length } }}
+          {{
+            '{done}/{total} validated' | t: { done: validated().size, total: reviewList().length }
+          }}
           ·
           <button type="button" class="link" (click)="changeSelection()">
             {{ 'Change selection' | t }}

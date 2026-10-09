@@ -151,7 +151,7 @@ server/store.ts               the lists in MySQL / MariaDB (DATABASE_URL)
 db/schema.sql                 MySQL / MariaDB tables (npm run db:import copies the JSON lists in)
 scripts/                      npm run add-components (adds missing components as characters)
 src/app/
-  app.ts, app.routes.ts       shell (header + tabs) and routes
+  app.ts + app.html, app.routes.ts   shell (header + menu) and routes
   core/
     character.model.ts        CharacterEntry types + cleanEntry() (shared with the server)
     config.ts                 TYPES and ROLES: add your own here
@@ -160,11 +160,18 @@ src/app/
     dictionary.service.ts     pinyin search and auto-fill (Make Me a Hanzi, Jun Da frequency, HSK words)
     stroke-data.service.ts    Hanzi Writer stroke data + which strokes belong to which component
     stats.service.ts          review scores (localStorage)
-  shared/
-    hanzi-writer.ts           <app-hanzi-writer>: animation and drawing practice
-    stroke-svg.ts             <app-stroke-svg>: static drawing with one colour per stroke
-    pinyin.ts                 <app-pinyin>: pinyin coloured by tone
-  features/study | review | add
+    i18n.ts, i18n/fr.ts, nl.ts  translations (English text = key; t(), | t, | tn)
+  shared/                     components used by several pages, one folder each (.ts + .html)
+    hanzi-writer/             <app-hanzi-writer>: animation and drawing practice
+    stroke-svg/               <app-stroke-svg>: static drawing with one colour per stroke
+    pinyin/                   <app-pinyin>: pinyin coloured by tone
+    tabbed-page/, add-fab/, label-picker/, notification-bell/, language-picker/, theme-toggle/, speaker-icon/
+    directives/               appSlidingThumb (segmented controls), appSwipeActions (swipe to delete)
+  features/                   the pages: one folder per feature; when a feature has several
+                              components, one subfolder each (study/character-card/…)
+    study/ (study, character-card, parts-summary), words/, add/ (add, add-word), review/,
+    dashboard/, paper/, friends/ (friends, friend-profile), communities/ (communities,
+    community), about/, account/, login/
 ```
 
 ## Data format

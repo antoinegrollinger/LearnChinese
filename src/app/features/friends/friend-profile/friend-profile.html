@@ -1,0 +1,140 @@
+<section class="view centered">
+  <div class="social-page">
+    <a class="button back-link" routerLink="/friends">← {{ 'Friends' | t }}</a>
+
+    @if (error(); as e) {
+      <p class="banner error">{{ e | tm }}</p>
+    } @else if (profile.isLoading() && !profile.value()) {
+      <p class="muted">{{ 'Loading…' | t }}</p>
+    } @else if (profile.value(); as p) {
+      <div class="dashboard-header">
+        <h2>{{ p.username }}</h2>
+        <span class="muted">{{ 'Friends since {date}' | t: { date: friendsSince() } }}</span>
+      </div>
+
+      <dl class="session-stats">
+        <div>
+          <dt>{{ 'Characters' | t }}</dt>
+          <dd>{{ p.characters }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'Words' | t }}</dt>
+          <dd>{{ p.words }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'Sessions' | t }}</dt>
+          <dd>{{ p.sharesReviews ? rows().length : '—' }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'Right first try' | t }}</dt>
+          <dd>{{ p.sharesReviews && rows().length ? totals().firstTryRate + '%' : '—' }}</dd>
+        </div>
+      </dl>
+
+      @if (!p.sharesReviews) {
+        <p class="muted">
+          {{ "{name} doesn't share their training sessions." | t: { name: p.username } }}
+        </p>
+      } @else if (!rows().length) {
+        <p class="muted">
+          {{
+            (kind() === 'words'
+              ? "{name} hasn't finished a word training session yet."
+              : kind() === 'characters'
+                ? "{name} hasn't finished a character training session yet."
+                : "{name} hasn't finished a training session yet."
+            ) | t: { name: p.username }
+          }}
+        </p>
+      } @else {
+        <h3>
+          {{
+            (kind() === 'words'
+              ? 'Their word training sessions'
+              : kind() === 'characters'
+                ? 'Their character training sessions'
+                : 'Their training sessions'
+            ) | t
+          }}
+        </h3>
+        <p class="muted">
+          {{
+            (kind() === 'words'
+              ? '{n} words trained in {time}. Read only.'
+              : kind() === 'characters'
+                ? '{n} characters trained in {time}. Read only.'
+                : '{n} characters and words trained in {time}. Read only.'
+            ) | t: { n: totals().items, time: totals().time }
+          }}
+        </p>
+        <ul class="sessions">
+          @for (row of rows(); track row.session.id) {
+            <li class="session">
+              <div class="session-top">
+                <div class="session-info">
+                  <strong
+                    >{{ row.date }}
+                    <span class="mode-tag">
+                      @if (kind() === 'all') {
+                        <span lang="zh">{{ kindInfo[row.session.kind].icon }}</span>
+                        {{ kindInfo[row.session.kind].name | t }} ·
+                      }
+                      {{ modeName(row.session.mode, row.session.kind) }}</span
+                    ></strong
+                  >
+                  <span class="muted">
+                    {{ countOf(row.stats.count, row.session.kind) }} ·
+                    {{
+                      '{done}/{total} first try ({rate}%)'
+                        | t
+                          : {
+                              done: row.stats.firstTry,
+                              total: row.stats.count,
+                              rate: row.firstTryRate,
+                            }
+                    }}
+                    · {{ row.stats.mistakes | tn: '{n} mistake' : '{n} mistakes' }} ·
+                    {{ formatDuration(row.stats.seconds) }}
+                  </span>
+                </div>
+                <div class="buttons toolbar">
+                  <button
+                    type="button"
+                    [attr.aria-expanded]="expanded() === row.session.id"
+                    (click)="toggle(row.session.id)"
+                  >
+                    {{ (expanded() === row.session.id ? 'Hide' : 'Details') | t }}
+                  </button>
+                </div>
+              </div>
+              @if (expanded() === row.session.id) {
+                <ul class="session-results" [class.words]="row.session.kind === 'words'" lang="zh">
+                  @for (r of row.session.results; track r.character) {
+                    <li [class.first-try]="r.tries === 1">
+                      <span class="result-char">{{ r.character }}</span>
+                      <small
+                        >{{ r.tries === 1 ? '✓' : '×' + r.tries }}
+                        @if (r.mistakes) {
+                          · {{ r.mistakes | tn: '{n} err' : '{n} err' }}
+                        }
+                      </small>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <p class="session-preview" lang="zh">
+                  @for (r of row.session.results.slice(0, 24); track r.character) {
+                    <span [class.missed-once]="r.tries > 1">{{ r.character }}</span>
+                  }
+                  @if (row.session.results.length > 24) {
+                    <span class="muted">+{{ row.session.results.length - 24 }}</span>
+                  }
+                </p>
+              }
+            </li>
+          }
+        </ul>
+      }
+    }
+  </div>
+</section>

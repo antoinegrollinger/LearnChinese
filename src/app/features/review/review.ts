@@ -34,10 +34,10 @@ import { StatsService } from '../../core/stats.service';
 import { WordsService } from '../../core/words.service';
 import { MessagePipe, PluralPipe, TranslatePipe, t } from '../../core/i18n';
 import { countOf, modeName } from '../../core/review-texts';
-import { HanziWriterView } from '../../shared/hanzi-writer';
-import { SpeakerIcon } from '../../shared/speaker-icon';
-import { Pinyin } from '../../shared/pinyin';
-import { PartsSummary } from '../study/parts-summary';
+import { HanziWriterView } from '../../shared/hanzi-writer/hanzi-writer';
+import { SpeakerIcon } from '../../shared/speaker-icon/speaker-icon';
+import { Pinyin } from '../../shared/pinyin/pinyin';
+import { PartsSummary } from '../study/parts-summary/parts-summary';
 
 /** Fisher–Yates shuffle (returns a new array). */
 function shuffle<T>(items: T[]): T[] {
@@ -296,11 +296,14 @@ export class Review {
     const list = this.reviewList();
     const seen = list.filter((item) => stats[item.text]);
     const perfect = seen.filter((item) => stats[item.text].perfect > 0).length;
-    return t('{seen}/{total} characters trained · {perfect} written without mistakes at least once', {
-      seen: seen.length,
-      total: list.length,
-      perfect,
-    });
+    return t(
+      '{seen}/{total} characters trained · {perfect} written without mistakes at least once',
+      {
+        seen: seen.length,
+        total: list.length,
+        perfect,
+      },
+    );
   });
 
   /** "Write the character", "Give the pinyin"… */

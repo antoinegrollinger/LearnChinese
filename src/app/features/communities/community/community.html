@@ -1,0 +1,234 @@
+<section class="view centered">
+  <div class="social-page">
+    <a class="button back-link" routerLink="/communities">← {{ 'Communities' | t }}</a>
+
+    @if (community.error(); as err) {
+      <p class="banner error">
+        {{
+          isNotFound(err)
+            ? ('This community does not exist (any more).' | t)
+            : ('Could not load it: {error}' | t: { error: errorMessage(err) })
+        }}
+      </p>
+    } @else if (community.isLoading() && !community.value()) {
+      <p class="muted">{{ 'Loading…' | t }}</p>
+    } @else if (community.value(); as c) {
+      <div class="dashboard-header">
+        <h2>
+          {{ c.name }}
+          @if (c.role && c.role !== 'member') {
+            <span class="mode-tag">{{
+              (c.role === 'owner' ? 'You are the owner' : 'You are an admin') | t
+            }}</span>
+          }
+        </h2>
+        <div class="buttons">
+          @if (isOwner() && !settingsOpen()) {
+            <button type="button" (click)="openSettings()">{{ 'Settings' | t }}</button>
+          }
+          @if (c.joined) {
+            <button type="button" [disabled]="busy()" (click)="leave()">{{ 'Leave' | t }}</button>
+          } @else if (c.pending) {
+            <span class="mode-tag">{{ 'Request pending' | t }}</span>
+            <button type="button" [disabled]="busy()" (click)="cancelRequest()">
+              {{ 'Withdraw request' | t }}
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="primary"
+              [disabled]="busy() || !auth.user()?.username"
+              (click)="join()"
+            >
+              {{ (c.joinPolicy === 'approval' ? 'Request to join' : 'Join') | t }}
+            </button>
+          }
+        </div>
+      </div>
+      @if (c.description) {
+        <p class="community-description">{{ c.description }}</p>
+      }
+      <p class="muted">
+        {{ c.memberCount | tn: '{n} member' : '{n} members' }} ·
+        <span [class.friends-inside]="c.friendCount > 0">{{
+          c.friendCount | tn: '{n} of your friends' : '{n} of your friends'
+        }}</span>
+        · {{ (c.joinPolicy === 'approval' ? 'New members need approval' : 'Anyone can join') | t }}
+      </p>
+      <p class="message" [class]="status().kind" role="status">{{ status().text | tm }}</p>
+
+      @if (settingsOpen()) {
+        <form class="community-settings" (submit)="$event.preventDefault(); saveSettings()">
+          <h3>{{ 'Settings' | t }}</h3>
+          <label>
+            {{ 'Description' | t }}
+            <textarea
+              rows="2"
+              [maxLength]="descriptionMax"
+              [value]="draft().description"
+              (input)="updateDraft({ description: $any($event.target).value })"
+            ></textarea>
+          </label>
+          <fieldset>
+            <legend>{{ 'Who can join' | t }}</legend>
+            @for (p of joinPolicies; track p[0]) {
+              <label class="checkbox">
+                <input
+                  type="radio"
+                  name="joinPolicy"
+                  [checked]="draft().joinPolicy === p[0]"
+                  (change)="updateDraft({ joinPolicy: p[0] })"
+                />
+                {{ p[1] | t }}
+              </label>
+            }
+          </fieldset>
+          <fieldset>
+            <legend>{{ 'Member list' | t }}</legend>
+            @for (v of memberLists; track v[0]) {
+              <label class="checkbox">
+                <input
+                  type="radio"
+                  name="memberList"
+                  [checked]="draft().memberList === v[0]"
+                  (change)="updateDraft({ memberList: v[0] })"
+                />
+                {{ v[1] | t }}
+              </label>
+            }
+          </fieldset>
+          <p class="muted">
+            {{
+              'Admins approve or reject join requests and remove regular members. Name them in the member list below.'
+                | t
+            }}
+          </p>
+          <div class="buttons">
+            <button type="button" (click)="settingsOpen.set(false)">{{ 'Cancel' | t }}</button>
+            <button type="submit" class="primary" [disabled]="busy()">
+              {{ 'Save settings' | t }}
+            </button>
+          </div>
+        </form>
+      }
+
+      @if (c.requests; as requests) {
+        <h3>{{ 'Join requests' | t }} ({{ requests.length }})</h3>
+        @if (requests.length) {
+          <ul class="people">
+            @for (r of requests; track r.username) {
+              <li>
+                <span class="person"
+                  ><strong>{{ r.username }}</strong>
+                  <span class="muted"
+                    >{{ 'asked {date}' | t: { date: date(r.at) }
+                    }}{{ r.relation === 'friend' ? ' · ' + ('your friend' | t) : '' }}</span
+                  ></span
+                >
+                <div class="buttons">
+                  <button
+                    type="button"
+                    class="primary"
+                    [disabled]="busy()"
+                    (click)="answer(r.username, true)"
+                  >
+                    {{ 'Approve' | t }}
+                  </button>
+                  <button type="button" [disabled]="busy()" (click)="answer(r.username, false)">
+                    {{ 'Reject' | t }}
+                  </button>
+                </div>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="muted">
+            {{
+              (c.joinPolicy === 'approval'
+                ? 'No one is waiting. New requests also appear in your notifications.'
+                : 'Anyone can join, so there are no requests to answer.'
+              ) | t
+            }}
+          </p>
+        }
+      }
+
+      @if (c.members; as members) {
+        <h3>{{ 'Members' | t }}</h3>
+        <ul class="people">
+          @for (m of members; track m.username) {
+            <li>
+              <span class="person"
+                ><strong
+                  >{{ m.username }}
+                  @if (m.role !== 'member') {
+                    <span class="mode-tag">{{ roleNames[m.role] | t }}</span>
+                  }
+                </strong></span
+              >
+              <div class="buttons">
+                @switch (m.relation) {
+                  @case ('me') {
+                    <span class="muted">{{ 'you' | t }}</span>
+                  }
+                  @case ('friend') {
+                    <a class="button" [routerLink]="['/friends', m.username]">{{
+                      'Friend · View' | t
+                    }}</a>
+                  }
+                  @case ('outgoing') {
+                    <span class="mode-tag">{{ 'Request sent' | t }}</span>
+                  }
+                  @case ('incoming') {
+                    <button
+                      type="button"
+                      class="primary"
+                      [disabled]="busy()"
+                      (click)="addFriend(m)"
+                    >
+                      {{ 'Accept their request' | t }}
+                    </button>
+                  }
+                  @default {
+                    <button type="button" [disabled]="busy()" (click)="addFriend(m)">
+                      {{ '+ Add friend' | t }}
+                    </button>
+                  }
+                }
+                @if (isOwner() && m.relation !== 'me') {
+                  @if (m.role === 'member') {
+                    <button type="button" [disabled]="busy()" (click)="setRole(m, 'admin')">
+                      {{ 'Make admin' | t }}
+                    </button>
+                  } @else if (m.role === 'admin') {
+                    <button type="button" [disabled]="busy()" (click)="setRole(m, 'member')">
+                      {{ 'Remove admin' | t }}
+                    </button>
+                    <button type="button" [disabled]="busy()" (click)="setRole(m, 'owner')">
+                      {{ 'Make owner' | t }}
+                    </button>
+                  }
+                }
+                @if (canRemove(m)) {
+                  <button
+                    type="button"
+                    class="danger"
+                    [disabled]="busy()"
+                    (click)="removeMember(m)"
+                  >
+                    {{ 'Remove' | t }}
+                  </button>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="muted">
+          {{ 'Only members see who the members are.' | t }}
+          {{ (c.pending ? 'Your request is waiting for an answer.' : 'Join to see them.') | t }}
+        </p>
+      }
+    }
+  </div>
+</section>

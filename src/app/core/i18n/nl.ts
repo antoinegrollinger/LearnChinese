@@ -10,6 +10,7 @@ export const NL: Record<string, string> = {
   'Train on paper': 'Oefenen op papier',
   Dashboard: 'Dashboard',
   Add: 'Toevoegen',
+  'Add a 汉字/Word': 'Een 汉字/Woord toevoegen',
   Friends: 'Vrienden',
   Communities: 'Gemeenschappen',
   About: 'Over',

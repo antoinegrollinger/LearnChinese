@@ -18,7 +18,9 @@
           >.
         </p>
         <div class="buttons">
-          <button type="button" class="primary" (click)="open('contact')">{{ 'Contact' | t }}</button>
+          <button type="button" class="primary" (click)="open('contact')">
+            {{ 'Contact' | t }}
+          </button>
           <button type="button" (click)="open('bug')">{{ 'Report a bug' | t }}</button>
         </div>
       </header>
@@ -51,7 +53,9 @@
             <span class="feature-icon" lang="zh" aria-hidden="true">进</span>
             <div>
               <strong>{{ 'Follow your progress' | t }}</strong>
-              <p>{{ 'Past training sessions, hardest characters, and labels to group them.' | t }}</p>
+              <p>
+                {{ 'Past training sessions, hardest characters, and labels to group them.' | t }}
+              </p>
             </div>
           </li>
           <li>
@@ -82,7 +86,12 @@
     </div>
 
     <section class="card feedback" id="feedback">
-      <div class="segmented feedback-switch" appSlidingThumb role="tablist" [attr.aria-label]="'Form' | t">
+      <div
+        class="segmented feedback-switch"
+        appSlidingThumb
+        role="tablist"
+        [attr.aria-label]="'Form' | t"
+      >
         <button
           type="button"
           role="tab"
@@ -107,7 +116,9 @@
         <h2 class="form-title">{{ (kind() === 'bug' ? 'Report a bug' : 'Contact') | t }}</h2>
         <p class="muted">
           @if (kind() === 'bug') {
-            {{ "Something doesn't work as it should? Tell what happened: it will be looked into." | t }}
+            {{
+              "Something doesn't work as it should? Tell what happened: it will be looked into." | t
+            }}
           } @else {
             {{ 'Send a message to Antoine Grollinger. You will get an answer by email.' | t }}
           }
@@ -116,7 +127,9 @@
         @if (kind() === 'contact') {
           <div class="row">
             <label class="grow">
-              <span>{{ 'Name' | t }} <span class="muted">{{ '(optional)' | t }}</span></span>
+              <span
+                >{{ 'Name' | t }} <span class="muted">{{ '(optional)' | t }}</span></span
+              >
               <input
                 autocomplete="name"
                 [maxLength]="limits.name"

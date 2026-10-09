@@ -1,0 +1,3 @@
+@for (s of segments(); track $index) {
+  <span [class]="s.tone ? 'tone' + s.tone : ''">{{ s.text }}</span>
+}

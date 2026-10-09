@@ -3,10 +3,8 @@
     <div class="dashboard-header">
       <h2>
         {{
-          (kind() === 'words'
-            ? 'Your word training sessions'
-            : 'Your character training sessions'
-          ) | t
+          (kind() === 'words' ? 'Your word training sessions' : 'Your character training sessions')
+            | t
         }}
       </h2>
       <div class="buttons">

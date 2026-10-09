@@ -1,0 +1,12 @@
+<select
+  class="language-picker"
+  [attr.aria-label]="'Language' | t"
+  [title]="'Language' | t"
+  (change)="choose($any($event.target).value)"
+>
+  @for (l of languages; track l.code) {
+    <option [value]="l.code" [selected]="l.code === current" [title]="l.name">
+      {{ l.short }}
+    </option>
+  }
+</select>

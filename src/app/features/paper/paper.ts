@@ -7,7 +7,7 @@ import { MessagePipe, PluralPipe, TranslatePipe, t } from '../../core/i18n';
 import { readSetting, writeSetting } from '../../core/settings';
 import { StrokeDataService } from '../../core/stroke-data.service';
 import { WordsService } from '../../core/words.service';
-import { SlidingThumb } from '../../shared/sliding-thumb';
+import { SlidingThumb } from '../../shared/directives/sliding-thumb';
 import { sheetPdf } from './pdf';
 import {
   DEFAULT_SHEET_OPTIONS,

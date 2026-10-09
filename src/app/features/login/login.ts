@@ -94,7 +94,9 @@ export class Login {
       this.form.reset();
       const target = this.returnUrl();
       // Only paths inside the app.
-      this.router.navigateByUrl(target?.startsWith('/') && !target.startsWith('//') ? target : '/study');
+      this.router.navigateByUrl(
+        target?.startsWith('/') && !target.startsWith('//') ? target : '/study',
+      );
     } catch (err) {
       this.form.controls.password.reset();
       this.form.controls.confirm.reset();

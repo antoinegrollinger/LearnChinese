@@ -1,0 +1,166 @@
+<section class="view centered">
+  <div class="social-page">
+    <div class="dashboard-header">
+      <h2>{{ 'Communities' | t }}</h2>
+      <a class="button" routerLink="/friends">{{ 'Your friends' | t }} →</a>
+    </div>
+    <p class="muted">
+      {{
+        'Join communities to meet other learners and add them as friends. You see how many of your friends are already in each one.'
+          | t
+      }}
+    </p>
+
+    <div class="community-browse">
+      <div
+        class="layout-toggle segmented"
+        appSlidingThumb
+        role="group"
+        [attr.aria-label]="'Show' | t"
+      >
+        <button
+          type="button"
+          [class.active]="scope() === 'mine'"
+          [attr.aria-pressed]="scope() === 'mine'"
+          (click)="setScope('mine')"
+        >
+          {{ 'Yours' | t }}
+        </button>
+        <button
+          type="button"
+          [class.active]="scope() === 'all'"
+          [attr.aria-pressed]="scope() === 'all'"
+          (click)="setScope('all')"
+        >
+          {{ 'All communities' | t }}
+        </button>
+      </div>
+      <input
+        type="search"
+        [attr.aria-label]="
+          (scope() === 'all' ? 'Search all communities' : 'Search your communities') | t
+        "
+        [placeholder]="
+          (scope() === 'all' ? 'Search all communities: HSK 1, Paris…' : 'Search your communities')
+            | t
+        "
+        [value]="query()"
+        (input)="onQuery($any($event.target).value)"
+      />
+    </div>
+
+    <h3>
+      {{ (scope() === 'all' ? 'All communities' : 'Your communities') | t }}
+      @if (!loading()) {
+        <span class="muted">({{ results().length }})</span>
+      }
+    </h3>
+    @if (results().length) {
+      <ul class="people">
+        @for (c of results(); track c.name) {
+          <!-- The whole pill opens the community (its link covers it); the buttons stay on top. -->
+          <li class="clickable">
+            <a class="person" [routerLink]="['/communities', c.name]">
+              <strong>{{ c.name }}</strong>
+              @if (c.description) {
+                <span class="community-description">{{ c.description }}</span>
+              }
+              <span class="muted"
+                >{{ c.memberCount | tn: '{n} member' : '{n} members' }} ·
+                <span [class.friends-inside]="c.friendCount > 0">{{
+                  c.friendCount | tn: '{n} of your friends' : '{n} of your friends'
+                }}</span></span
+              >
+            </a>
+            <div class="buttons">
+              @if (c.joinPolicy === 'approval') {
+                <span class="mode-tag" [title]="'An owner or admin approves each new member' | t">{{
+                  'Approval' | t
+                }}</span>
+              }
+              @if (c.joined) {
+                <span class="mode-tag">{{
+                  (c.role === 'member' ? 'Joined ✓' : roleNames[c.role!]) | t
+                }}</span>
+              } @else if (c.pending) {
+                <span class="mode-tag">{{ 'Requested…' | t }}</span>
+              } @else {
+                <button
+                  type="button"
+                  class="primary"
+                  [disabled]="busy() || !auth.user()?.username"
+                  (click)="join(c)"
+                >
+                  {{ (c.joinPolicy === 'approval' ? 'Request to join' : 'Join') | t }}
+                </button>
+              }
+            </div>
+          </li>
+        }
+      </ul>
+    } @else if (!loading()) {
+      <p class="muted">
+        @if (query().trim()) {
+          @if (scope() === 'mine') {
+            {{ 'No community with this name among yours.' | t }}
+            <button type="button" class="link" (click)="setScope('all')">
+              {{ 'Search all communities' | t }}
+            </button>
+          } @else {
+            {{ 'No community with this name. Create it below!' | t }}
+          }
+        } @else if (scope() === 'mine') {
+          {{ "You haven't joined a community yet." | t }}
+          <button type="button" class="link" (click)="setScope('all')">
+            {{ 'See all communities' | t }}
+          </button>
+          {{ 'or create one below.' | t }}
+        } @else {
+          {{ 'There is no community yet: create the first one below!' | t }}
+        }
+      </p>
+    }
+
+    <h3>{{ 'Create a community' | t }}</h3>
+    @if (!auth.user()?.username) {
+      <p class="banner">
+        {{ 'Choose a username first:' | t }} <a routerLink="/account">{{ 'Account' | t }} →</a>
+      </p>
+    } @else {
+      <form class="create-community" (submit)="$event.preventDefault(); create()">
+        <input
+          [attr.aria-label]="'Name of the community' | t"
+          [placeholder]="'Name (3 to 64 characters)' | t"
+          [maxLength]="nameMax"
+          [value]="newName()"
+          (input)="newName.set($any($event.target).value)"
+        />
+        <textarea
+          [attr.aria-label]="'Description (optional)' | t"
+          [placeholder]="'Description (optional)' | t"
+          rows="2"
+          [maxLength]="descriptionMax"
+          [value]="newDescription()"
+          (input)="newDescription.set($any($event.target).value)"
+        ></textarea>
+        <label class="checkbox">
+          <input
+            type="checkbox"
+            [checked]="newNeedsApproval()"
+            (change)="newNeedsApproval.set($any($event.target).checked)"
+          />
+          {{ 'New members need your approval' | t }}
+        </label>
+        <p class="muted">
+          {{
+            'You will be its owner: you can change its settings and name admins at any time.' | t
+          }}
+        </p>
+        <button type="submit" class="primary" [disabled]="busy() || !newName().trim()">
+          {{ 'Create and join' | t }}
+        </button>
+      </form>
+    }
+    <p class="message" [class]="status().kind" role="status">{{ status().text | tm }}</p>
+  </div>
+</section>

@@ -2,9 +2,9 @@ import { Routes, UrlMatcher, UrlSegment } from '@angular/router';
 import { anyone, loggedIn, loggedOut } from './core/auth.guard';
 import { Account } from './features/account/account';
 import { Login } from './features/login/login';
-import { Study } from './features/study/study';
+import { Study } from './features/study/study/study';
 import { Words } from './features/words/words';
-import { PageTab, TabbedPage } from './shared/tabbed-page';
+import { PageTab, TabbedPage } from './shared/tabbed-page/tabbed-page';
 
 /** Matches "/prefix" and "/prefix/:name" with one route, so the page is kept when the parameter changes. */
 function withOptionalParam(prefix: string, name: string): UrlMatcher {
@@ -70,18 +70,18 @@ const pages: Routes = [
   {
     path: 'add',
     component: TabbedPage,
-    data: { tabs: ADD_TABS, label: 'Add' },
+    data: { tabs: ADD_TABS, label: 'Add a 汉字/Word' },
     children: [
       // Loaded when first opened (keeps the first download small).
       {
         matcher: withOptionalParam('word', 'word'),
-        loadComponent: () => import('./features/add/add-word').then((m) => m.AddWord),
-        title: 'Word · Add · Hanzi Workshop',
+        loadComponent: () => import('./features/add/add-word/add-word').then((m) => m.AddWord),
+        title: 'Word · Add a 汉字/Word · Hanzi Workshop',
       },
       {
         matcher: optionalParamExcept('word', 'character'),
-        loadComponent: () => import('./features/add/add').then((m) => m.Add),
-        title: 'Character · Add · Hanzi Workshop',
+        loadComponent: () => import('./features/add/add/add').then((m) => m.Add),
+        title: 'Character · Add a 汉字/Word · Hanzi Workshop',
       },
     ],
   },
@@ -141,7 +141,7 @@ const pages: Routes = [
   },
   {
     path: 'friends',
-    loadComponent: () => import('./features/friends/friends').then((m) => m.Friends),
+    loadComponent: () => import('./features/friends/friends/friends').then((m) => m.Friends),
     title: 'Friends · Hanzi Workshop',
   },
   // A friend: all their reviews (/friends/:username), or those of their characters or words.
@@ -153,21 +153,27 @@ const pages: Routes = [
       {
         path: 'characters',
         loadComponent: () =>
-          import('./features/friends/friend-profile').then((m) => m.FriendProfilePage),
+          import('./features/friends/friend-profile/friend-profile').then(
+            (m) => m.FriendProfilePage,
+          ),
         data: { kind: 'characters' },
         title: 'Characters · Friend · Hanzi Workshop',
       },
       {
         path: 'words',
         loadComponent: () =>
-          import('./features/friends/friend-profile').then((m) => m.FriendProfilePage),
+          import('./features/friends/friend-profile/friend-profile').then(
+            (m) => m.FriendProfilePage,
+          ),
         data: { kind: 'words' },
         title: 'Words · Friend · Hanzi Workshop',
       },
       {
         path: '',
         loadComponent: () =>
-          import('./features/friends/friend-profile').then((m) => m.FriendProfilePage),
+          import('./features/friends/friend-profile/friend-profile').then(
+            (m) => m.FriendProfilePage,
+          ),
         data: { kind: 'all' },
         title: 'Friend · Hanzi Workshop',
       },
@@ -175,12 +181,14 @@ const pages: Routes = [
   },
   {
     path: 'communities',
-    loadComponent: () => import('./features/communities/communities').then((m) => m.Communities),
+    loadComponent: () =>
+      import('./features/communities/communities/communities').then((m) => m.Communities),
     title: 'Communities · Hanzi Workshop',
   },
   {
     path: 'communities/:name',
-    loadComponent: () => import('./features/communities/community').then((m) => m.CommunityPage),
+    loadComponent: () =>
+      import('./features/communities/community/community').then((m) => m.CommunityPage),
     title: 'Community · Hanzi Workshop',
   },
   { path: 'account', component: Account, title: 'Account · Hanzi Workshop' },

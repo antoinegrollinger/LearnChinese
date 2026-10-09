@@ -23,7 +23,7 @@ import {
 import { FeedbackService } from '../../core/feedback.service';
 import { ThemeService } from '../../core/theme.service';
 import { MessagePipe, TranslatePipe, t } from '../../core/i18n';
-import { SlidingThumb } from '../../shared/sliding-thumb';
+import { SlidingThumb } from '../../shared/directives/sliding-thumb';
 
 export const CONTACT_EMAIL = 'contact@grolltech.be';
 

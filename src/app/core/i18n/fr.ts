@@ -10,6 +10,7 @@ export const FR: Record<string, string> = {
   'Train on paper': "S'entraîner sur papier",
   Dashboard: 'Tableau de bord',
   Add: 'Ajouter',
+  'Add a 汉字/Word': 'Ajouter un 汉字/Mot',
   Friends: 'Amis',
   Communities: 'Communautés',
   About: 'À propos',

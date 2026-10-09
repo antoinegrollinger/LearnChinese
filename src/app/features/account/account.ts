@@ -9,41 +9,7 @@ import { MessagePipe, TranslatePipe, t } from '../../core/i18n';
 @Component({
   selector: 'app-account',
   imports: [ReactiveFormsModule, TranslatePipe, MessagePipe],
-  template: `
-    <section class="view centered">
-      <form class="login-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
-        <h2>{{ 'Account' | t }}</h2>
-        <label>
-          {{ 'Email address' | t }}
-          <input type="email" [value]="auth.user()?.email ?? ''" disabled />
-        </label>
-        <label>
-          {{ 'Username' | t }}
-          <input
-            type="text"
-            formControlName="username"
-            autocomplete="username"
-            autocapitalize="none"
-            spellcheck="false"
-            maxlength="32"
-            [attr.aria-invalid]="!!error()"
-            aria-describedby="username-error"
-          />
-          @if (error(); as e) {
-            <span class="field-error" id="username-error">{{ e | tm }}</span>
-          } @else {
-            <span class="muted">{{
-              '3–32 letters, digits, ".", "_" or "-". Unique; you can log in with it.' | t
-            }}</span>
-          }
-        </label>
-        <p class="message" [class]="status().kind" role="status">{{ status().text | tm }}</p>
-        <button type="submit" class="primary" [disabled]="busy()">
-          {{ (auth.user()?.username ? 'Change username' : 'Save username') | t }}
-        </button>
-      </form>
-    </section>
-  `,
+  templateUrl: './account.html',
 })
 export class Account {
   protected readonly auth = inject(AuthService);
@@ -63,7 +29,10 @@ export class Account {
     try {
       const user = await this.auth.setUsername(username);
       this.form.setValue({ username: user.username ?? '' });
-      this.status.set({ text: t('Saved: you can now log in as {name}.', { name: user.username ?? '' }), kind: 'ok' });
+      this.status.set({
+        text: t('Saved: you can now log in as {name}.', { name: user.username ?? '' }),
+        kind: 'ok',
+      });
     } catch (err) {
       const message = err instanceof HttpErrorResponse ? err.error?.error : null;
       if (message) this.error.set(message);

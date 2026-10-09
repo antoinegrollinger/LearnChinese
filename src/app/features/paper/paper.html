@@ -125,7 +125,12 @@
 
       <div class="paper-field">
         <span>{{ 'Box size' | t }}</span>
-        <div class="layout-toggle segmented" appSlidingThumb role="group" [attr.aria-label]="'Box size' | t">
+        <div
+          class="layout-toggle segmented"
+          appSlidingThumb
+          role="group"
+          [attr.aria-label]="'Box size' | t"
+        >
           @for (s of sizes; track s.boxes) {
             <button
               type="button"
@@ -179,7 +184,9 @@
           downloading()
             ? ('Making the PDF…' | t)
             : ('Download the PDF' | t) +
-              (pages().length > 1 ? ' (' + (pages().length | tn: '{n} page' : '{n} pages') + ')' : '')
+              (pages().length > 1
+                ? ' (' + (pages().length | tn: '{n} page' : '{n} pages') + ')'
+                : '')
         }}
       </button>
       @if (error(); as e) {

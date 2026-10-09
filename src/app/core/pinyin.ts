@@ -102,3 +102,37 @@ export function checkPinyin(
       .replace(/[\u0300-\u036f]/g, '');
   return readings.some((r) => noTone(r) === noTone(given)) ? 'tone' : 'wrong';
 }
+
+/** For sorting: the first reading without tones ("hǎo / hào" → "hao"), and the tones of its marks. */
+function pinyinSortKey(text: string | undefined): { letters: string; tones: string } | null {
+  const reading = toPinyin(String(text ?? '').split(/[,/;]/)[0])
+    .trim()
+    .toLowerCase();
+  if (!reading) return null;
+  // ü sorts right after u (lu, lü, luan), as in dictionaries: u + a character before "a".
+  const letters = stripTones(reading.replace(/[ǖǘǚǜü]/g, 'u\u0001')).replace(/[^a-z\u0001]/g, '');
+  let tones = '';
+  for (const ch of reading) {
+    const tone = toneOf(ch);
+    if (tone < 5) tones += tone;
+  }
+  return { letters, tones };
+}
+
+/**
+ * Alphabetical order of pinyin: the letters first (a → z, ü after u), then the tones (mā, má, mǎ,
+ * mà, ma). Entries without pinyin go last. Use as a sort comparator on pinyin texts.
+ */
+export function comparePinyin(a: string | undefined, b: string | undefined): number {
+  const ka = pinyinSortKey(a);
+  const kb = pinyinSortKey(b);
+  if (!ka || !kb) return ka ? -1 : kb ? 1 : 0;
+  if (ka.letters !== kb.letters) return ka.letters < kb.letters ? -1 : 1;
+  // Tone by tone; a syllable without a mark (neutral tone, 5) comes after the marked ones.
+  for (let i = 0; i < Math.max(ka.tones.length, kb.tones.length); i++) {
+    const ta = ka.tones[i] ?? '5';
+    const tb = kb.tones[i] ?? '5';
+    if (ta !== tb) return ta < tb ? -1 : 1;
+  }
+  return 0;
+}

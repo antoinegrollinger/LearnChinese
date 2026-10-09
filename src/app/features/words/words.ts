@@ -10,17 +10,17 @@ import {
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CharactersService, errorMessage } from '../../core/characters.service';
-import { stripTones, toPinyin } from '../../core/pinyin';
+import { comparePinyin, stripTones, toPinyin } from '../../core/pinyin';
 import { speak } from '../../core/speech';
 import { WordEntry } from '../../core/word.model';
 import { TranslatePipe, t } from '../../core/i18n';
 import { LabelsService } from '../../core/labels.service';
 import { WordsService } from '../../core/words.service';
 import { readSetting, writeSetting } from '../../core/settings';
-import { LabelPicker } from '../../shared/label-picker';
-import { SpeakerIcon } from '../../shared/speaker-icon';
-import { Pinyin } from '../../shared/pinyin';
-import { SlidingThumb } from '../../shared/sliding-thumb';
+import { LabelPicker } from '../../shared/label-picker/label-picker';
+import { SpeakerIcon } from '../../shared/speaker-icon/speaker-icon';
+import { Pinyin } from '../../shared/pinyin/pinyin';
+import { SlidingThumb } from '../../shared/directives/sliding-thumb';
 
 const LAYOUT_KEY = 'hanzi-workshop-words-layout';
 
@@ -75,10 +75,17 @@ export class Words {
     this.labelFilter.set(value === 'all' ? null : value === 'none' ? '' : value.slice(1));
   }
 
+  /** Your words in the alphabetical order of their pinyin (then by word). */
+  private readonly sorted = computed(() =>
+    [...this.words.list()].sort(
+      (a, b) => comparePinyin(a.pinyin, b.pinyin) || a.word.localeCompare(b.word),
+    ),
+  );
+
   protected readonly visible = computed(() => {
     const q = stripTones(this.query().trim()).toLowerCase();
     const label = this.labelFilter();
-    return this.words.list().filter((w) => {
+    return this.sorted().filter((w) => {
       if (label !== null && (w.label ?? '') !== label) return false;
       if (!q) return true;
       return stripTones([w.word, w.pinyin, toPinyin(w.pinyin), w.meaning, w.label].join(' '))
@@ -89,7 +96,7 @@ export class Words {
 
   /** The word from the URL, or the first one. */
   protected readonly current = computed<WordEntry | undefined>(
-    () => this.words.find(this.word()) ?? this.words.list()[0],
+    () => this.words.find(this.word()) ?? this.sorted()[0],
   );
 
   /** Each character of the word, with your data when it's one of your characters. */

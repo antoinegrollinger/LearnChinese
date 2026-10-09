@@ -1,0 +1,18 @@
+<nav class="page-tabs" appSlidingThumb [attr.aria-label]="label | t">
+  @for (tab of tabs(); track tab.path) {
+    <a
+      [routerLink]="lastUrl()[tab.path]"
+      [class.active]="active() === tab.path"
+      [attr.aria-current]="active() === tab.path ? 'page' : null"
+    >
+      <span lang="zh" aria-hidden="true">{{ tab.icon }}</span> {{ tab.name | t }}
+      @if (tab.count) {
+        <span class="tab-count">{{ countOf(tab.count) }}</span>
+      }
+    </a>
+  }
+</nav>
+<router-outlet />
+@if (addButton) {
+  <app-add-fab />
+}

@@ -1,0 +1,13 @@
+@for (group of groups(); track group.label) {
+  {{ group.label | t }}
+  @for (part of group.parts; track $index) {
+    @if (!$first) {
+      +
+    }
+    <b>{{ part.character }}</b> <app-pinyin [text]="part.pinyin" />
+    @if (part.meaning) {
+      “{{ part.meaning }}”
+    }
+  }
+  .
+}

@@ -1,0 +1,7 @@
+<svg [attr.width]="size()" [attr.height]="size()">
+  <g [attr.transform]="transform()">
+    @for (d of strokes(); track $index) {
+      <path [attr.d]="d" [style.fill]="colors()[$index] || 'var(--ink)'" />
+    }
+  </g>
+</svg>

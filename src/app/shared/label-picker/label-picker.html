@@ -1,0 +1,37 @@
+@if (adding()) {
+  <input
+    type="color"
+    [title]="'Colour of the label' | t"
+    [value]="newColor()"
+    (input)="newColor.set($any($event.target).value)"
+  />
+  <input
+    #name
+    [placeholder]="'New label (HSK 1, food…)' | t"
+    [maxLength]="maxLength"
+    (keydown.enter)="$event.preventDefault(); create(name.value)"
+    (keydown.escape)="adding.set(false)"
+  />
+  <button type="button" (click)="create(name.value)">{{ 'OK' | t }}</button>
+  <button type="button" (click)="adding.set(false)">{{ 'Cancel' | t }}</button>
+} @else {
+  @if (value(); as label) {
+    <input
+      type="color"
+      [title]="'Colour of {label} (for all its characters and words)' | t: { label }"
+      [value]="labels.colorOf(label)"
+      [disabled]="disabled()"
+      (change)="setColor(label, $any($event.target).value)"
+    />
+  }
+  <select [disabled]="disabled()" (change)="pick($any($event.target))">
+    <option value="" [selected]="!value()">{{ '— no label —' | t }}</option>
+    @for (l of options(); track l) {
+      <option [value]="'=' + l" [selected]="l === value()">{{ l }}</option>
+    }
+    <option value="new">{{ '+ New label…' | t }}</option>
+  </select>
+}
+@if (error(); as e) {
+  <span class="error">{{ e }}</span>
+}
