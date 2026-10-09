@@ -1486,13 +1486,38 @@ button.link {
 
 html {
   min-height: 100%;
+  /* Room for the scrollbar on every page, so the layout doesn't move sideways when it appears. */
+  scrollbar-gutter: stable;
 }
 body {
-  min-height: 100vh;
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+/* The whole app is at least the height of the window (not more: the header's margin stays inside),
+   and the page fills what's left under the header. */
+app-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+/* The login box: in the middle of that space. */
+main > app-login {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+app-login > .view {
+  flex: 1;
+  align-items: center;
+}
+
 /* The coloured light behind the glass (fixed, also on iOS where background-attachment isn't). */
 body::before {
   content: '';
@@ -2005,22 +2030,28 @@ a:hover {
   transform: scale(0.94);
 }
 
-/* A new page: fades in and rises a little. The page's component is the element inserted next to
+/* A new page: fades in and zooms in a little. The page's component is the element inserted next to
    the router outlet (main's, and the tab's inside Study, Review…). */
-main > :not(router-outlet),
+main > :not(router-outlet, app-login),
 app-tabbed-page > :not(router-outlet, nav) {
   display: block;
+}
+main > :not(router-outlet),
+app-tabbed-page > :not(router-outlet, nav) {
   /* backwards: nothing stays applied after it (a transform would move fixed toasts). */
+  transform-origin: 50% 0;
   animation: page-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
 }
 /* The tabbed page itself only fades: its own tab's page does the rising. */
 main > app-tabbed-page {
   animation-name: page-fade;
 }
+/* A slight zoom from the top: always within the page's own size, so it never adds a scrollbar
+   (moving it down would, for a moment, on pages as tall as the window). */
 @keyframes page-in {
   from {
     opacity: 0;
-    transform: translateY(8px) scale(0.995);
+    transform: scale(0.985);
   }
 }
 @keyframes page-fade {
