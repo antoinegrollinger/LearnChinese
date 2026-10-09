@@ -1960,6 +1960,75 @@ a:hover {
   justify-content: flex-start;
 }
 
+/* ----- Motion, iOS style ----- */
+/* Segmented controls (SlidingThumb): the glass thumb slides to the selected item with a little
+   spring, under the items; the selected item itself is then transparent. */
+.has-thumb {
+  position: relative;
+  isolation: isolate;
+}
+.thumb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  border-radius: 999px;
+  background: var(--surface-strong);
+  border: 1px solid var(--glass-rim);
+  box-shadow: var(--glass-sheen), 0 2px 8px rgb(0 0 0 / 0.1);
+  pointer-events: none;
+  transition:
+    transform 0.5s cubic-bezier(0.32, 1.25, 0.5, 1),
+    width 0.5s cubic-bezier(0.32, 1.25, 0.5, 1),
+    height 0.5s cubic-bezier(0.32, 1.25, 0.5, 1),
+    opacity 0.2s ease;
+}
+.thumb.instant {
+  transition: none;
+}
+.has-thumb > a.active,
+.has-thumb > a.button.active {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+/* Pressing an item: it gives a little, like on iOS. */
+.tabs a.button,
+.page-tabs a {
+  transition:
+    color 0.3s ease,
+    background 0.25s ease,
+    transform 0.2s ease;
+}
+.tabs a.button:active,
+.page-tabs a:active {
+  transform: scale(0.94);
+}
+
+/* A new page: fades in and rises a little. The page's component is the element inserted next to
+   the router outlet (main's, and the tab's inside Study, Review…). */
+main > :not(router-outlet),
+app-tabbed-page > :not(router-outlet, nav) {
+  display: block;
+  /* backwards: nothing stays applied after it (a transform would move fixed toasts). */
+  animation: page-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+/* The tabbed page itself only fades: its own tab's page does the rising. */
+main > app-tabbed-page {
+  animation-name: page-fade;
+}
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.995);
+  }
+}
+@keyframes page-fade {
+  from {
+    opacity: 0;
+  }
+}
+
 /* ----- Fallbacks ----- */
 /* No backdrop-filter, or the system asks for less transparency: solid surfaces. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -1990,8 +2059,17 @@ a:hover {
   textarea,
   .tabs a.button,
   .page-tabs a,
-  .theme-toggle svg {
+  .theme-toggle svg,
+  .thumb {
     transition: none;
+  }
+  main > :not(router-outlet),
+  app-tabbed-page > :not(router-outlet, nav) {
+    animation: none;
+  }
+  .tabs a.button:active,
+  .page-tabs a:active {
+    transform: none;
   }
   button:hover:not(:disabled),
   a.button:hover,

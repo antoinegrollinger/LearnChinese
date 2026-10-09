@@ -2,6 +2,7 @@ import { Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
+import { SlidingThumb } from './sliding-thumb';
 import { CharactersService } from '../core/characters.service';
 import { ReviewsService } from '../core/reviews.service';
 import { WordsService } from '../core/words.service';
@@ -28,9 +29,9 @@ export interface PageTab {
  */
 @Component({
   selector: 'app-tabbed-page',
-  imports: [RouterOutlet, RouterLink],
+  imports: [RouterOutlet, RouterLink, SlidingThumb],
   template: `
-    <nav class="page-tabs" [attr.aria-label]="label">
+    <nav class="page-tabs" appSlidingThumb [attr.aria-label]="label">
       @for (tab of tabs(); track tab.path) {
         <a
           [routerLink]="lastUrl()[tab.path]"

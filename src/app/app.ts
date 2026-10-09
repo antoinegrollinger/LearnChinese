@@ -3,16 +3,24 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/auth.service';
 import { CharactersService } from './core/characters.service';
 import { NotificationBell } from './shared/notification-bell';
+import { SlidingThumb } from './shared/sliding-thumb';
 import { ThemeToggle } from './shared/theme-toggle';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, NotificationBell, ThemeToggle],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    NotificationBell,
+    SlidingThumb,
+    ThemeToggle,
+  ],
   template: `
     <header class="header">
       <h1><span class="logo">汉字</span> Workshop</h1>
       @if (auth.user(); as user) {
-        <nav class="tabs">
+        <nav class="tabs" appSlidingThumb>
           <a class="button" routerLink="/study" routerLinkActive="active">Study</a>
           <a class="button" routerLink="/review" routerLinkActive="active">Review</a>
           <a class="button" routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
