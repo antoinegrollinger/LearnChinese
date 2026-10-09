@@ -14,9 +14,10 @@ import {
   ROLE_NAMES,
   canModerate,
 } from '../../core/social.model';
+import { MessagePipe, PluralPipe, TranslatePipe, locale, t } from '../../core/i18n';
 import { SocialService, isNotFound } from '../../core/social.service';
 
-const DATE_FORMAT = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' });
+const DATE_FORMAT = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' });
 
 /**
  * One community (/communities/:name): join or ask to join, its members (add them as friends),
@@ -24,7 +25,7 @@ const DATE_FORMAT = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 
  */
 @Component({
   selector: 'app-community',
-  imports: [RouterLink],
+  imports: [RouterLink, TranslatePipe, PluralPipe, MessagePipe],
   templateUrl: './community.html',
 })
 export class CommunityPage {
@@ -103,24 +104,24 @@ export class CommunityPage {
       () => this.social.join(this.name()),
       (c) =>
         c?.joined
-          ? 'Welcome! You can now see the members.'
-          : 'Request sent: an owner or admin will answer it.',
+          ? t('Welcome! You can now see the members.')
+          : t('Request sent: an owner or admin will answer it.'),
     );
   }
 
   protected cancelRequest(): void {
-    this.run(() => this.social.cancelJoinRequest(this.name()), 'Request withdrawn.');
+    this.run(() => this.social.cancelJoinRequest(this.name()), t('Request withdrawn.'));
   }
 
   protected leave(): void {
     const c = this.community.value();
     const note =
       c?.memberCount === 1
-        ? ' You are its last member: it will be deleted.'
+        ? ' ' + t('You are its last member: it will be deleted.')
         : c?.role === 'owner'
-          ? ' An admin (or else the longest-standing member) will become the owner.'
+          ? ' ' + t('An admin (or else the longest-standing member) will become the owner.')
           : '';
-    if (!confirm(`Leave ${c?.name ?? this.name()}?${note}`)) return;
+    if (!confirm(t('Leave {community}?', { community: c?.name ?? this.name() }) + note)) return;
     this.run(async () => {
       await this.social.leave(this.name());
       this.router.navigate(['/communities']);
@@ -138,8 +139,8 @@ export class CommunityPage {
       (c) => {
         const relation = c?.members?.find((m) => m.username === member.username)?.relation;
         return relation === 'friend'
-          ? `You and ${member.username} are now friends ✓`
-          : `Request sent to ${member.username} ✓`;
+          ? t('You and {name} are now friends ✓', { name: member.username })
+          : t('Request sent to {name} ✓', { name: member.username });
       },
     );
   }
@@ -148,7 +149,9 @@ export class CommunityPage {
   protected answer(username: string, approve: boolean): void {
     this.run(
       () => this.social.answerJoinRequest(this.name(), username, approve),
-      approve ? `${username} is now a member ✓` : `Rejected ${username}'s request.`,
+      approve
+        ? t('{name} is now a member ✓', { name: username })
+        : t("Rejected {name}'s request.", { name: username }),
     );
   }
 
@@ -159,10 +162,13 @@ export class CommunityPage {
   }
 
   protected removeMember(member: CommunityMember): void {
-    if (!confirm(`Remove ${member.username} from ${this.community.value()?.name}?`)) return;
+    const community = this.community.value()?.name ?? this.name();
+    if (!confirm(t('Remove {name} from {community}?', { name: member.username, community }))) {
+      return;
+    }
     this.run(
       () => this.social.removeMember(this.name(), member.username),
-      `${member.username} was removed.`,
+      t('{name} was removed.', { name: member.username }),
     );
   }
 
@@ -170,17 +176,20 @@ export class CommunityPage {
     if (
       role === 'owner' &&
       !confirm(
-        `Make ${member.username} the owner of ${this.community.value()?.name}? You will become an admin.`,
+        t('Make {name} the owner of {community}? You will become an admin.', {
+          name: member.username,
+          community: this.community.value()?.name ?? this.name(),
+        }),
       )
     ) {
       return;
     }
     const text =
       role === 'owner'
-        ? `${member.username} is now the owner; you are an admin.`
+        ? t('{name} is now the owner; you are an admin.', { name: member.username })
         : role === 'admin'
-          ? `${member.username} is now an admin ✓`
-          : `${member.username} is now a regular member.`;
+          ? t('{name} is now an admin ✓', { name: member.username })
+          : t('{name} is now a regular member.', { name: member.username });
     this.run(() => this.social.setRole(this.name(), member.username, role), text);
   }
 
@@ -206,7 +215,9 @@ export class CommunityPage {
       (this.community.value()?.requests?.length ?? 0) > 0;
     if (
       opening &&
-      !confirm('Anyone can now join: the people waiting for an answer will join at once. Continue?')
+      !confirm(
+        t('Anyone can now join: the people waiting for an answer will join at once. Continue?'),
+      )
     ) {
       return;
     }
@@ -214,6 +225,6 @@ export class CommunityPage {
       const detail = await this.social.updateCommunity(this.name(), this.draft());
       this.settingsOpen.set(false);
       return detail;
-    }, 'Settings saved ✓');
+    }, t('Settings saved ✓'));
   }
 }

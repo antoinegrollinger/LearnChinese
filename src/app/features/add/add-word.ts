@@ -13,6 +13,7 @@ import {
   joinPinyin,
   meaningOf,
 } from '../../core/words.service';
+import { MessagePipe, TranslatePipe, t } from '../../core/i18n';
 import { LabelPicker } from '../../shared/label-picker';
 import { SpeakerIcon } from '../../shared/speaker-icon';
 import { Pinyin } from '../../shared/pinyin';
@@ -23,7 +24,15 @@ import { Pinyin } from '../../shared/pinyin';
  */
 @Component({
   selector: 'app-add-word',
-  imports: [ReactiveFormsModule, Pinyin, RouterLink, LabelPicker, SpeakerIcon],
+  imports: [
+    ReactiveFormsModule,
+    Pinyin,
+    RouterLink,
+    LabelPicker,
+    SpeakerIcon,
+    TranslatePipe,
+    MessagePipe,
+  ],
   templateUrl: './add-word.html',
 })
 export class AddWord {
@@ -139,7 +148,7 @@ export class AddWord {
       const { pinyin, meaning } = this.form.getRawValue();
       if (result.exact.length === 1 && !pinyin && !meaning) this.useEntry(result.exact[0]);
     } catch (err) {
-      this.lookupError.set(`Lookup failed: ${errorMessage(err)}`);
+      this.lookupError.set(t('Lookup failed: {error}', { error: errorMessage(err) }));
     } finally {
       this.lookupLoading.set(false);
     }
@@ -178,10 +187,10 @@ export class AddWord {
       const { entry: saved, created } = await this.words.save(entry);
       // To the Words tab of Study, showing the saved word.
       this.router.navigate(['/study/words', saved.word], {
-        state: { saved: `${created ? 'Added' : 'Updated'} ${saved.word} ✓` },
+        state: { saved: t(created ? 'Added {item} ✓' : 'Updated {item} ✓', { item: saved.word }) },
       });
     } catch (err) {
-      this.status.set({ text: `Save failed: ${errorMessage(err)}`, kind: 'error' });
+      this.status.set({ text: t('Save failed: {error}', { error: errorMessage(err) }), kind: 'error' });
     } finally {
       this.saving.set(false);
     }
@@ -189,13 +198,13 @@ export class AddWord {
 
   protected async remove(): Promise<void> {
     const word = this.editing();
-    if (!word || !confirm(`Delete ${word} from your words?`)) return;
+    if (!word || !confirm(t('Delete {word} from your words?', { word }))) return;
     try {
       await this.words.remove(word);
       this.clear();
-      this.status.set({ text: `Deleted ${word}.`, kind: 'ok' });
+      this.status.set({ text: t('Deleted {item}.', { item: word }), kind: 'ok' });
     } catch (err) {
-      this.status.set({ text: `Delete failed: ${errorMessage(err)}`, kind: 'error' });
+      this.status.set({ text: t('Delete failed: {error}', { error: errorMessage(err) }), kind: 'error' });
     }
   }
 

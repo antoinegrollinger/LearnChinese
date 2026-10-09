@@ -1,13 +1,13 @@
 <section class="view centered">
   <form class="login-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
-    <h2>{{ title() }}</h2>
+    <h2>{{ title() | t }}</h2>
 
     @if (expired() && mode() === 'login') {
-      <p class="banner">Your session has ended. Please log in again.</p>
+      <p class="banner">{{ 'Your session has ended. Please log in again.' | t }}</p>
     }
 
     <label>
-      {{ mode() === 'login' ? 'Email address or username' : 'Email address' }}
+      {{ (mode() === 'login' ? 'Email address or username' : 'Email address') | t }}
       <input
         [attr.type]="mode() === 'login' ? 'text' : 'email'"
         formControlName="email"
@@ -15,18 +15,20 @@
         [attr.inputmode]="mode() === 'login' ? null : 'email'"
         autocapitalize="none"
         spellcheck="false"
-        [attr.placeholder]="mode() === 'login' ? 'name@example.com or username' : 'name@example.com'"
+        [attr.placeholder]="
+          (mode() === 'login' ? 'name@example.com or username' : 'name@example.com') | t
+        "
         [attr.aria-invalid]="!!fieldError('email')"
         aria-describedby="email-error"
       />
       @if (fieldError('email'); as e) {
-        <span class="field-error" id="email-error">{{ e }}</span>
+        <span class="field-error" id="email-error">{{ e | tm }}</span>
       }
     </label>
 
     @if (mode() === 'register') {
       <label>
-        Username
+        {{ 'Username' | t }}
         <input
           type="text"
           formControlName="username"
@@ -38,15 +40,17 @@
           aria-describedby="username-error"
         />
         @if (fieldError('username'); as e) {
-          <span class="field-error" id="username-error">{{ e }}</span>
+          <span class="field-error" id="username-error">{{ e | tm }}</span>
         } @else {
-          <span class="muted">3–32 letters, digits, ".", "_" or "-". Unique; you can log in with it.</span>
+          <span class="muted">{{
+            '3–32 letters, digits, ".", "_" or "-". Unique; you can log in with it.' | t
+          }}</span>
         }
       </label>
     }
 
     <label>
-      Password
+      {{ 'Password' | t }}
       <input
         type="password"
         formControlName="password"
@@ -55,15 +59,17 @@
         aria-describedby="password-error"
       />
       @if (fieldError('password'); as e) {
-        <span class="field-error" id="password-error">{{ e }}</span>
+        <span class="field-error" id="password-error">{{ e | tm }}</span>
       } @else if (mode() === 'register') {
-        <span class="muted">At least {{ passwordMin }} characters, with letters and a digit or symbol.</span>
+        <span class="muted">{{
+          'At least {n} characters, with letters and a digit or symbol.' | t: { n: passwordMin }
+        }}</span>
       }
     </label>
 
     @if (mode() === 'register') {
       <label>
-        Repeat the password
+        {{ 'Repeat the password' | t }}
         <input
           type="password"
           formControlName="confirm"
@@ -72,26 +78,28 @@
           aria-describedby="confirm-error"
         />
         @if (fieldError('confirm'); as e) {
-          <span class="field-error" id="confirm-error">{{ e }}</span>
+          <span class="field-error" id="confirm-error">{{ e | tm }}</span>
         }
       </label>
     }
 
     @if (serverError(); as e) {
-      <p class="message error" role="alert">{{ e }}</p>
+      <p class="message error" role="alert">{{ e | tm }}</p>
     }
 
     <button type="submit" class="primary" [disabled]="busy()">
-      {{ busy() ? 'Please wait…' : title() }}
+      {{ busy() ? ('Please wait…' | t) : (title() | t) }}
     </button>
 
     <p class="muted switch">
       @if (mode() === 'login') {
-        No account yet?
-        <button type="button" class="link" (click)="switchMode('register')">Create one</button>
+        {{ 'No account yet?' | t }}
+        <button type="button" class="link" (click)="switchMode('register')">
+          {{ 'Create one' | t }}
+        </button>
       } @else {
-        Already have an account?
-        <button type="button" class="link" (click)="switchMode('login')">Log in</button>
+        {{ 'Already have an account?' | t }}
+        <button type="button" class="link" (click)="switchMode('login')">{{ 'Log in' | t }}</button>
       }
     </p>
   </form>

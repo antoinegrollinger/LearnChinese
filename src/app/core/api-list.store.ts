@@ -2,6 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { effect, inject, signal, untracked } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from './auth.service';
+import { t, translateMessage } from './i18n';
 
 export interface SaveResult<T> {
   entry: T;
@@ -44,8 +45,10 @@ export abstract class ApiListStore<T> {
       if (err instanceof HttpErrorResponse && err.status === 401) return; // back to the login screen
       const url = err instanceof HttpErrorResponse && err.url ? err.url : this.url;
       this.error.set(
-        `Could not reach the server (${url}): ${errorMessage(err)}. ` +
-          'On your computer, start the app with "npm start"; online, check apiUrl in config.json.',
+        t(
+          'Could not reach the server ({url}): {error}. On your computer, start the app with "npm start"; online, check apiUrl in config.json.',
+          { url, error: errorMessage(err) },
+        ),
       );
     } finally {
       this.loaded.set(true);
@@ -73,8 +76,8 @@ export abstract class ApiListStore<T> {
   }
 }
 
-/** Readable message for a failed API call. */
+/** Readable message for a failed API call (translated when it is one of the known messages). */
 export function errorMessage(err: unknown): string {
-  if (err instanceof HttpErrorResponse) return err.error?.error ?? err.message;
-  return err instanceof Error ? err.message : String(err);
+  if (err instanceof HttpErrorResponse) return translateMessage(err.error?.error ?? err.message);
+  return translateMessage(err instanceof Error ? err.message : String(err));
 }

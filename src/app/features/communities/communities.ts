@@ -10,6 +10,7 @@ import {
   communityNameError,
 } from '../../core/social.model';
 import { SocialService } from '../../core/social.service';
+import { MessagePipe, PluralPipe, TranslatePipe, t } from '../../core/i18n';
 import { SlidingThumb } from '../../shared/sliding-thumb';
 
 /**
@@ -18,7 +19,7 @@ import { SlidingThumb } from '../../shared/sliding-thumb';
  */
 @Component({
   selector: 'app-communities',
-  imports: [RouterLink, SlidingThumb],
+  imports: [RouterLink, SlidingThumb, TranslatePipe, PluralPipe, MessagePipe],
   templateUrl: './communities.html',
 })
 export class Communities {
@@ -79,7 +80,10 @@ export class Communities {
       if (token === this.searchToken) this.results.set(results);
     } catch (err) {
       if (token === this.searchToken) {
-        this.status.set({ text: `Search failed: ${errorMessage(err)}`, kind: 'error' });
+        this.status.set({
+          text: t('Search failed: {error}', { error: errorMessage(err) }),
+          kind: 'error',
+        });
       }
     } finally {
       if (token === this.searchToken) this.loading.set(false);
@@ -96,12 +100,14 @@ export class Communities {
           list.map((c) => (c.name === community.name ? { ...c, pending: true } : c)),
         );
         this.status.set({
-          text: `Request sent: an owner or admin of ${community.name} will answer it.`,
+          text: t('Request sent: an owner or admin of {community} will answer it.', {
+            community: community.name,
+          }),
           kind: 'ok',
         });
       }
     } catch (err) {
-      this.status.set({ text: `Could not join: ${errorMessage(err)}`, kind: 'error' });
+      this.status.set({ text: t('Could not join: {error}', { error: errorMessage(err) }), kind: 'error' });
     } finally {
       this.busy.set(false);
     }

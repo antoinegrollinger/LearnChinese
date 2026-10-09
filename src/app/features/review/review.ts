@@ -32,6 +32,8 @@ import { readSetting, writeSetting } from '../../core/settings';
 import { speak } from '../../core/speech';
 import { StatsService } from '../../core/stats.service';
 import { WordsService } from '../../core/words.service';
+import { MessagePipe, PluralPipe, TranslatePipe, t } from '../../core/i18n';
+import { countOf, modeName } from '../../core/review-texts';
 import { HanziWriterView } from '../../shared/hanzi-writer';
 import { SpeakerIcon } from '../../shared/speaker-icon';
 import { Pinyin } from '../../shared/pinyin';
@@ -104,7 +106,16 @@ interface Attempts {
  */
 @Component({
   selector: 'app-review',
-  imports: [HanziWriterView, Pinyin, PartsSummary, RouterLink, SpeakerIcon],
+  imports: [
+    HanziWriterView,
+    Pinyin,
+    PartsSummary,
+    RouterLink,
+    SpeakerIcon,
+    TranslatePipe,
+    PluralPipe,
+    MessagePipe,
+  ],
   templateUrl: './review.html',
 })
 export class Review {
@@ -285,8 +296,22 @@ export class Review {
     const list = this.reviewList();
     const seen = list.filter((item) => stats[item.text]);
     const perfect = seen.filter((item) => stats[item.text].perfect > 0).length;
-    return `${seen.length}/${list.length} characters trained · ${perfect} written without mistakes at least once`;
+    return t('{seen}/{total} characters trained · {perfect} written without mistakes at least once', {
+      seen: seen.length,
+      total: list.length,
+      perfect,
+    });
   });
+
+  /** "Write the character", "Give the pinyin"… */
+  protected modeName(mode: ReviewMode, kind: ReviewKind = this.kind()): string {
+    return modeName(mode, kind);
+  }
+
+  /** "3 characters", "1 word"… */
+  protected countOf(count: number, kind: ReviewKind = this.kind()): string {
+    return countOf(count, kind);
+  }
 
   constructor() {
     // Once the list of the current kind is loaded: the dashboard's replay, else the last
@@ -449,12 +474,15 @@ export class Review {
         ...(attempts.get(item.text) ?? { tries: 0, mistakes: 0 }),
       })),
     };
-    this.saveStatus.set({ text: 'Saving to your history…' });
+    this.saveStatus.set({ text: t('Saving to your history…') });
     try {
       await this.reviews.save(session);
-      this.saveStatus.set({ text: 'Saved to your history ✓', kind: 'ok' });
+      this.saveStatus.set({ text: t('Saved to your history ✓'), kind: 'ok' });
     } catch (err) {
-      this.saveStatus.set({ text: `Could not save it: ${errorMessage(err)}`, kind: 'error' });
+      this.saveStatus.set({
+        text: t('Could not save it: {error}', { error: errorMessage(err) }),
+        kind: 'error',
+      });
     }
   }
 
@@ -486,8 +514,12 @@ export class Review {
     this.message.set({
       text:
         result === 'tone'
-          ? `Right ${this.kind() === 'words' ? 'syllables' : 'syllable'}, wrong tone. Try again…`
-          : 'Not quite… Try again.',
+          ? t(
+              this.kind() === 'words'
+                ? 'Right syllables, wrong tone. Try again…'
+                : 'Right syllable, wrong tone. Try again…',
+            )
+          : t('Not quite… Try again.'),
       kind: 'error',
     });
     this.focusAnswer();
@@ -503,9 +535,12 @@ export class Review {
     const index = this.writeIndex();
     writer.quiz({
       showHintAfterMisses: 3,
-      onMistake: () => this.message.set({ text: 'Not quite…', kind: 'error' }),
+      onMistake: () => this.message.set({ text: t('Not quite…'), kind: 'error' }),
       onCorrectStroke: (s) =>
-        this.message.set({ text: `✓ ${s.strokesRemaining} stroke(s) left`, kind: 'ok' }),
+        this.message.set({
+          text: t('✓ {n} stroke(s) left', { n: s.strokesRemaining }),
+          kind: 'ok',
+        }),
       onComplete: ({ totalMistakes }) => {
         if (index === this.writeIndex()) this.charWritten(totalMistakes);
       },
@@ -518,7 +553,9 @@ export class Review {
     if (this.writeIndex() < this.cardChars().length - 1) {
       this.writeIndex.update((i) => i + 1);
       this.message.set({
-        text: mistakes ? `${mistakes} mistake(s). Next character…` : '✓ Next character…',
+        text: mistakes
+          ? t('{n} mistake(s). Next character…', { n: mistakes })
+          : t('✓ Next character…'),
         kind: mistakes ? undefined : 'ok',
       });
     } else {
@@ -531,10 +568,10 @@ export class Review {
     if (!this.card() || this.done()) return;
     const ch = this.currentChar();
     if (this.writeIndex() < this.cardChars().length - 1) {
-      this.message.set({ text: `No stroke data for ${ch}: skipped.` });
+      this.message.set({ text: t('No stroke data for {char}: skipped.', { char: ch }) });
       this.writeIndex.update((i) => i + 1);
     } else {
-      this.message.set({ text: `No stroke data for ${ch}.` });
+      this.message.set({ text: t('No stroke data for {char}.', { char: ch }) });
       this.finish(this.cardMistakes);
     }
   }
@@ -562,12 +599,12 @@ export class Review {
         ? {
             text:
               this.mode() === 'pinyin'
-                ? 'Say it out loud a few times, it will come back soon.'
-                : 'Watch the stroke order carefully, it will come back soon.',
+                ? t('Say it out loud a few times, it will come back soon.')
+                : t('Watch the stroke order carefully, it will come back soon.'),
           }
         : mistakes
-          ? { text: `Done with ${mistakes} mistake(s).` }
-          : { text: 'Perfect!', kind: 'ok' },
+          ? { text: t('Done with {n} mistake(s).', { n: mistakes }) }
+          : { text: t('Perfect!'), kind: 'ok' },
     );
   }
 

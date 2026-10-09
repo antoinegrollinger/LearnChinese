@@ -2,6 +2,7 @@ import { Component, ElementRef, Injector, afterNextRender, inject, signal } from
 import { NavigationStart, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs';
+import { TranslatePipe } from '../core/i18n';
 
 /**
  * Floating "+" (Study page): unfolds into a menu to add a character (/add) or a word (/add/word).
@@ -9,7 +10,7 @@ import { filter } from 'rxjs';
  */
 @Component({
   selector: 'app-add-fab',
-  imports: [RouterLink],
+  imports: [RouterLink, TranslatePipe],
   host: {
     class: 'add-fab',
     '[class.open]': 'open()',
@@ -21,14 +22,14 @@ import { filter } from 'rxjs';
       class="add-fab-menu"
       role="menu"
       id="add-fab-menu"
-      aria-label="Add"
+      [attr.aria-label]="'Add' | t"
       [attr.inert]="open() ? null : ''"
     >
       <a class="add-fab-item" role="menuitem" routerLink="/add" (click)="close()">
-        <span class="add-fab-icon" lang="zh" aria-hidden="true">字</span> Add a character
+        <span class="add-fab-icon" lang="zh" aria-hidden="true">字</span> {{ 'Add a character' | t }}
       </a>
       <a class="add-fab-item" role="menuitem" routerLink="/add/word" (click)="close()">
-        <span class="add-fab-icon" lang="zh" aria-hidden="true">词</span> Add a word
+        <span class="add-fab-icon" lang="zh" aria-hidden="true">词</span> {{ 'Add a word' | t }}
       </a>
     </div>
     <button
@@ -37,8 +38,8 @@ import { filter } from 'rxjs';
       aria-haspopup="menu"
       aria-controls="add-fab-menu"
       [attr.aria-expanded]="open()"
-      [attr.aria-label]="open() ? 'Close' : 'Add a character or a word'"
-      [title]="open() ? 'Close' : 'Add a character or a word'"
+      [attr.aria-label]="(open() ? 'Close' : 'Add a character or a word') | t"
+      [title]="(open() ? 'Close' : 'Add a character or a word') | t"
       (click)="toggleMenu()"
     >
       <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">

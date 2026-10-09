@@ -1,27 +1,27 @@
 <section class="view centered">
   <div class="social-page">
     <div class="dashboard-header">
-      <h2>Friends</h2>
+      <h2>{{ 'Friends' | t }}</h2>
       <a class="button" routerLink="/communities" [queryParams]="{ show: 'all' }"
-        >Discover communities →</a
+        >{{ 'Discover communities' | t }} →</a
       >
     </div>
 
     @if (!auth.user()?.username) {
       <p class="banner">
-        Choose a username first, so your friends can find you:
-        <a routerLink="/account">Account →</a>
+        {{ 'Choose a username first, so your friends can find you:' | t }}
+        <a routerLink="/account">{{ 'Account' | t }} →</a>
       </p>
     } @else {
       <p class="muted">
-        Your username is <strong>{{ auth.user()?.username }}</strong
-        >: your friends add you with it.
+        {{ 'Your username is' | t }} <strong>{{ auth.user()?.username }}</strong
+        >{{ ': your friends add you with it.' | t }}
       </p>
 
       <form class="add-friend" (submit)="$event.preventDefault(); addFriend()">
         <input
-          aria-label="Username of your friend"
-          placeholder="Username of your friend"
+          [attr.aria-label]="'Username of your friend' | t"
+          [placeholder]="'Username of your friend' | t"
           autocomplete="off"
           autocapitalize="none"
           spellcheck="false"
@@ -30,10 +30,10 @@
           (input)="username.set($any($event.target).value)"
         />
         <button type="submit" class="primary" [disabled]="busy() || !username().trim()">
-          Send a friend request
+          {{ 'Send a friend request' | t }}
         </button>
       </form>
-      <p class="message" [class]="status().kind" role="status">{{ status().text }}</p>
+      <p class="message" [class]="status().kind" role="status">{{ status().text | tm }}</p>
 
       <label class="share-setting">
         <input
@@ -43,23 +43,25 @@
           (change)="setShare($any($event.target).checked)"
         />
         <span>
-          <strong>Share my training sessions with my friends</strong>
+          <strong>{{ 'Share my training sessions with my friends' | t }}</strong>
           <span class="muted"
-            >They can then see your training history (read only). They always see how many
-            characters and words you have.</span
+            >{{
+              'They can then see your training history (read only). They always see how many characters and words you have.'
+                | t
+            }}</span
           >
         </span>
       </label>
     }
 
     @if (social.overview().incoming.length) {
-      <h3>Friend requests</h3>
+      <h3>{{ 'Friend requests' | t }}</h3>
       <ul class="people">
         @for (r of social.overview().incoming; track r.username) {
           <li>
             <span class="person"
               ><strong>{{ r.username }}</strong>
-              <span class="muted">wants to be your friend · {{ date(r.at) }}</span></span
+              <span class="muted">{{ 'wants to be your friend' | t }} · {{ date(r.at) }}</span></span
             >
             <div class="buttons">
               <button
@@ -68,16 +70,16 @@
                 [disabled]="busy()"
                 (click)="accept(r.username)"
               >
-                Accept
+                {{ 'Accept' | t }}
               </button>
               <button
                 type="button"
                 [disabled]="busy()"
                 (click)="
-                  remove(r.username, 'Decline the request of ' + r.username + '?', 'Declined.')
+                  remove(r.username, 'Decline the request of {name}?', 'Declined.')
                 "
               >
-                Decline
+                {{ 'Decline' | t }}
               </button>
             </div>
           </li>
@@ -85,7 +87,7 @@
       </ul>
     }
 
-    <h3>Your friends ({{ social.overview().friends.length }})</h3>
+    <h3>{{ 'Your friends' | t }} ({{ social.overview().friends.length }})</h3>
     @if (social.overview().friends.length) {
       <ul class="people">
         @for (f of social.overview().friends; track f.username) {
@@ -93,32 +95,28 @@
             <a class="person" [routerLink]="['/friends', f.username]">
               <strong>{{ f.username }}</strong>
               <span class="muted"
-                >{{ f.characters }} character{{ f.characters === 1 ? '' : 's' }} ·
-                {{ f.words }} word{{ f.words === 1 ? '' : 's' }} ·
+                >{{ f.characters | tn: '{n} character' : '{n} characters' }} ·
+                {{ f.words | tn: '{n} word' : '{n} words' }} ·
                 {{
                   f.reviews === null
-                    ? 'sessions private'
-                    : f.reviews + ' training session' + (f.reviews === 1 ? '' : 's')
+                    ? ('sessions private' | t)
+                    : (f.reviews | tn: '{n} training session' : '{n} training sessions')
                 }}
-                · friends since {{ date(f.since) }}</span
+                · {{ 'friends since {date}' | t: { date: date(f.since) } }}</span
               >
             </a>
             <div class="buttons">
-              <a class="button" [routerLink]="['/friends', f.username]">View</a>
+              <a class="button" [routerLink]="['/friends', f.username]">{{ 'View' | t }}</a>
               <button
                 type="button"
                 class="danger"
-                title="Remove from your friends"
+                [title]="'Remove from your friends' | t"
                 [disabled]="busy()"
                 (click)="
-                  remove(
-                    f.username,
-                    'Remove ' + f.username + ' from your friends?',
-                    f.username + ' is no longer your friend.'
-                  )
+                  remove(f.username, 'Remove {name} from your friends?', '{name} is no longer your friend.')
                 "
               >
-                Remove
+                {{ 'Remove' | t }}
               </button>
             </div>
           </li>
@@ -126,32 +124,28 @@
       </ul>
     } @else if (social.loaded()) {
       <p class="muted">
-        No friends yet. Add one with their username, or find people in a
-        <a routerLink="/communities">community</a>.
+        {{ 'No friends yet. Add one with their username, or find people in a' | t }}
+        <a routerLink="/communities">{{ 'community' | t }}</a>.
       </p>
     }
 
     @if (social.overview().outgoing.length) {
-      <h3>Requests you sent</h3>
+      <h3>{{ 'Requests you sent' | t }}</h3>
       <ul class="people">
         @for (r of social.overview().outgoing; track r.username) {
           <li>
             <span class="person"
               ><strong>{{ r.username }}</strong>
-              <span class="muted">waiting for an answer · {{ date(r.at) }}</span></span
+              <span class="muted">{{ 'waiting for an answer' | t }} · {{ date(r.at) }}</span></span
             >
             <button
               type="button"
               [disabled]="busy()"
               (click)="
-                remove(
-                  r.username,
-                  'Cancel your request to ' + r.username + '?',
-                  'Request cancelled.'
-                )
+                remove(r.username, 'Cancel your request to {name}?', 'Request cancelled.')
               "
             >
-              Cancel
+              {{ 'Cancel' | t }}
             </button>
           </li>
         }

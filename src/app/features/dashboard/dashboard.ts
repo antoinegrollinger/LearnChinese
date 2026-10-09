@@ -13,6 +13,8 @@ import {
   reviewStats,
 } from '../../core/review.model';
 import { ReviewsService } from '../../core/reviews.service';
+import { MessagePipe, PluralPipe, TranslatePipe, locale, t } from '../../core/i18n';
+import { countOf, modeName } from '../../core/review-texts';
 import { WordsService } from '../../core/words.service';
 import { SlidingThumb } from '../../shared/sliding-thumb';
 import { SwipeActions } from '../../shared/swipe-actions';
@@ -25,7 +27,7 @@ interface Known {
   label?: string;
 }
 
-const DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
+const DATE_FORMAT = new Intl.DateTimeFormat(locale, {
   weekday: 'short',
   day: 'numeric',
   month: 'short',
@@ -37,7 +39,7 @@ const DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
 /** Your past reviews with their results; start one of them again. */
 @Component({
   selector: 'app-dashboard',
-  imports: [RouterLink, SlidingThumb, SwipeActions],
+  imports: [RouterLink, SlidingThumb, SwipeActions, TranslatePipe, PluralPipe, MessagePipe],
   templateUrl: './dashboard.html',
 })
 export class Dashboard {
@@ -52,6 +54,8 @@ export class Dashboard {
     ReviewMode,
     (typeof REVIEW_MODES)[ReviewMode],
   ][];
+  protected readonly modeName = modeName;
+  protected readonly countOf = countOf;
   protected readonly modeInfo = REVIEW_MODES;
   protected readonly kindInfo = REVIEW_KINDS;
   /** The reviews of your characters, or of your words: the tab of the page (route data). */
@@ -183,13 +187,15 @@ export class Dashboard {
   /** Deletes the session from your history (after confirmation, unless swiped). True if done. */
   protected async remove(session: ReviewSession, confirmFirst = true): Promise<boolean> {
     if (!session.id) return false;
-    if (confirmFirst && !confirm('Delete this training session from your history?')) return false;
+    if (confirmFirst && !confirm(t('Delete this training session from your history?'))) {
+      return false;
+    }
     try {
       await this.reviews.remove(String(session.id));
       this.message.set({ text: '' });
       return true;
     } catch (err) {
-      this.message.set({ text: `Delete failed: ${errorMessage(err)}`, kind: 'error' });
+      this.message.set({ text: t('Delete failed: {error}', { error: errorMessage(err) }), kind: 'error' });
       return false;
     }
   }

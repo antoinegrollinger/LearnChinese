@@ -2,7 +2,6 @@ import { Routes, UrlMatcher, UrlSegment } from '@angular/router';
 import { anyone, loggedIn, loggedOut } from './core/auth.guard';
 import { Account } from './features/account/account';
 import { Login } from './features/login/login';
-import { Review } from './features/review/review';
 import { Study } from './features/study/study';
 import { Words } from './features/words/words';
 import { PageTab, TabbedPage } from './shared/tabbed-page';
@@ -98,15 +97,16 @@ const pages: Routes = [
     component: TabbedPage,
     data: { tabs: REVIEW_TABS, label: 'Training session' },
     children: [
+      // Loaded when first opened (keeps the first download small).
       {
         path: 'words',
-        component: Review,
+        loadComponent: () => import('./features/review/review').then((m) => m.Review),
         data: { kind: 'words' },
         title: 'Words · Training session · Hanzi Workshop',
       },
       {
         path: '',
-        component: Review,
+        loadComponent: () => import('./features/review/review').then((m) => m.Review),
         data: { kind: 'characters' },
         title: 'Characters · Training session · Hanzi Workshop',
       },

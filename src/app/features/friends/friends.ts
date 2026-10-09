@@ -2,9 +2,10 @@ import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { errorMessage } from '../../core/characters.service';
+import { MessagePipe, PluralPipe, TranslatePipe, locale, t } from '../../core/i18n';
 import { SocialService } from '../../core/social.service';
 
-const DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
+const DATE_FORMAT = new Intl.DateTimeFormat(locale, {
   day: 'numeric',
   month: 'short',
   year: 'numeric',
@@ -13,7 +14,7 @@ const DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
 /** Your friends, friend requests and whether your friends see your reviews (/friends). */
 @Component({
   selector: 'app-friends',
-  imports: [RouterLink],
+  imports: [RouterLink, TranslatePipe, PluralPipe, MessagePipe],
   templateUrl: './friends.html',
 })
 export class Friends {
@@ -27,7 +28,7 @@ export class Friends {
   constructor() {
     this.social.reload().catch((err) =>
       this.status.set({
-        text: `Could not load your friends: ${errorMessage(err)}`,
+        text: t('Could not load your friends: {error}', { error: errorMessage(err) }),
         kind: 'error',
       }),
     );
@@ -56,23 +57,24 @@ export class Friends {
       const relation = await this.social.addFriend(name);
       this.username.set('');
       return relation === 'friend'
-        ? `${name} had already sent you a request: you are now friends ✓`
-        : `Request sent to ${name} ✓ They will see it on their Friends page.`;
+        ? t('{name} had already sent you a request: you are now friends ✓', { name })
+        : t('Request sent to {name} ✓ They will see it on their Friends page.', { name });
     });
   }
 
   protected accept(name: string): void {
     this.run(async () => {
       await this.social.accept(name);
-      return `You and ${name} are now friends ✓`;
+      return t('You and {name} are now friends ✓', { name });
     });
   }
 
+  /** question and done: texts to translate, with {name}. */
   protected remove(name: string, question: string, done: string): void {
-    if (!confirm(question)) return;
+    if (!confirm(t(question, { name }))) return;
     this.run(async () => {
       await this.social.removeFriend(name);
-      return done;
+      return t(done, { name });
     });
   }
 
@@ -80,8 +82,8 @@ export class Friends {
     this.run(async () => {
       await this.social.setShareReviews(share);
       return share
-        ? 'Your friends can now see your training sessions ✓'
-        : 'Your training sessions are now private ✓';
+        ? t('Your friends can now see your training sessions ✓')
+        : t('Your training sessions are now private ✓');
     });
   }
 }

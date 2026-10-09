@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import { LABEL_COLORS, LABEL_MAX_LENGTH } from '../core/character.model';
 import { errorMessage } from '../core/characters.service';
+import { TranslatePipe, t } from '../core/i18n';
 import { LabelsService, sortLabels } from '../core/labels.service';
 
 /**
@@ -20,40 +21,41 @@ import { LabelsService, sortLabels } from '../core/labels.service';
  */
 @Component({
   selector: 'app-label-picker',
+  imports: [TranslatePipe],
   host: { class: 'label-picker' },
   template: `
     @if (adding()) {
       <input
         type="color"
-        title="Colour of the label"
+        [title]="'Colour of the label' | t"
         [value]="newColor()"
         (input)="newColor.set($any($event.target).value)"
       />
       <input
         #name
-        placeholder="New label (HSK 1, food…)"
+        [placeholder]="'New label (HSK 1, food…)' | t"
         [maxLength]="maxLength"
         (keydown.enter)="$event.preventDefault(); create(name.value)"
         (keydown.escape)="adding.set(false)"
       />
-      <button type="button" (click)="create(name.value)">OK</button>
-      <button type="button" (click)="adding.set(false)">Cancel</button>
+      <button type="button" (click)="create(name.value)">{{ 'OK' | t }}</button>
+      <button type="button" (click)="adding.set(false)">{{ 'Cancel' | t }}</button>
     } @else {
       @if (value(); as label) {
         <input
           type="color"
-          title="Colour of {{ label }} (for all its characters and words)"
+          [title]="'Colour of {label} (for all its characters and words)' | t: { label }"
           [value]="labels.colorOf(label)"
           [disabled]="disabled()"
           (change)="setColor(label, $any($event.target).value)"
         />
       }
       <select [disabled]="disabled()" (change)="pick($any($event.target))">
-        <option value="" [selected]="!value()">— no label —</option>
+        <option value="" [selected]="!value()">{{ '— no label —' | t }}</option>
         @for (l of options(); track l) {
           <option [value]="'=' + l" [selected]="l === value()">{{ l }}</option>
         }
-        <option value="new">+ New label…</option>
+        <option value="new">{{ '+ New label…' | t }}</option>
       </select>
     }
     @if (error(); as e) {
@@ -105,7 +107,7 @@ export class LabelPicker {
     try {
       await this.labels.save({ name, color });
     } catch (err) {
-      this.error.set(`Could not save the colour: ${errorMessage(err)}`);
+      this.error.set(t('Could not save the colour: {error}', { error: errorMessage(err) }));
     }
   }
 }

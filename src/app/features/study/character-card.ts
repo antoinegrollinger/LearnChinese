@@ -14,6 +14,7 @@ import { RouterLink } from '@angular/router';
 import { CharacterEntry, CharacterPart } from '../../core/character.model';
 import { CharactersService, errorMessage } from '../../core/characters.service';
 import { ROLES, typeOf } from '../../core/config';
+import { MessagePipe, PluralPipe, TranslatePipe, t } from '../../core/i18n';
 import { speak } from '../../core/speech';
 import { StatsService } from '../../core/stats.service';
 import { WordsService } from '../../core/words.service';
@@ -27,7 +28,18 @@ import { PartsSummary } from './parts-summary';
 
 @Component({
   selector: 'app-character-card',
-  imports: [HanziWriterView, Pinyin, StrokeSvg, RouterLink, PartsSummary, LabelPicker, SpeakerIcon],
+  imports: [
+    HanziWriterView,
+    Pinyin,
+    StrokeSvg,
+    RouterLink,
+    PartsSummary,
+    LabelPicker,
+    SpeakerIcon,
+    TranslatePipe,
+    PluralPipe,
+    MessagePipe,
+  ],
   templateUrl: './character-card.html',
 })
 export class CharacterCard {
@@ -115,23 +127,28 @@ export class CharacterCard {
   protected practice(): void {
     const character = this.entry().character;
     this.practicing.set(true);
-    this.message.set({ text: 'Draw the first stroke…' });
+    this.message.set({ text: t('Draw the first stroke…') });
     this.writer().quiz({
       showHintAfterMisses: 2,
       highlightOnComplete: true,
       onMistake: (s) =>
         this.message.set({
-          text: `Missed stroke ${s.strokeNum + 1}${s.mistakesOnStroke >= 2 ? ' — follow the hint' : ''}`,
+          text:
+            s.mistakesOnStroke >= 2
+              ? t('Missed stroke {n} — follow the hint', { n: s.strokeNum + 1 })
+              : t('Missed stroke {n}', { n: s.strokeNum + 1 }),
           kind: 'error',
         }),
       onCorrectStroke: (s) =>
         this.message.set({
-          text: `Stroke ${s.strokeNum + 1} ✓ (${s.strokesRemaining} left)`,
+          text: t('Stroke {n} ✓ ({left} left)', { n: s.strokeNum + 1, left: s.strokesRemaining }),
           kind: 'ok',
         }),
       onComplete: ({ totalMistakes }) => {
         this.message.set({
-          text: totalMistakes ? `Done with ${totalMistakes} mistake(s).` : 'Perfect, no mistakes!',
+          text: totalMistakes
+            ? t('Done with {n} mistake(s).', { n: totalMistakes })
+            : t('Perfect, no mistakes!'),
           kind: 'ok',
         });
         this.statsService.record(character, totalMistakes);
@@ -146,9 +163,15 @@ export class CharacterCard {
     this.savingLabel.set(true);
     try {
       await this.characters.save({ ...entry, label: label || undefined });
-      this.message.set({ text: label ? `Label: ${label} ✓` : 'Label removed ✓', kind: 'ok' });
+      this.message.set({
+        text: label ? t('Label: {label} ✓', { label }) : t('Label removed ✓'),
+        kind: 'ok',
+      });
     } catch (err) {
-      this.message.set({ text: `Could not save the label: ${errorMessage(err)}`, kind: 'error' });
+      this.message.set({
+        text: t('Could not save the label: {error}', { error: errorMessage(err) }),
+        kind: 'error',
+      });
     } finally {
       this.savingLabel.set(false);
     }

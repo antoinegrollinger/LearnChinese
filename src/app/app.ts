@@ -2,6 +2,8 @@ import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/auth.service';
 import { CharactersService } from './core/characters.service';
+import { TranslatePipe } from './core/i18n';
+import { LanguagePicker } from './shared/language-picker';
 import { NotificationBell } from './shared/notification-bell';
 import { SlidingThumb } from './shared/sliding-thumb';
 import { ThemeToggle } from './shared/theme-toggle';
@@ -15,6 +17,8 @@ import { ThemeToggle } from './shared/theme-toggle';
     NotificationBell,
     SlidingThumb,
     ThemeToggle,
+    LanguagePicker,
+    TranslatePipe,
   ],
   template: `
     <header class="header">
@@ -22,17 +26,24 @@ import { ThemeToggle } from './shared/theme-toggle';
       @if (auth.user(); as user) {
         <nav class="tabs" appSlidingThumb>
           <a class="button" routerLink="/study" routerLinkActive="active"
-            >My <span lang="zh">汉字</span> and words</a
+            >{{ 'My' | t }} <span lang="zh">汉字</span> {{ 'and words' | t }}</a
           >
-          <a class="button" routerLink="/training" routerLinkActive="active">Training session</a>
-          <a class="button" routerLink="/paper" routerLinkActive="active">Train on paper</a>
-          <a class="button" routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
-          <a class="button" routerLink="/add" routerLinkActive="active">Add</a>
-          <a class="button" routerLink="/friends" routerLinkActive="active">Friends</a>
-          <a class="button" routerLink="/communities" routerLinkActive="active">Communities</a>
-          <a class="button" routerLink="/about" routerLinkActive="active">About</a>
+          <a class="button" routerLink="/training" routerLinkActive="active">{{
+            'Training session' | t
+          }}</a>
+          <a class="button" routerLink="/paper" routerLinkActive="active">{{
+            'Train on paper' | t
+          }}</a>
+          <a class="button" routerLink="/dashboard" routerLinkActive="active">{{ 'Dashboard' | t }}</a>
+          <a class="button" routerLink="/add" routerLinkActive="active">{{ 'Add' | t }}</a>
+          <a class="button" routerLink="/friends" routerLinkActive="active">{{ 'Friends' | t }}</a>
+          <a class="button" routerLink="/communities" routerLinkActive="active">{{
+            'Communities' | t
+          }}</a>
+          <a class="button" routerLink="/about" routerLinkActive="active">{{ 'About' | t }}</a>
         </nav>
         <div class="account">
+          <app-language-picker />
           <app-theme-toggle />
           <app-notification-bell />
           <a routerLink="/account" routerLinkActive="active" [title]="user.email">{{
@@ -41,8 +52,8 @@ import { ThemeToggle } from './shared/theme-toggle';
           <button
             type="button"
             class="logout"
-            title="Log out"
-            aria-label="Log out"
+            [title]="'Log out' | t"
+            [attr.aria-label]="'Log out' | t"
             (click)="auth.logout()"
           >
             <!-- Icon on phones, text on wider screens (styles.css) -->
@@ -58,24 +69,27 @@ import { ThemeToggle } from './shared/theme-toggle';
                 <path d="M10 16l-4-4 4-4M6 12h10" />
               </g>
             </svg>
-            <span class="logout-text">Log out</span>
+            <span class="logout-text">{{ 'Log out' | t }}</span>
           </button>
         </div>
       } @else {
         <div class="account">
-          <a routerLink="/about" routerLinkActive="active">About</a>
+          <a routerLink="/about" routerLinkActive="active">{{ 'About' | t }}</a>
+          <app-language-picker />
           <app-theme-toggle />
         </div>
       }
     </header>
     @if (auth.user(); as user) {
       @if (!user.username) {
-        <p class="banner">Choose a username: <a routerLink="/account">Account →</a></p>
+        <p class="banner">
+          {{ 'Choose a username:' | t }} <a routerLink="/account">{{ 'Account' | t }} →</a>
+        </p>
       }
     }
     @if (auth.user() && characters.error(); as error) {
       <p class="banner error">
-        {{ error }} <button type="button" (click)="characters.reload()">Retry</button>
+        {{ error | t }} <button type="button" (click)="characters.reload()">{{ 'Retry' | t }}</button>
       </p>
     }
     <main><router-outlet /></main>

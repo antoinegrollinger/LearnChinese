@@ -13,6 +13,7 @@ import { CharactersService, errorMessage } from '../../core/characters.service';
 import { stripTones, toPinyin } from '../../core/pinyin';
 import { speak } from '../../core/speech';
 import { WordEntry } from '../../core/word.model';
+import { TranslatePipe, t } from '../../core/i18n';
 import { LabelsService } from '../../core/labels.service';
 import { WordsService } from '../../core/words.service';
 import { readSetting, writeSetting } from '../../core/settings';
@@ -26,7 +27,7 @@ const LAYOUT_KEY = 'hanzi-workshop-words-layout';
 /** The Words tab of Study: your words, and the card of the one selected (/study/words/:word). */
 @Component({
   selector: 'app-words',
-  imports: [Pinyin, RouterLink, SlidingThumb, LabelPicker, SpeakerIcon],
+  imports: [Pinyin, RouterLink, SlidingThumb, LabelPicker, SpeakerIcon, TranslatePipe],
   templateUrl: './words.html',
   host: { '(document:keydown)': 'onKey($event)' },
 })
@@ -131,9 +132,9 @@ export class Words {
     this.savingLabel.set(true);
     try {
       await this.words.save({ ...entry, label: label || undefined });
-      this.showToast(label ? `Label: ${label} ✓` : 'Label removed ✓');
+      this.showToast(label ? t('Label: {label} ✓', { label }) : t('Label removed ✓'));
     } catch (err) {
-      this.showToast(`Could not save the label: ${errorMessage(err)}`, 'error');
+      this.showToast(t('Could not save the label: {error}', { error: errorMessage(err) }), 'error');
     } finally {
       this.savingLabel.set(false);
     }
@@ -147,17 +148,17 @@ export class Words {
   /** Deletes the selected word after confirmation, then selects its neighbour. */
   protected async deleteCurrent(): Promise<void> {
     const entry = this.current();
-    if (!entry || !confirm(`Delete ${entry.word} from your words?`)) return;
+    if (!entry || !confirm(t('Delete {word} from your words?', { word: entry.word }))) return;
     const list = this.visible();
     const i = list.findIndex((w) => w.word === entry.word);
     const next = list[i + 1] ?? list[i - 1];
     try {
       await this.words.remove(entry.word);
-      this.showToast(`Deleted ${entry.word}`);
+      this.showToast(t('Deleted {item}', { item: entry.word }));
       if (next) this.select(next);
       else this.router.navigate(['/study/words'], { replaceUrl: true });
     } catch (err) {
-      this.showToast(`Delete failed: ${errorMessage(err)}`, 'error');
+      this.showToast(t('Delete failed: {error}', { error: errorMessage(err) }), 'error');
     }
   }
 

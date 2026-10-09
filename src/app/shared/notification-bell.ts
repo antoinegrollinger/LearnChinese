@@ -1,22 +1,23 @@
 import { Component, ElementRef, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { errorMessage } from '../core/characters.service';
+import { TranslatePipe, locale, t } from '../core/i18n';
 import { NotificationsService } from '../core/notifications.service';
 import { InfoType, NotificationItem } from '../core/social.model';
 import { SocialService } from '../core/social.service';
 
 /** What an update says, around the community name: [before, after]. */
 const INFO_TEXT: Record<InfoType, (who: string) => [string, string]> = {
-  'friend-accepted': (who) => [`${who} accepted your friend request`, ''],
-  'join-approved': () => ['Your request to join ', ' was approved'],
-  'join-rejected': () => ['Your request to join ', ' was declined'],
-  'made-admin': (who) => [`${who} made you an admin of `, ''],
-  'removed-admin': (who) => [`${who} made you a regular member of `, ''],
-  'removed-from-community': (who) => [`${who} removed you from `, ''],
-  'made-owner': () => ['You are now the owner of ', ''],
+  'friend-accepted': (who) => [t('{who} accepted your friend request', { who }), ''],
+  'join-approved': () => [t('Your request to join '), t(' was approved')],
+  'join-rejected': () => [t('Your request to join '), t(' was declined')],
+  'made-admin': (who) => [t('{who} made you an admin of ', { who }), ''],
+  'removed-admin': (who) => [t('{who} made you a regular member of ', { who }), ''],
+  'removed-from-community': (who) => [t('{who} removed you from ', { who }), ''],
+  'made-owner': () => [t('You are now the owner of '), ''],
 };
 
-const RELATIVE = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
+const RELATIVE = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
 
 /** "just now", "5 minutes ago", "yesterday"… */
 function ago(iso: string): string {
@@ -29,13 +30,13 @@ function ago(iso: string): string {
   for (const [unit, size] of steps) {
     if (Math.abs(seconds) >= size) return RELATIVE.format(Math.round(seconds / size), unit);
   }
-  return 'just now';
+  return t('just now');
 }
 
 /** The bell in the header and its menu: answer requests directly, see what happened. */
 @Component({
   selector: 'app-notification-bell',
-  imports: [RouterLink],
+  imports: [RouterLink, TranslatePipe],
   host: {
     class: 'notification-bell',
     '(document:click)': 'onDocumentClick($event)',
@@ -49,8 +50,10 @@ function ago(iso: string): string {
       [attr.aria-expanded]="open()"
       aria-haspopup="true"
       [attr.aria-label]="
-        'Notifications' +
-        (notifications.data().unread ? ' (' + notifications.data().unread + ' new)' : '')
+        ('Notifications' | t) +
+        (notifications.data().unread
+          ? ' (' + ('{n} new' | t: { n: notifications.data().unread }) + ')'
+          : '')
       "
       (click)="toggle()"
     >
@@ -66,12 +69,12 @@ function ago(iso: string): string {
     </button>
 
     @if (open()) {
-      <div class="bell-panel" role="dialog" aria-label="Notifications">
+      <div class="bell-panel" role="dialog" [attr.aria-label]="'Notifications' | t">
         <div class="bell-header">
-          <strong>Notifications</strong>
+          <strong>{{ 'Notifications' | t }}</strong>
           <span class="bell-links">
-            <a routerLink="/friends" (click)="close()">Friends</a> ·
-            <a routerLink="/communities" (click)="close()">Communities</a>
+            <a routerLink="/friends" (click)="close()">{{ 'Friends' | t }}</a> ·
+            <a routerLink="/communities" (click)="close()">{{ 'Communities' | t }}</a>
           </span>
         </div>
         @if (status().text) {
@@ -82,7 +85,7 @@ function ago(iso: string): string {
 
         @if (!items().length) {
           <p class="muted bell-empty">
-            {{ notifications.loaded() ? 'No notifications.' : 'Loading…' }}
+            {{ (notifications.loaded() ? 'No notifications.' : 'Loading…') | t }}
           </p>
         } @else {
           <ul class="bell-list">
@@ -93,7 +96,7 @@ function ago(iso: string): string {
                     <span class="bell-icon" lang="zh" aria-hidden="true">友</span>
                     <div class="bell-body">
                       <span
-                        ><strong>{{ n.username }}</strong> wants to be your friend</span
+                        ><strong>{{ n.username }}</strong> {{ 'wants to be your friend' | t }}</span
                       >
                       <small class="muted">{{ ago(n.at) }}</small>
                       <div class="buttons">
@@ -103,14 +106,14 @@ function ago(iso: string): string {
                           [disabled]="busy()"
                           (click)="acceptFriend(n.username)"
                         >
-                          Accept
+                          {{ 'Accept' | t }}
                         </button>
                         <button
                           type="button"
                           [disabled]="busy()"
                           (click)="declineFriend(n.username)"
                         >
-                          Decline
+                          {{ 'Decline' | t }}
                         </button>
                       </div>
                     </div>
@@ -119,7 +122,7 @@ function ago(iso: string): string {
                     <span class="bell-icon" lang="zh" aria-hidden="true">群</span>
                     <div class="bell-body">
                       <span
-                        ><strong>{{ n.username }}</strong> asks to join
+                        ><strong>{{ n.username }}</strong> {{ 'asks to join' | t }}
                         <a [routerLink]="['/communities', n.community]" (click)="close()">{{
                           n.community
                         }}</a></span
@@ -132,14 +135,14 @@ function ago(iso: string): string {
                           [disabled]="busy()"
                           (click)="answerJoin(n.community, n.username, true)"
                         >
-                          Approve
+                          {{ 'Approve' | t }}
                         </button>
                         <button
                           type="button"
                           [disabled]="busy()"
                           (click)="answerJoin(n.community, n.username, false)"
                         >
-                          Reject
+                          {{ 'Reject' | t }}
                         </button>
                       </div>
                     </div>
@@ -154,7 +157,9 @@ function ago(iso: string): string {
                             n.community
                           }}</a>
                         } @else if (n.type === 'friend-accepted' && n.username) {
-                          · <a [routerLink]="['/friends', n.username]" (click)="close()">View</a>
+                          · <a [routerLink]="['/friends', n.username]" (click)="close()">{{
+                            'View' | t
+                          }}</a>
                         }
                         {{ text(n)[1] }}
                       </span>
@@ -163,8 +168,8 @@ function ago(iso: string): string {
                     <button
                       type="button"
                       class="link bell-dismiss"
-                      title="Dismiss"
-                      aria-label="Dismiss"
+                      [title]="'Dismiss' | t"
+                      [attr.aria-label]="'Dismiss' | t"
                       (click)="dismiss(n.id)"
                     >
                       ×
@@ -230,7 +235,7 @@ export class NotificationBell {
   }
 
   protected text(n: Extract<NotificationItem, { kind: 'info' }>): [string, string] {
-    return INFO_TEXT[n.type]?.(n.username ?? 'Someone') ?? ['', ''];
+    return INFO_TEXT[n.type]?.(n.username ?? t('Someone')) ?? ['', ''];
   }
 
   /** Runs an action from the menu, then shows what happened at its top. */
@@ -248,17 +253,19 @@ export class NotificationBell {
   }
 
   protected acceptFriend(username: string): void {
-    this.run(() => this.social.accept(username), `You and ${username} are now friends ✓`);
+    this.run(() => this.social.accept(username), t('You and {name} are now friends ✓', { name: username }));
   }
 
   protected declineFriend(username: string): void {
-    this.run(() => this.social.removeFriend(username), `Declined ${username}'s request.`);
+    this.run(() => this.social.removeFriend(username), t("Declined {name}'s request.", { name: username }));
   }
 
   protected answerJoin(community: string, username: string, approve: boolean): void {
     this.run(
       () => this.social.answerJoinRequest(community, username, approve),
-      approve ? `${username} joined ${community} ✓` : `Rejected ${username}'s request.`,
+      approve
+        ? t('{name} joined {community} ✓', { name: username, community })
+        : t("Rejected {name}'s request.", { name: username }),
     );
   }
 

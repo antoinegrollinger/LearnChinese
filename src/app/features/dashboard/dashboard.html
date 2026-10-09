@@ -1,7 +1,14 @@
 <section class="view centered">
   <div class="dashboard">
     <div class="dashboard-header">
-      <h2>Your {{ kindInfo[kind()].one }} training sessions</h2>
+      <h2>
+        {{
+          (kind() === 'words'
+            ? 'Your word training sessions'
+            : 'Your character training sessions'
+          ) | t
+        }}
+      </h2>
       <div class="buttons">
         @if (lastReview(); as last) {
           <button
@@ -10,31 +17,36 @@
             [disabled]="!last.available"
             (click)="reviewSession(last.session)"
           >
-            ↻ Repeat the last training session ({{
-              modeInfo[last.session.mode].name.toLowerCase()
-            }}, {{ last.available }} {{ kindInfo[last.session.kind].one
-            }}{{ last.available === 1 ? '' : 's' }})
+            ↻ {{ 'Repeat the last training session' | t }} ({{
+              modeName(last.session.mode, last.session.kind).toLowerCase()
+            }}, {{ countOf(last.available, last.session.kind) }})
           </button>
         }
-        <a class="button" [routerLink]="reviewLink()">New training session</a>
+        <a class="button" [routerLink]="reviewLink()">{{ 'New training session' | t }}</a>
       </div>
     </div>
 
     @if (reviews.error(); as error) {
-      <p class="banner error">{{ error }}</p>
+      <p class="banner error">{{ error | tm }}</p>
     } @else if (!reviews.loaded()) {
-      <p class="muted">Loading…</p>
+      <p class="muted">{{ 'Loading…' | t }}</p>
     } @else if (!kindSessions().length) {
       <p class="muted">
-        No {{ kindInfo[kind()].one }} training sessions yet. Finish a
-        <a [routerLink]="reviewLink()">training session</a> to see it here.
+        {{
+          (kind() === 'words'
+            ? 'No word training sessions yet. Finish a'
+            : 'No character training sessions yet. Finish a'
+          ) | t
+        }}
+        <a [routerLink]="reviewLink()">{{ 'training session' | t }}</a>
+        {{ 'to see it here.' | t }}
       </p>
     } @else {
       <div
         class="filters segmented"
         appSlidingThumb
         role="group"
-        aria-label="Show the training sessions of"
+        [attr.aria-label]="'Show the training sessions of' | t"
       >
         <button
           type="button"
@@ -42,7 +54,7 @@
           [attr.aria-pressed]="modeFilter() === 'all'"
           (click)="modeFilter.set('all')"
         >
-          All modes
+          {{ 'All modes' | t }}
         </button>
         @for (m of modes; track m[0]) {
           <button
@@ -51,7 +63,7 @@
             [attr.aria-pressed]="modeFilter() === m[0]"
             (click)="modeFilter.set(m[0])"
           >
-            {{ m[1].name }}
+            {{ modeName(m[0], kind()) }}
           </button>
         }
       </div>
@@ -59,34 +71,42 @@
 
     @if (kindSessions().length && !rows().length) {
       <p class="muted">
-        No {{ kindInfo[kind()].one }} training sessions{{
-          modeFilter() === 'all' ? '' : ' in this mode'
+        {{
+          (modeFilter() === 'all'
+            ? kind() === 'words'
+              ? 'No word training sessions yet.'
+              : 'No character training sessions yet.'
+            : kind() === 'words'
+              ? 'No word training sessions in this mode yet.'
+              : 'No character training sessions in this mode yet.'
+          ) | t
         }}
-        yet.
       </p>
     } @else if (rows().length) {
       <dl class="session-stats">
         <div>
-          <dt>Sessions</dt>
+          <dt>{{ 'Sessions' | t }}</dt>
           <dd>{{ totals().sessions }}</dd>
         </div>
         <div>
-          <dt>{{ kindInfo[kind()].name }}</dt>
+          <dt>{{ kindInfo[kind()].name | t }}</dt>
           <dd>{{ totals().characters }}</dd>
         </div>
         <div>
-          <dt>Right first try</dt>
+          <dt>{{ 'Right first try' | t }}</dt>
           <dd>{{ totals().firstTryRate }}%</dd>
         </div>
         <div>
-          <dt>Time</dt>
+          <dt>{{ 'Time' | t }}</dt>
           <dd>{{ totals().time }}</dd>
         </div>
       </dl>
 
       @if (hardest().length) {
         <div class="hardest">
-          <h3>Hardest {{ kindInfo[kind()].name.toLowerCase() }}</h3>
+          <h3>
+            {{ (kind() === 'words' ? 'Hardest words' : 'Hardest characters') | t }}
+          </h3>
           <ul class="missed" lang="zh">
             @for (h of hardest(); track h.entry.text) {
               <li
@@ -95,8 +115,7 @@
                   ' — ' +
                   (h.entry.meaning ?? '') +
                   ' · ' +
-                  h.extraTries +
-                  ' extra tries'
+                  (h.extraTries | tn: '{n} extra try' : '{n} extra tries')
                 "
               >
                 <a class="missed-char" [routerLink]="linkOf(h.entry.text)">{{ h.entry.text }}</a>
@@ -107,14 +126,14 @@
           <div class="buttons">
             @for (m of modes; track m[0]) {
               <button type="button" (click)="reviewHardest(m[0])">
-                Train on these: {{ m[1].name.toLowerCase() }}
+                {{ 'Train on these:' | t }} {{ modeName(m[0], kind()).toLowerCase() }}
               </button>
             }
           </div>
         </div>
       }
 
-      <h3>History</h3>
+      <h3>{{ 'History' | t }}</h3>
       <ul class="sessions">
         @for (row of rows(); track row.session.id) {
           <li
@@ -127,19 +146,22 @@
                 <div class="session-info">
                   <strong
                     >{{ row.date }}
-                    <span class="mode-tag" [title]="modeInfo[row.session.mode].name">{{
-                      modeInfo[row.session.mode].name
+                    <span class="mode-tag">{{
+                      modeName(row.session.mode, row.session.kind)
                     }}</span></strong
                   >
                   <span class="muted">
-                    {{ row.stats.count }} {{ kindInfo[row.session.kind].one
-                    }}{{ row.stats.count === 1 ? '' : 's' }} · {{ row.stats.firstTry }}/{{
-                      row.stats.count
+                    {{ countOf(row.stats.count, row.session.kind) }} ·
+                    {{
+                      '{done}/{total} first try ({rate}%)'
+                        | t
+                          : {
+                              done: row.stats.firstTry,
+                              total: row.stats.count,
+                              rate: row.firstTryRate,
+                            }
                     }}
-                    first try ({{ row.firstTryRate }}%) · {{ row.stats.mistakes }} mistake{{
-                      row.stats.mistakes === 1 ? '' : 's'
-                    }}
-                    ·
+                    · {{ row.stats.mistakes | tn: '{n} mistake' : '{n} mistakes' }} ·
                     {{ formatDuration(row.stats.seconds) }}
                   </span>
                   @if (row.labels.length) {
@@ -160,27 +182,28 @@
                     [disabled]="!row.available"
                     [title]="
                       row.available < row.stats.count
-                        ? row.stats.count - row.available + ' of them are no longer in your list'
+                        ? ('{n} of them are no longer in your list'
+                          | t: { n: row.stats.count - row.available })
                         : ''
                     "
                     (click)="reviewSession(row.session)"
                   >
-                    ↻ Train again
+                    ↻ {{ 'Train again' | t }}
                   </button>
                   <button
                     type="button"
                     [attr.aria-expanded]="expanded() === row.session.id"
                     (click)="toggle(row.session.id)"
                   >
-                    {{ expanded() === row.session.id ? 'Hide' : 'Details' }}
+                    {{ (expanded() === row.session.id ? 'Hide' : 'Details') | t }}
                   </button>
                   <button
                     type="button"
                     class="danger delete-button"
-                    title="Delete from your history"
+                    [title]="'Delete from your history' | t"
                     (click)="remove(row.session)"
                   >
-                    Delete
+                    {{ 'Delete' | t }}
                   </button>
                 </div>
               </div>
@@ -193,14 +216,14 @@
                       [title]="
                         r.entry
                           ? toPinyin(r.entry.pinyin) + ' — ' + (r.entry.meaning ?? '')
-                          : 'No longer in your list'
+                          : ('No longer in your list' | t)
                       "
                     >
                       <span class="result-char">{{ r.character }}</span>
                       <small
                         >{{ r.tries === 1 ? '✓' : '×' + r.tries }}
                         @if (r.mistakes) {
-                          · {{ r.mistakes }} err
+                          · {{ r.mistakes | tn: '{n} err' : '{n} err' }}
                         }
                       </small>
                     </li>
@@ -235,12 +258,12 @@
                   stroke-linejoin="round"
                 />
               </svg>
-              Delete
+              {{ 'Delete' | t }}
             </button>
           </li>
         }
       </ul>
-      <p class="message" [class]="message().kind">{{ message().text }}</p>
+      <p class="message" [class]="message().kind">{{ message().text | tm }}</p>
     }
   </div>
 </section>

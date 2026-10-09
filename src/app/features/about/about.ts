@@ -22,6 +22,7 @@ import {
 } from '../../core/feedback.model';
 import { FeedbackService } from '../../core/feedback.service';
 import { ThemeService } from '../../core/theme.service';
+import { MessagePipe, TranslatePipe, t } from '../../core/i18n';
 import { SlidingThumb } from '../../shared/sliding-thumb';
 
 export const CONTACT_EMAIL = 'contact@grolltech.be';
@@ -29,7 +30,7 @@ export const CONTACT_EMAIL = 'contact@grolltech.be';
 /** What the project is, who made it, and the contact and bug report forms (/about, /about?form=bug). */
 @Component({
   selector: 'app-about',
-  imports: [RouterLink, SlidingThumb],
+  imports: [RouterLink, SlidingThumb, TranslatePipe, MessagePipe],
   templateUrl: './about.html',
 })
 export class About {
@@ -159,15 +160,18 @@ export class About {
       this.status.set({
         text:
           this.kind() === 'bug'
-            ? 'Thank you! Your bug report was sent.'
-            : 'Thank you! Your message was sent; you will get an answer by email.',
+            ? t('Thank you! Your bug report was sent.')
+            : t('Thank you! Your message was sent; you will get an answer by email.'),
         kind: 'ok',
       });
       this.draft.set(this.emptyDraft());
       this.submitted.set(false);
     } catch (err) {
       this.status.set({
-        text: `It could not be sent (${errorMessage(err)}). You can also write to ${CONTACT_EMAIL}.`,
+        text: t('It could not be sent ({error}). You can also write to {email}.', {
+          error: errorMessage(err),
+          email: CONTACT_EMAIL,
+        }),
         kind: 'error',
       });
     } finally {

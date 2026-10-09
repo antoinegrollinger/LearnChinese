@@ -28,6 +28,7 @@ import {
 } from '../../core/dictionary.service';
 import { StrokeDataService } from '../../core/stroke-data.service';
 import { toPinyin } from '../../core/pinyin';
+import { MessagePipe, TranslatePipe, t } from '../../core/i18n';
 import { LabelPicker } from '../../shared/label-picker';
 import { Pinyin } from '../../shared/pinyin';
 
@@ -42,7 +43,7 @@ type PartForm = FormGroup<{
 /** Add a character, or edit one already in your list (route /add/:character). */
 @Component({
   selector: 'app-add',
-  imports: [ReactiveFormsModule, Pinyin, RouterLink, LabelPicker],
+  imports: [ReactiveFormsModule, Pinyin, RouterLink, LabelPicker, TranslatePipe, MessagePipe],
   templateUrl: './add.html',
 })
 export class Add {
@@ -236,7 +237,7 @@ export class Add {
     const ch = value.trim();
     const token = ++this.checkToken;
     if (this.editing() && ch !== this.editing()) this.editing.set(null);
-    this.check.set(ch ? 'Checking…' : '');
+    this.check.set(ch ? t('Checking…') : '');
     if (!ch) return;
 
     const known = this.characters.find(ch);
@@ -252,9 +253,11 @@ export class Add {
     const data = await this.strokeData.load(ch);
     if (token !== this.checkToken) return;
     const note =
-      known && this.editing() !== ch ? ' — already in your list (saving will update it)' : '';
+      known && this.editing() !== ch ? t(' — already in your list (saving will update it)') : '';
     this.check.set(
-      data ? `✓ ${data.strokes.length} strokes${note}` : '✗ Not found in Hanzi Writer',
+      data
+        ? '✓ ' + t('{n} strokes', { n: data.strokes.length }) + note
+        : t('✗ Not found in Hanzi Writer'),
     );
   }
 
@@ -281,7 +284,7 @@ export class Add {
       const dict = await this.dictionary.load();
       const e = dict.byCharacter.get(ch);
       if (e) this.fill(this.fromDictionary(dict, e));
-      else this.status.set({ text: `${ch} is not in the dictionary.`, kind: 'error' });
+      else this.status.set({ text: t('{char} is not in the dictionary.', { char: ch }), kind: 'error' });
     } catch {
       this.status.set({
         text: 'Could not load the dictionary (internet connection?).',
@@ -299,10 +302,12 @@ export class Add {
       const { entry: saved, created } = await this.characters.save(entry);
       // Back to the list, showing the saved character.
       this.router.navigate(['/study', saved.character], {
-        state: { saved: `${created ? 'Added' : 'Updated'} ${saved.character} ✓` },
+        state: {
+          saved: t(created ? 'Added {item} ✓' : 'Updated {item} ✓', { item: saved.character }),
+        },
       });
     } catch (err) {
-      this.status.set({ text: `Save failed: ${errorMessage(err)}`, kind: 'error' });
+      this.status.set({ text: t('Save failed: {error}', { error: errorMessage(err) }), kind: 'error' });
     } finally {
       this.saving.set(false);
     }
@@ -310,13 +315,13 @@ export class Add {
 
   protected async remove(): Promise<void> {
     const ch = this.editing();
-    if (!ch || !confirm(`Delete ${ch} from your list?`)) return;
+    if (!ch || !confirm(t('Delete {char} from your list?', { char: ch }))) return;
     try {
       await this.characters.remove(ch);
       this.clear();
-      this.status.set({ text: `Deleted ${ch}.`, kind: 'ok' });
+      this.status.set({ text: t('Deleted {item}.', { item: ch }), kind: 'ok' });
     } catch (err) {
-      this.status.set({ text: `Delete failed: ${errorMessage(err)}`, kind: 'error' });
+      this.status.set({ text: t('Delete failed: {error}', { error: errorMessage(err) }), kind: 'error' });
     }
   }
 

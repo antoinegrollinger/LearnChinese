@@ -2,8 +2,15 @@
   @if (!started()) {
     <div class="review-setup">
       <div class="setup-header">
-        <h2>Choose the {{ one() }}s for your training session</h2>
-        <a class="button" [routerLink]="dashboardLink()">Past training sessions →</a>
+        <h2>
+          {{
+            (kind() === 'words'
+              ? 'Choose the words for your training session'
+              : 'Choose the characters for your training session'
+            ) | t
+          }}
+        </h2>
+        <a class="button" [routerLink]="dashboardLink()">{{ 'Past training sessions' | t }} →</a>
       </div>
 
       @if (lastReview(); as last) {
@@ -11,12 +18,12 @@
           type="button"
           class="repeat-last"
           [disabled]="!last.available"
-          [title]="last.available ? '' : 'None of them is in your lists any more'"
+          [title]="last.available ? '' : ('None of them is in your lists any more' | t)"
           (click)="repeatLast()"
         >
-          ↻ Repeat the last training session ({{ modeInfo[last.session.mode].name.toLowerCase() }},
-          {{ last.available }} {{ kindInfo[last.session.kind].one
-          }}{{ last.available === 1 ? '' : 's' }})
+          ↻ {{ 'Repeat the last training session' | t }} ({{
+            modeName(last.session.mode, last.session.kind).toLowerCase()
+          }}, {{ countOf(last.available, last.session.kind) }})
           <span class="muted" lang="zh">{{ last.preview }}</span>
         </button>
       }
@@ -25,22 +32,35 @@
         @if (itemsLoaded()) {
           <p class="muted">
             @if (kind() === 'words') {
-              No words yet. <a routerLink="/add/word">Add some</a> first.
+              {{ 'No words yet.' | t }} <a routerLink="/add/word">{{ 'Add some' | t }}</a>
+              {{ 'first.' | t }}
             } @else {
-              No characters yet. Add some on the <a routerLink="/add">Add</a> page first.
+              {{ 'No characters yet. Add some on the' | t }}
+              <a routerLink="/add">{{ 'Add' | t }}</a> {{ 'page first.' | t }}
             }
           </p>
         } @else {
-          <p class="muted">Loading…</p>
+          <p class="muted">{{ 'Loading…' | t }}</p>
         }
       } @else {
         <div class="buttons">
-          <button type="button" (click)="selectAll()">Select all ({{ items().length }})</button>
-          <button type="button" [disabled]="!selected().size" (click)="selectNone()">Clear</button>
+          <button type="button" (click)="selectAll()">
+            {{ 'Select all' | t }} ({{ items().length }})
+          </button>
+          <button type="button" [disabled]="!selected().size" (click)="selectNone()">
+            {{ 'Clear' | t }}
+          </button>
         </div>
 
         @if (groups().length) {
-          <p class="muted">By label: click to add its {{ one() }}s, again to remove them.</p>
+          <p class="muted">
+            {{
+              (kind() === 'words'
+                ? 'By label: click to add its words, again to remove them.'
+                : 'By label: click to add its characters, again to remove them.'
+              ) | t
+            }}
+          </p>
           <div class="label-groups">
             @for (g of groups(); track g.key) {
               <button
@@ -51,13 +71,18 @@
                 (click)="toggleGroup(g)"
               >
                 <span class="label-dot" [style.background]="g.color"></span>
-                {{ g.name }} ({{ g.selected }}/{{ g.items.length }})
+                {{ g.key ? g.name : ('No label' | t) }} ({{ g.selected }}/{{ g.items.length }})
               </button>
             }
           </div>
         }
 
-        <p class="muted">Or click {{ one() }}s one by one:</p>
+        <p class="muted">
+          {{
+            (kind() === 'words' ? 'Or click words one by one:' : 'Or click characters one by one:')
+              | t
+          }}
+        </p>
         <ul class="review-picker" [class.words]="kind() === 'words'" lang="zh">
           @for (item of items(); track item.text) {
             <li>
@@ -83,8 +108,8 @@
           }
         </ul>
 
-        <p class="muted">Mode:</p>
-        <div class="mode-choice" role="radiogroup" aria-label="Training mode">
+        <p class="muted">{{ 'Mode:' | t }}</p>
+        <div class="mode-choice" role="radiogroup" [attr.aria-label]="'Training mode' | t">
           @for (m of modes; track m[0]) {
             <button
               type="button"
@@ -94,12 +119,16 @@
               (click)="setMode(m[0])"
             >
               <span aria-hidden="true">{{ m[1].icon }}</span>
-              {{ m[0] === 'write' ? 'Write the ' + one() : m[1].name }}
+              {{ modeName(m[0], kind()) }}
               <small class="muted">{{
-                m[0] === 'write'
-                  ? 'from its pinyin and meaning' +
-                    (kind() === 'words' ? ', character by character' : '')
-                  : 'of the ' + one() + ' shown'
+                (m[0] === 'write'
+                  ? kind() === 'words'
+                    ? 'from its pinyin and meaning, character by character'
+                    : 'from its pinyin and meaning'
+                  : kind() === 'words'
+                    ? 'of the word shown'
+                    : 'of the character shown'
+                ) | t
               }}</small>
             </button>
           }
@@ -111,39 +140,42 @@
           [disabled]="!reviewList().length"
           (click)="start()"
         >
-          Start the training session ({{ reviewList().length }} {{ one()
-          }}{{ reviewList().length === 1 ? '' : 's' }})
+          {{ 'Start the training session' | t }} ({{ countOf(reviewList().length) }})
         </button>
       }
     </div>
   } @else if (complete()) {
     <div class="review-complete" role="status">
       <div class="celebrate" aria-hidden="true">✓</div>
-      <h2>Session complete!</h2>
+      <h2>{{ 'Session complete!' | t }}</h2>
       <p>
-        {{ mode() === 'pinyin' ? 'You gave the pinyin of' : 'You wrote' }} all {{ summary().count }}
-        {{ one() }}{{ summary().count === 1 ? '' : 's' }} without a mistake.
+        {{
+          (mode() === 'pinyin'
+            ? 'You gave the pinyin of all {count} without a mistake.'
+            : 'You wrote all {count} without a mistake.'
+          ) | t: { count: countOf(summary().count) }
+        }}
       </p>
       <dl class="session-stats">
         <div>
-          <dt>First try</dt>
+          <dt>{{ 'First try' | t }}</dt>
           <dd>{{ summary().firstTry }}/{{ summary().count }}</dd>
         </div>
         <div>
-          <dt>Attempts</dt>
+          <dt>{{ 'Attempts' | t }}</dt>
           <dd>{{ summary().tries }}</dd>
         </div>
         <div>
-          <dt>Mistakes</dt>
+          <dt>{{ 'Mistakes' | t }}</dt>
           <dd>{{ summary().mistakes }}</dd>
         </div>
         <div>
-          <dt>Time</dt>
+          <dt>{{ 'Time' | t }}</dt>
           <dd>{{ summary().time }}</dd>
         </div>
       </dl>
       @if (summary().missed.length) {
-        <p class="muted">Needed more than one try:</p>
+        <p class="muted">{{ 'Needed more than one try:' | t }}</p>
         <ul class="missed" lang="zh">
           @for (m of summary().missed; track m.item.text) {
             <li [title]="toPinyin(m.item.pinyin) + ' — ' + (m.item.meaning ?? '')">
@@ -153,23 +185,31 @@
           }
         </ul>
       } @else {
-        <p class="muted">Every {{ one() }} right on the first try. Perfect session!</p>
+        <p class="muted">
+          {{
+            (kind() === 'words'
+              ? 'Every word right on the first try. Perfect session!'
+              : 'Every character right on the first try. Perfect session!'
+            ) | t
+          }}
+        </p>
       }
       <div class="buttons">
-        <button type="button" class="primary" (click)="start()">↻ Train again</button>
+        <button type="button" class="primary" (click)="start()">↻ {{ 'Train again' | t }}</button>
         @if (summary().missed.length) {
           <button type="button" (click)="reviewMissed()">
-            Train on the {{ summary().missed.length }} harder one{{
-              summary().missed.length === 1 ? '' : 's'
+            {{
+              summary().missed.length
+                | tn: 'Train on the {n} harder one' : 'Train on the {n} harder ones'
             }}
           </button>
         }
-        <button type="button" (click)="changeSelection()">Change selection</button>
+        <button type="button" (click)="changeSelection()">{{ 'Change selection' | t }}</button>
       </div>
       <p class="message" [class]="saveStatus().kind">
-        {{ saveStatus().text }}
+        {{ saveStatus().text | tm }}
         @if (saveStatus().kind === 'ok') {
-          · <a [routerLink]="dashboardLink()">See the dashboard →</a>
+          · <a [routerLink]="dashboardLink()">{{ 'See the dashboard' | t }} →</a>
         }
       </p>
     </div>
@@ -177,21 +217,29 @@
     <div class="review">
       <div class="session-progress">
         <span class="muted"
-          >{{ kindInfo[kind()].name }} · {{ modeInfo[mode()].icon }}
-          {{ mode() === 'write' ? 'Write the ' + one() : modeInfo[mode()].name }} ·
-          {{ validated().size }}/{{ reviewList().length }} validated ·
+          >{{ kindInfo[kind()].name | t }} · {{ modeInfo[mode()].icon }}
+          {{ modeName(mode(), kind()) }} ·
+          {{ '{done}/{total} validated' | t: { done: validated().size, total: reviewList().length } }}
+          ·
           <button type="button" class="link" (click)="changeSelection()">
-            Change selection
+            {{ 'Change selection' | t }}
           </button></span
         >
         <progress
           [value]="validated().size"
           [max]="reviewList().length"
-          [attr.aria-label]="kindInfo[kind()].name + ' validated'"
+          [attr.aria-label]="'{kind} validated' | t: { kind: kindInfo[kind()].name | t }"
         ></progress>
       </div>
       @if (mode() === 'pinyin') {
-        <p class="muted">Type the pinyin of this {{ one() }}:</p>
+        <p class="muted">
+          {{
+            (kind() === 'words'
+              ? 'Type the pinyin of this word:'
+              : 'Type the pinyin of this character:'
+            ) | t
+          }}
+        </p>
         <div class="prompt-char" [class.prompt-word]="c.text.length > 2" lang="zh">
           {{ c.text }}
         </div>
@@ -202,8 +250,8 @@
         <form class="pinyin-answer" (submit)="$event.preventDefault(); submitAnswer()">
           <input
             #answerInput
-            aria-label="Pinyin"
-            [placeholder]="kind() === 'words' ? 'ma1ma5 or māma' : 'ma1 or mā'"
+            [attr.aria-label]="'Pinyin' | t"
+            [placeholder]="(kind() === 'words' ? 'ma1ma5 or māma' : 'ma1 or mā') | t"
             autocomplete="off"
             autocapitalize="off"
             spellcheck="false"
@@ -212,7 +260,7 @@
             (input)="answer.set($any($event.target).value)"
           />
           <button type="submit" class="primary">
-            {{ !done() ? 'Check' : allValidated() ? 'See results' : 'Next →' }}
+            {{ (!done() ? 'Check' : allValidated() ? 'See results' : 'Next →') | t }}
           </button>
         </form>
         @if (!done()) {
@@ -222,22 +270,24 @@
         <div class="buttons toolbar">
           @if (!done()) {
             <button type="button" [disabled]="meaningShown()" (click)="hint()">
-              Hint (meaning)
+              {{ 'Hint (meaning)' | t }}
             </button>
-            <button type="button" (click)="solution()">Show answer</button>
-            <button type="button" (click)="next()">Skip →</button>
+            <button type="button" (click)="solution()">{{ 'Show answer' | t }}</button>
+            <button type="button" (click)="next()">{{ 'Skip →' | t }}</button>
           } @else {
-            <button type="button" (click)="speak()"><app-speaker-icon /> Pronounce</button>
+            <button type="button" (click)="speak()">
+              <app-speaker-icon /> {{ 'Pronounce' | t }}
+            </button>
           }
         </div>
-        <p class="message" [class]="message().kind">{{ message().text }}</p>
+        <p class="message" [class]="message().kind">{{ message().text | tm }}</p>
 
         @if (done()) {
           <div class="answer">
             <div class="pinyin"><app-pinyin [text]="c.pinyin" /></div>
             @if (c.character; as ch) {
               <span class="badge" [style.--type-color]="typeOf(ch.type).color">{{
-                typeOf(ch.type).name
+                typeOf(ch.type).name | t
               }}</span>
               <app-parts-summary class="summary" [parts]="ch.components ?? []" />
             }
@@ -245,12 +295,17 @@
         }
       } @else {
         <p class="muted">
-          Write the matching {{ one()
-          }}{{
-            kind() === 'words' && cardChars().length > 1
-              ? ' (character ' + (writeIndex() + 1) + ' of ' + cardChars().length + ')'
-              : ''
-          }}:
+          @if (kind() === 'words' && cardChars().length > 1) {
+            {{
+              'Write the matching word (character {i} of {count}):'
+                | t: { i: writeIndex() + 1, count: cardChars().length }
+            }}
+          } @else {
+            {{
+              (kind() === 'words' ? 'Write the matching word:' : 'Write the matching character:')
+                | t
+            }}
+          }
         </p>
         <div class="question">
           <div class="pinyin"><app-pinyin [text]="c.pinyin" /></div>
@@ -278,23 +333,32 @@
         }
 
         <div class="buttons toolbar">
-          <button type="button" [disabled]="done()" (click)="hint()">Hint (outline)</button>
-          <button type="button" [disabled]="done()" (click)="solution()">Show solution</button>
-          <button type="button" title="Pronounce" aria-label="Pronounce" (click)="speak()">
+          <button type="button" [disabled]="done()" (click)="hint()">
+            {{ 'Hint (outline)' | t }}
+          </button>
+          <button type="button" [disabled]="done()" (click)="solution()">
+            {{ 'Show solution' | t }}
+          </button>
+          <button
+            type="button"
+            [title]="'Pronounce' | t"
+            [attr.aria-label]="'Pronounce' | t"
+            (click)="speak()"
+          >
             <app-speaker-icon />
           </button>
           <button type="button" class="primary" (click)="next()">
-            {{ !done() ? 'Skip →' : allValidated() ? 'See results' : 'Next →' }}
+            {{ (!done() ? 'Skip →' : allValidated() ? 'See results' : 'Next →') | t }}
           </button>
         </div>
-        <p class="message" [class]="message().kind">{{ message().text }}</p>
+        <p class="message" [class]="message().kind">{{ message().text | tm }}</p>
 
         @if (done()) {
           <div class="answer">
             <div class="big-char" lang="zh">{{ c.text }}</div>
             @if (c.character; as ch) {
               <span class="badge" [style.--type-color]="typeOf(ch.type).color">{{
-                typeOf(ch.type).name
+                typeOf(ch.type).name | t
               }}</span>
               <app-parts-summary class="summary" [parts]="ch.components ?? []" />
             }
@@ -307,8 +371,15 @@
     </div>
   } @else {
     <p class="muted">
-      None of the selected {{ one() }}s is in your list any more.
-      <button type="button" class="link" (click)="changeSelection()">Choose again</button>
+      {{
+        (kind() === 'words'
+          ? 'None of the selected words is in your list any more.'
+          : 'None of the selected characters is in your list any more.'
+        ) | t
+      }}
+      <button type="button" class="link" (click)="changeSelection()">
+        {{ 'Choose again' | t }}
+      </button>
     </p>
   }
 </section>

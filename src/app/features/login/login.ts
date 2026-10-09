@@ -9,6 +9,7 @@ import {
   usernameError,
 } from '../../core/auth.model';
 import { AuthService } from '../../core/auth.service';
+import { MessagePipe, TranslatePipe } from '../../core/i18n';
 
 type Mode = 'login' | 'register';
 type Field = 'email' | 'username' | 'password' | 'confirm';
@@ -16,7 +17,7 @@ type Field = 'email' | 'username' | 'password' | 'confirm';
 /** Log in, or create an account (/login). */
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslatePipe, MessagePipe],
   templateUrl: './login.html',
 })
 export class Login {

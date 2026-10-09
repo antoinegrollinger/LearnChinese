@@ -2,7 +2,7 @@
   <aside class="sidebar">
     <input
       type="search"
-      placeholder="Search: 妈, ma, mother…"
+      [placeholder]="'Search: 妈, ma, mother…' | t"
       [value]="query()"
       (input)="query.set($any($event.target).value)"
     />
@@ -13,21 +13,21 @@
           [class.active]="typeFilter() === f.key"
           (click)="typeFilter.set(f.key)"
         >
-          {{ f.name }} ({{ f.count }})
+          {{ f.name | t }} ({{ f.count }})
         </button>
       }
     </div>
     @if (labelFilters().labels.length) {
       <select
         class="label-filter"
-        title="Show only the characters with this label"
+        [title]="'Show only the characters with this label' | t"
         (change)="setLabelFilter($any($event.target).value)"
       >
         <option value="all" [selected]="labelFilter() === null">
-          All labels ({{ labelFilters().all }})
+          {{ 'All labels' | t }} ({{ labelFilters().all }})
         </option>
         <option value="none" [selected]="labelFilter() === ''">
-          No label ({{ labelFilters().none }})
+          {{ 'No label' | t }} ({{ labelFilters().none }})
         </option>
         @for (l of labelFilters().labels; track l.name) {
           <option [value]="'=' + l.name" [selected]="labelFilter() === l.name">
@@ -40,7 +40,7 @@
       class="layout-toggle segmented"
       appSlidingThumb
       role="group"
-      aria-label="Show the characters as"
+      [attr.aria-label]="'Show the characters as' | t"
     >
       <button
         type="button"
@@ -48,7 +48,7 @@
         [attr.aria-pressed]="layout() === 'grid'"
         (click)="setLayout('grid')"
       >
-        Grid
+        {{ 'Grid' | t }}
       </button>
       <button
         type="button"
@@ -56,7 +56,7 @@
         [attr.aria-pressed]="layout() === 'list'"
         (click)="setLayout('list')"
       >
-        List
+        {{ 'List' | t }}
       </button>
     </div>
     <ul class="tiles" [class.as-list]="layout() === 'list'">
@@ -69,7 +69,10 @@
             [class.just-saved]="c.character === justSaved()"
             [style.--type-color]="typeOf(c.type).color"
             [title]="
-              (c.meaning ?? '') + ' — ' + typeOf(c.type).name + (c.label ? ' · ' + c.label : '')
+              (c.meaning ?? '') +
+              ' — ' +
+              (typeOf(c.type).name | t) +
+              (c.label ? ' · ' + c.label : '')
             "
             (click)="select(c)"
           >
@@ -97,7 +100,8 @@
     <app-character-card [entry]="entry" (deleteRequested)="deleteCurrent()" />
   } @else if (characters.loaded()) {
     <p class="muted">
-      No characters yet: add your first one with the <strong>+</strong> button (bottom right).
+      {{ 'No characters yet: add your first one with the' | t }} <strong>+</strong>
+      {{ 'button (bottom right).' | t }}
     </p>
   }
 </section>

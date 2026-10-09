@@ -11,8 +11,10 @@ import {
   reviewStats,
 } from '../../core/review.model';
 import { SocialService, isNotFound } from '../../core/social.service';
+import { MessagePipe, PluralPipe, TranslatePipe, locale, t } from '../../core/i18n';
+import { countOf, modeName } from '../../core/review-texts';
 
-const DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
+const DATE_FORMAT = new Intl.DateTimeFormat(locale, {
   weekday: 'short',
   day: 'numeric',
   month: 'short',
@@ -21,7 +23,7 @@ const DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
   minute: '2-digit',
 });
 
-const DAY_FORMAT = new Intl.DateTimeFormat(undefined, {
+const DAY_FORMAT = new Intl.DateTimeFormat(locale, {
   day: 'numeric',
   month: 'short',
   year: 'numeric',
@@ -33,7 +35,7 @@ const DAY_FORMAT = new Intl.DateTimeFormat(undefined, {
  */
 @Component({
   selector: 'app-friend-profile',
-  imports: [RouterLink],
+  imports: [RouterLink, TranslatePipe, PluralPipe, MessagePipe],
   templateUrl: './friend-profile.html',
 })
 export class FriendProfilePage {
@@ -63,8 +65,8 @@ export class FriendProfilePage {
     const err = this.profile.error();
     if (!err) return null;
     return isNotFound(err)
-      ? `${this.username()} is not your friend (or no longer).`
-      : `Could not load ${this.username()}: ${errorMessage(err)}`;
+      ? t('{name} is not your friend (or no longer).', { name: this.username() })
+      : t('Could not load {name}: {error}', { name: this.username(), error: errorMessage(err) });
   });
 
   protected readonly friendsSince = computed(() => {
@@ -72,11 +74,8 @@ export class FriendProfilePage {
     return since ? DAY_FORMAT.format(new Date(since)) : '';
   });
 
-  /** "training session", "character training session" or "word training session", for the texts. */
-  protected readonly reviewName = computed(() => {
-    const kind = this.kind();
-    return kind === 'all' ? 'training session' : `${REVIEW_KINDS[kind].one} training session`;
-  });
+  protected readonly modeName = modeName;
+  protected readonly countOf = countOf;
 
   /** One row per shared session of this tab, newest first. */
   protected readonly rows = computed(() =>

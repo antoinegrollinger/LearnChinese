@@ -10,17 +10,17 @@
         "
       />
       <div class="buttons">
-        <button type="button" (click)="animate()">Animate</button>
+        <button type="button" (click)="animate()">{{ 'Animate' | t }}</button>
         <button
           type="button"
           [class.active]="practicing()"
           [attr.aria-pressed]="practicing()"
           [title]="
-            practicing() ? 'Stop practising: show the character' : 'Draw it stroke by stroke'
+            (practicing() ? 'Stop practising: show the character' : 'Draw it stroke by stroke') | t
           "
           (click)="togglePractice()"
         >
-          Practice
+          {{ 'Practice' | t }}
         </button>
         @if (practicing()) {
           <!-- On while the outline to trace is shown; off to write from memory. -->
@@ -29,40 +29,49 @@
             [class.active]="showOutline()"
             [attr.aria-pressed]="showOutline()"
             [title]="
-              showOutline() ? 'Hide the outline: write from memory' : 'Show the outline again'
+              (showOutline() ? 'Hide the outline: write from memory' : 'Show the outline again')
+                | t
             "
             (click)="showOutline.set(!showOutline())"
           >
-            Outline
+            {{ 'Outline' | t }}
           </button>
         }
-        <button type="button" title="Pronounce" aria-label="Pronounce" (click)="speak()">
+        <button
+          type="button"
+          [title]="'Pronounce' | t"
+          [attr.aria-label]="'Pronounce' | t"
+          (click)="speak()"
+        >
           <app-speaker-icon />
         </button>
-        <a class="button" [routerLink]="['/add', entry().character]" title="Edit this character"
-          >Edit</a
+        <a
+          class="button"
+          [routerLink]="['/add', entry().character]"
+          [title]="'Edit this character' | t"
+          >{{ 'Edit' | t }}</a
         >
         <button
           type="button"
           class="danger"
-          title="Delete this character"
+          [title]="'Delete this character' | t"
           (click)="deleteRequested.emit()"
         >
-          Delete
+          {{ 'Delete' | t }}
         </button>
       </div>
-      <p class="message" [class]="message().kind">{{ message().text }}</p>
+      <p class="message" [class]="message().kind">{{ message().text | tm }}</p>
     </div>
 
     <div class="details">
       <div class="pinyin"><app-pinyin [text]="entry().pinyin" /></div>
       <div class="meaning">{{ entry().meaning }}</div>
       <span class="badge" [style.--type-color]="type().color"
-        >{{ type().name }} · {{ type().chinese }}</span
+        >{{ type().name | t }} · {{ type().chinese }}</span
       >
-      <p class="type-description">{{ type().description }}</p>
+      <p class="type-description">{{ type().description | t }}</p>
       <div class="label-row">
-        <span class="muted">Label</span>
+        <span class="muted">{{ 'Label' | t }}</span>
         <app-label-picker
           [value]="entry().label"
           [disabled]="savingLabel()"
@@ -71,12 +80,12 @@
       </div>
       @if (strokeInfo.value(); as info) {
         <p class="muted">
-          {{ info.strokes.length }} stroke{{ info.strokes.length > 1 ? 's' : '' }}
+          {{ info.strokes.length | tn: '{n} stroke' : '{n} strokes' }}
         </p>
       }
 
       @if (parts().length) {
-        <h3>Decomposition</h3>
+        <h3>{{ 'Decomposition' | t }}</h3>
         <div class="decomposition">
           @if (strokeInfo.value(); as info) {
             <app-stroke-svg [strokes]="info.strokes" [colors]="strokeColors()" [size]="130" />
@@ -86,7 +95,7 @@
               <li class="component" [style.--c]="colors()[$index]">
                 <span class="component-char">{{ part.character }}</span>
                 <div>
-                  <span class="role">{{ roles[part.role].name }}</span>
+                  <span class="role">{{ roles[part.role].name | t }}</span>
                   <div>
                     <app-pinyin [text]="part.pinyin" />
                     @if (part.meaning) {
@@ -100,18 +109,18 @@
         </div>
         <app-parts-summary class="summary" [parts]="parts()" />
         @if (strokeInfo.value()?.warning; as warning) {
-          <p class="warning">{{ warning }}</p>
+          <p class="warning">{{ warning | tm }}</p>
         }
       }
     </div>
   </div>
 
-  <h3>Stroke order</h3>
+  <h3>{{ 'Stroke order' | t }}</h3>
   <div class="fan">
     @if (strokeInfo.isLoading()) {
-      <span class="muted">Loading…</span>
+      <span class="muted">{{ 'Loading…' | t }}</span>
     } @else if (!strokeInfo.value()) {
-      <span class="muted">Stroke data unavailable.</span>
+      <span class="muted">{{ 'Stroke data unavailable.' | t }}</span>
     }
     @for (colors of steps(); track $index) {
       <figure class="step">
@@ -122,7 +131,7 @@
   </div>
 
   @if (entry().words?.length) {
-    <h3>Words</h3>
+    <h3>{{ 'Words' | t }}</h3>
     <ul class="words">
       @for (word of entry().words; track $index) {
         <li>
@@ -137,7 +146,7 @@
   }
 
   @if (savedWords().length) {
-    <h3>In your word list</h3>
+    <h3>{{ 'In your word list' | t }}</h3>
     <ul class="words">
       @for (w of savedWords(); track w.word) {
         <li>
@@ -152,7 +161,7 @@
   }
 
   @if (entry().notes) {
-    <h3>Notes</h3>
+    <h3>{{ 'Notes' | t }}</h3>
     <p>{{ entry().notes }}</p>
   }
 </article>

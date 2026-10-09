@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { CharactersService, errorMessage } from '../../core/characters.service';
 import { LabelsService } from '../../core/labels.service';
 import { toPinyin } from '../../core/pinyin';
+import { MessagePipe, PluralPipe, TranslatePipe, t } from '../../core/i18n';
 import { readSetting, writeSetting } from '../../core/settings';
 import { StrokeDataService } from '../../core/stroke-data.service';
 import { WordsService } from '../../core/words.service';
@@ -10,6 +11,7 @@ import { SlidingThumb } from '../../shared/sliding-thumb';
 import { sheetPdf } from './pdf';
 import {
   DEFAULT_SHEET_OPTIONS,
+  DEFAULT_SHEET_TITLE,
   GridStyle,
   PAGE,
   SHEET_FONT,
@@ -32,7 +34,7 @@ const isHan = (ch: string) => /\p{Script=Han}/u.test(ch);
  */
 @Component({
   selector: 'app-paper',
-  imports: [RouterLink, SlidingThumb],
+  imports: [RouterLink, SlidingThumb, TranslatePipe, PluralPipe, MessagePipe],
   templateUrl: './paper.html',
 })
 export class Paper {
@@ -44,9 +46,10 @@ export class Paper {
   protected readonly page = PAGE;
   protected readonly font = SHEET_FONT;
   protected readonly glyphTransform = glyphTransform;
+  protected readonly defaultTitle = DEFAULT_SHEET_TITLE;
   protected readonly grids: [GridStyle, string][] = [
-    ['mi', '米 Cross and diagonals'],
-    ['tian', '田 Cross'],
+    ['mi', 'Cross and diagonals (米)'],
+    ['tian', 'Cross (田)'],
     ['none', 'Empty boxes'],
   ];
   protected readonly sizes = [
@@ -194,7 +197,7 @@ export class Paper {
     this.downloading.set(true);
     this.error.set('');
     try {
-      const title = this.options().title.trim() || 'Practice sheet';
+      const title = this.options().title.trim() || t(DEFAULT_SHEET_TITLE);
       const blob = await sheetPdf(pages, title);
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -205,7 +208,7 @@ export class Paper {
       link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch (err) {
-      this.error.set(`Could not make the PDF: ${errorMessage(err)}`);
+      this.error.set(t('Could not make the PDF: {error}', { error: errorMessage(err) }));
     } finally {
       this.downloading.set(false);
     }
@@ -216,6 +219,8 @@ export class Paper {
 function readOptions(): SheetOptions {
   try {
     const saved = JSON.parse(readSetting(OPTIONS_KEY) ?? '{}') as Partial<SheetOptions>;
+    // The English default title saved by an earlier version: the default, in the app's language.
+    if (saved.title === DEFAULT_SHEET_TITLE) saved.title = '';
     return { ...DEFAULT_SHEET_OPTIONS, ...saved };
   } catch {
     return DEFAULT_SHEET_OPTIONS;

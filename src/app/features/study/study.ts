@@ -14,6 +14,7 @@ import { CharactersService, errorMessage } from '../../core/characters.service';
 import { DEFAULT_TYPE, TYPES, typeOf } from '../../core/config';
 import { LabelsService } from '../../core/labels.service';
 import { stripTones, toPinyin } from '../../core/pinyin';
+import { TranslatePipe, t } from '../../core/i18n';
 import { readSetting, writeSetting } from '../../core/settings';
 import { SlidingThumb } from '../../shared/sliding-thumb';
 import { CharacterCard } from './character-card';
@@ -22,7 +23,7 @@ const LAYOUT_KEY = 'hanzi-workshop-study-layout';
 
 @Component({
   selector: 'app-study',
-  imports: [CharacterCard, SlidingThumb],
+  imports: [CharacterCard, SlidingThumb, TranslatePipe],
   templateUrl: './study.html',
   host: { '(document:keydown)': 'onKey($event)' },
 })
@@ -143,20 +144,23 @@ export class Study {
       )
       .map((c) => c.character);
     const note = usedBy.length
-      ? `\n\nIt is a component of ${usedBy.join(' ')}: they will keep it listed as a component.`
+      ? '\n\n' +
+        t('It is a component of {chars}: they will keep it listed as a component.', {
+          chars: usedBy.join(' '),
+        })
       : '';
-    if (!confirm(`Delete ${entry.character} from your list?${note}`)) return;
+    if (!confirm(t('Delete {char} from your list?', { char: entry.character }) + note)) return;
 
     const list = this.visible();
     const i = list.findIndex((c) => c.character === entry.character);
     const next = list[i + 1] ?? list[i - 1];
     try {
       await this.characters.remove(entry.character);
-      this.showToast(`Deleted ${entry.character}`);
+      this.showToast(t('Deleted {item}', { item: entry.character }));
       if (next) this.select(next);
       else this.router.navigate(['/study'], { replaceUrl: true });
     } catch (err) {
-      this.showToast(`Delete failed: ${errorMessage(err)}`, 'error');
+      this.showToast(t('Delete failed: {error}', { error: errorMessage(err) }), 'error');
     }
   }
 

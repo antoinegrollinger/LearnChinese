@@ -1,14 +1,15 @@
 import { Component, computed, input } from '@angular/core';
 import { CharacterPart } from '../../core/character.model';
+import { TranslatePipe } from '../../core/i18n';
 import { Pinyin } from '../../shared/pinyin';
 
 /** "Meaning from 女 nǚ “woman”. Sound from 马 mǎ “horse”." */
 @Component({
   selector: 'app-parts-summary',
-  imports: [Pinyin],
+  imports: [Pinyin, TranslatePipe],
   template: `
     @for (group of groups(); track group.label) {
-      {{ group.label }}
+      {{ group.label | t }}
       @for (part of group.parts; track $index) {
         @if (!$first) {
           +

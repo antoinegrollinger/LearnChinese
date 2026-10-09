@@ -2,21 +2,21 @@
   <aside class="sidebar">
     <input
       type="search"
-      placeholder="Search: 妈妈, mama, mum…"
+      [placeholder]="'Search: 妈妈, mama, mum…' | t"
       [value]="query()"
       (input)="query.set($any($event.target).value)"
     />
     @if (labelFilters().labels.length) {
       <select
         class="label-filter"
-        title="Show only the words with this label"
+        [title]="'Show only the words with this label' | t"
         (change)="setLabelFilter($any($event.target).value)"
       >
         <option value="all" [selected]="labelFilter() === null">
-          All labels ({{ labelFilters().all }})
+          {{ 'All labels' | t }} ({{ labelFilters().all }})
         </option>
         <option value="none" [selected]="labelFilter() === ''">
-          No label ({{ labelFilters().none }})
+          {{ 'No label' | t }} ({{ labelFilters().none }})
         </option>
         @for (l of labelFilters().labels; track l.name) {
           <option [value]="'=' + l.name" [selected]="labelFilter() === l.name">
@@ -29,7 +29,7 @@
       class="layout-toggle segmented"
       appSlidingThumb
       role="group"
-      aria-label="Show the words as"
+      [attr.aria-label]="'Show the words as' | t"
     >
       <button
         type="button"
@@ -37,7 +37,7 @@
         [attr.aria-pressed]="layout() === 'grid'"
         (click)="setLayout('grid')"
       >
-        Grid
+        {{ 'Grid' | t }}
       </button>
       <button
         type="button"
@@ -45,7 +45,7 @@
         [attr.aria-pressed]="layout() === 'list'"
         (click)="setLayout('list')"
       >
-        List
+        {{ 'List' | t }}
       </button>
     </div>
     <ul class="word-list" [class.as-grid]="layout() === 'grid'">
@@ -74,7 +74,9 @@
         </li>
       } @empty {
         <li class="muted">
-          {{ words.list().length ? 'No word matches your search or label.' : 'No words yet.' }}
+          {{
+            (words.list().length ? 'No word matches your search or label.' : 'No words yet.') | t
+          }}
         </li>
       }
     </ul>
@@ -88,12 +90,24 @@
       <div class="word-card-top">
         <div class="word-big" lang="zh">{{ w.word }}</div>
         <div class="buttons">
-          <button type="button" title="Pronounce" aria-label="Pronounce" (click)="speak()">
+          <button
+            type="button"
+            [title]="'Pronounce' | t"
+            [attr.aria-label]="'Pronounce' | t"
+            (click)="speak()"
+          >
             <app-speaker-icon />
           </button>
-          <a class="button" [routerLink]="['/add/word', w.word]" title="Edit this word">Edit</a>
-          <button type="button" class="danger" title="Delete this word" (click)="deleteCurrent()">
-            Delete
+          <a class="button" [routerLink]="['/add/word', w.word]" [title]="'Edit this word' | t">{{
+            'Edit' | t
+          }}</a>
+          <button
+            type="button"
+            class="danger"
+            [title]="'Delete this word' | t"
+            (click)="deleteCurrent()"
+          >
+            {{ 'Delete' | t }}
           </button>
         </div>
       </div>
@@ -102,7 +116,7 @@
         <div class="meaning">{{ w.meaning }}</div>
       }
       <div class="label-row">
-        <span class="muted">Label</span>
+        <span class="muted">{{ 'Label' | t }}</span>
         <app-label-picker
           [value]="w.label"
           [disabled]="savingLabel()"
@@ -110,30 +124,35 @@
         />
       </div>
 
-      <h3>Characters</h3>
+      <h3>{{ 'Characters' | t }}</h3>
       <ul class="composition">
         @for (c of composition(); track $index) {
           <li class="char-chip" [class.unknown]="!c.known">
             @if (c.known; as k) {
-              <a [routerLink]="['/study', c.ch]" title="Open in the Characters tab">{{ c.ch }}</a>
+              <a [routerLink]="['/study', c.ch]" [title]="'Open in the Characters tab' | t">{{
+                c.ch
+              }}</a>
               <app-pinyin [text]="k.pinyin" />
               <small>{{ k.meaning }}</small>
             } @else {
               <span>{{ c.ch }}</span>
-              <a [routerLink]="['/add', c.ch]" title="Not in your characters yet">+ Add</a>
+              <a [routerLink]="['/add', c.ch]" [title]="'Not in your characters yet' | t">{{
+                '+ Add' | t
+              }}</a>
             }
           </li>
         }
       </ul>
 
       @if (w.notes) {
-        <h3>Notes</h3>
+        <h3>{{ 'Notes' | t }}</h3>
         <p>{{ w.notes }}</p>
       }
     </article>
   } @else if (words.loaded()) {
     <p class="muted">
-      No words yet: add your first one with the <strong>+</strong> button (bottom right).
+      {{ 'No words yet: add your first one with the' | t }} <strong>+</strong>
+      {{ 'button (bottom right).' | t }}
     </p>
   }
 </section>

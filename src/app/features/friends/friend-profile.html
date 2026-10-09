@@ -1,50 +1,71 @@
 <section class="view centered">
   <div class="social-page">
-    <a class="button back-link" routerLink="/friends">← Friends</a>
+    <a class="button back-link" routerLink="/friends">← {{ 'Friends' | t }}</a>
 
     @if (error(); as e) {
-      <p class="banner error">{{ e }}</p>
+      <p class="banner error">{{ e | tm }}</p>
     } @else if (profile.isLoading() && !profile.value()) {
-      <p class="muted">Loading…</p>
+      <p class="muted">{{ 'Loading…' | t }}</p>
     } @else if (profile.value(); as p) {
       <div class="dashboard-header">
         <h2>{{ p.username }}</h2>
-        <span class="muted">Friends since {{ friendsSince() }}</span>
+        <span class="muted">{{ 'Friends since {date}' | t: { date: friendsSince() } }}</span>
       </div>
 
       <dl class="session-stats">
         <div>
-          <dt>Characters</dt>
+          <dt>{{ 'Characters' | t }}</dt>
           <dd>{{ p.characters }}</dd>
         </div>
         <div>
-          <dt>Words</dt>
+          <dt>{{ 'Words' | t }}</dt>
           <dd>{{ p.words }}</dd>
         </div>
         <div>
-          <dt>Sessions</dt>
+          <dt>{{ 'Sessions' | t }}</dt>
           <dd>{{ p.sharesReviews ? rows().length : '—' }}</dd>
         </div>
         <div>
-          <dt>Right first try</dt>
+          <dt>{{ 'Right first try' | t }}</dt>
           <dd>{{ p.sharesReviews && rows().length ? totals().firstTryRate + '%' : '—' }}</dd>
         </div>
       </dl>
 
       @if (!p.sharesReviews) {
-        <p class="muted">{{ p.username }} doesn't share their training sessions.</p>
-      } @else if (!rows().length) {
-        <p class="muted">{{ p.username }} hasn't finished a {{ reviewName() }} yet.</p>
-      } @else {
-        <h3>Their {{ reviewName() }}s</h3>
         <p class="muted">
-          {{ totals().items }}
+          {{ "{name} doesn't share their training sessions." | t: { name: p.username } }}
+        </p>
+      } @else if (!rows().length) {
+        <p class="muted">
           {{
-            kind() === 'all'
-              ? 'characters and words'
-              : kindInfo[kind() === 'words' ? 'words' : 'characters'].name.toLowerCase()
+            (kind() === 'words'
+              ? "{name} hasn't finished a word training session yet."
+              : kind() === 'characters'
+                ? "{name} hasn't finished a character training session yet."
+                : "{name} hasn't finished a training session yet."
+            ) | t: { name: p.username }
           }}
-          trained in {{ totals().time }}. Read only.
+        </p>
+      } @else {
+        <h3>
+          {{
+            (kind() === 'words'
+              ? 'Their word training sessions'
+              : kind() === 'characters'
+                ? 'Their character training sessions'
+                : 'Their training sessions'
+            ) | t
+          }}
+        </h3>
+        <p class="muted">
+          {{
+            (kind() === 'words'
+              ? '{n} words trained in {time}. Read only.'
+              : kind() === 'characters'
+                ? '{n} characters trained in {time}. Read only.'
+                : '{n} characters and words trained in {time}. Read only.'
+            ) | t: { n: totals().items, time: totals().time }
+          }}
         </p>
         <ul class="sessions">
           @for (row of rows(); track row.session.id) {
@@ -56,20 +77,23 @@
                     <span class="mode-tag">
                       @if (kind() === 'all') {
                         <span lang="zh">{{ kindInfo[row.session.kind].icon }}</span>
-                        {{ kindInfo[row.session.kind].name }} ·
+                        {{ kindInfo[row.session.kind].name | t }} ·
                       }
-                      {{ modeInfo[row.session.mode].name }}</span
+                      {{ modeName(row.session.mode, row.session.kind) }}</span
                     ></strong
                   >
                   <span class="muted">
-                    {{ row.stats.count }} {{ kindInfo[row.session.kind].one
-                    }}{{ row.stats.count === 1 ? '' : 's' }} · {{ row.stats.firstTry }}/{{
-                      row.stats.count
+                    {{ countOf(row.stats.count, row.session.kind) }} ·
+                    {{
+                      '{done}/{total} first try ({rate}%)'
+                        | t
+                          : {
+                              done: row.stats.firstTry,
+                              total: row.stats.count,
+                              rate: row.firstTryRate,
+                            }
                     }}
-                    first try ({{ row.firstTryRate }}%) · {{ row.stats.mistakes }} mistake{{
-                      row.stats.mistakes === 1 ? '' : 's'
-                    }}
-                    · {{ formatDuration(row.stats.seconds) }}
+                    · {{ row.stats.mistakes | tn: '{n} mistake' : '{n} mistakes' }} · {{ formatDuration(row.stats.seconds) }}
                   </span>
                 </div>
                 <div class="buttons toolbar">
@@ -78,7 +102,7 @@
                     [attr.aria-expanded]="expanded() === row.session.id"
                     (click)="toggle(row.session.id)"
                   >
-                    {{ expanded() === row.session.id ? 'Hide' : 'Details' }}
+                    {{ (expanded() === row.session.id ? 'Hide' : 'Details') | t }}
                   </button>
                 </div>
               </div>
@@ -90,7 +114,7 @@
                       <small
                         >{{ r.tries === 1 ? '✓' : '×' + r.tries }}
                         @if (r.mistakes) {
-                          · {{ r.mistakes }} err
+                          · {{ r.mistakes | tn: '{n} err' : '{n} err' }}
                         }
                       </small>
                     </li>

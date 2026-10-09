@@ -3204,3 +3204,32 @@ button.cta:disabled {
 .people > li.clickable a.person:focus-visible {
   outline: none;
 }
+
+/* Add forms: where the filled-in data comes from (English dictionaries). */
+.source-note {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--cta) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cta) 22%, transparent);
+}
+
+/* Language (EN / FR / NL) in the header: a small pill like the other header buttons. */
+.language-picker {
+  width: auto;
+  padding: 5px 26px 5px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background-color: var(--surface);
+  border: 1px solid var(--glass-rim);
+  box-shadow: var(--glass-sheen);
+  cursor: pointer;
+}
+@media (pointer: coarse) {
+  .language-picker {
+    font-size: 16px; /* no zoom on iPhone */
+  }
+}

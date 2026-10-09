@@ -1,10 +1,12 @@
 /* Layout of the practice sheets (Train on paper): A4 pages, in millimetres, as a list of simple
  * drawing operations. The page shows them as SVG (preview) and pdf.ts turns them into a PDF. */
+import { t } from '../../core/i18n';
 
 /** Lines inside each box: 米 (cross and diagonals), 田 (cross) or none. */
 export type GridStyle = 'mi' | 'tian' | 'none';
 
 export interface SheetOptions {
+  /** '' = the default title (DEFAULT_SHEET_TITLE, in the app's language). */
   title: string;
   /** Boxes in a row (their size follows). */
   boxesPerRow: number;
@@ -18,8 +20,11 @@ export interface SheetOptions {
   grid: GridStyle;
 }
 
+/** Translated when shown (t()). */
+export const DEFAULT_SHEET_TITLE = 'My Chinese character worksheet';
+
 export const DEFAULT_SHEET_OPTIONS: SheetOptions = {
-  title: 'My Chinese character worksheet',
+  title: '',
   boxesPerRow: 11,
   shadows: 4,
   rowsPerCharacter: 1,
@@ -153,7 +158,8 @@ export function layoutSheet(characters: SheetCharacter[], options: SheetOptions)
     }
   }
 
-  return pages.map((ops, i) => ({ ops: [...header(options.title, i + 1, pages.length), ...ops] }));
+  const title = options.title.trim() || t(DEFAULT_SHEET_TITLE);
+  return pages.map((ops, i) => ({ ops: [...header(title, i + 1, pages.length), ...ops] }));
 }
 
 /** "Name: ____", the title and the page number, over a line. */
@@ -165,10 +171,10 @@ function header(title: string, page: number, pages: number): SheetOp[] {
   const line = (x1: number, y1: number, x2: number, width: number) =>
     ({ kind: 'line', x1, y1, x2, y2: y1, width, color: INK }) as const;
   return [
-    text('Name:', MARGIN.x, 'start', 3.6),
-    line(MARGIN.x + 12, base + 0.8, MARGIN.x + 48, 0.2),
+    text(t('Name:'), MARGIN.x, 'start', 3.6),
+    line(MARGIN.x + 14, base + 0.8, MARGIN.x + 48, 0.2),
     text(title, PAGE.width / 2, 'middle', 4.6),
-    text(pages > 1 ? `Page ${page} / ${pages}` : '', right, 'end', 3.6),
+    text(pages > 1 ? t('Page {page} / {pages}', { page, pages }) : '', right, 'end', 3.6),
     line(MARGIN.x, base + 3, right, 0.35),
   ].filter((op) => op.kind !== 'text' || op.text);
 }

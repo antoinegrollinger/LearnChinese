@@ -5,6 +5,7 @@ import { filter, map } from 'rxjs';
 import { AddFab } from './add-fab';
 import { SlidingThumb } from './sliding-thumb';
 import { CharactersService } from '../core/characters.service';
+import { TranslatePipe } from '../core/i18n';
 import { ReviewsService } from '../core/reviews.service';
 import { WordsService } from '../core/words.service';
 
@@ -30,16 +31,16 @@ export interface PageTab {
  */
 @Component({
   selector: 'app-tabbed-page',
-  imports: [RouterOutlet, RouterLink, SlidingThumb, AddFab],
+  imports: [RouterOutlet, RouterLink, SlidingThumb, AddFab, TranslatePipe],
   template: `
-    <nav class="page-tabs" appSlidingThumb [attr.aria-label]="label">
+    <nav class="page-tabs" appSlidingThumb [attr.aria-label]="label | t">
       @for (tab of tabs(); track tab.path) {
         <a
           [routerLink]="lastUrl()[tab.path]"
           [class.active]="active() === tab.path"
           [attr.aria-current]="active() === tab.path ? 'page' : null"
         >
-          <span lang="zh" aria-hidden="true">{{ tab.icon }}</span> {{ tab.name }}
+          <span lang="zh" aria-hidden="true">{{ tab.icon }}</span> {{ tab.name | t }}
           @if (tab.count) {
             <span class="tab-count">{{ countOf(tab.count) }}</span>
           }

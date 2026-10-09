@@ -1,29 +1,40 @@
 <section class="view centered">
   <form class="card add-form entry-form" [formGroup]="form" autocomplete="off" (ngSubmit)="save()">
-    <h2 class="form-title">{{ editing() ? 'Edit ' + editing() : 'Add a character' }}</h2>
+    <h2 class="form-title">
+      {{ editing() ? ('Edit {item}' | t: { item: editing()! }) : ('Add a character' | t) }}
+    </h2>
+
+    <!-- Where the filled-in data comes from: English dictionaries. -->
+    <p class="source-note" role="note">
+      {{
+        'Meanings, definitions and example words filled in from the dictionaries (Make Me a Hanzi, CC-CEDICT) are in English. Translate them by hand if you want them in your language.'
+          | t
+      }}
+    </p>
 
     <fieldset>
-      <legend>Find a character by pinyin</legend>
+      <legend>{{ 'Find a character by pinyin' | t }}</legend>
       <input
         type="search"
-        placeholder="ma, mǎ, nv3… or a character"
+        [placeholder]="'ma, mǎ, nv3… or a character' | t"
         [value]="searchQuery()"
         (input)="search($any($event.target).value)"
         (keydown.enter)="$event.preventDefault()"
       />
       <p class="muted">
         @if (dictionary.loading()) {
-          Loading the dictionary (only once)…
+          {{ 'Loading the dictionary (only once)…' | t }}
         } @else if (dictionary.error()) {
-          Could not load the dictionary (internet connection?).
+          {{ 'Could not load the dictionary (internet connection?).' | t }}
         } @else if (searchQuery().trim()) {
           {{
             results().length
-              ? results().length + ' result(s), most common first. Click one to fill in the form.'
-              : 'No character found.'
+              ? ('{n} result(s), most common first. Click one to fill in the form.'
+                | t: { n: results().length })
+              : ('No character found.' | t)
           }}
         } @else {
-          Most common characters first. Click one to fill in the form.
+          {{ 'Most common characters first. Click one to fill in the form.' | t }}
         }
       </p>
       <ul class="results">
@@ -34,7 +45,7 @@
               class="tile result"
               [class.known]="isKnown(e.character)"
               [title]="
-                (isKnown(e.character) ? 'Already in your list — click to edit. ' : '') +
+                (isKnown(e.character) ? ('Already in your list — click to edit. ' | t) : '') +
                 (e.definition ?? '')
               "
               (click)="pick(e)"
@@ -42,7 +53,7 @@
               <span class="tile-char">{{ e.character }}</span>
               <app-pinyin [text]="e.pinyin.join(', ')" />
               <span class="def">{{
-                isKnown(e.character) ? '✓ already learned' : shortDefinition(e.definition)
+                isKnown(e.character) ? ('✓ already learned' | t) : shortDefinition(e.definition)
               }}</span>
             </button>
           </li>
@@ -52,43 +63,50 @@
 
     @if (editing(); as ch) {
       <p class="banner">
-        Editing {{ ch }} — saving will update it in your list.
-        <a [routerLink]="['/study', ch]">View in My 汉字 and words →</a>
+        {{ 'Editing {item} — saving will update it in your list.' | t: { item: ch } }}
+        <a [routerLink]="['/study', ch]">{{ 'View in My 汉字 and words' | t }} →</a>
       </p>
     }
 
     <div class="row">
-      <label>Character <input formControlName="character" class="big" /></label>
-      <span class="muted">{{ check() }}</span>
+      <label>{{ 'Character' | t }} <input formControlName="character" class="big" /></label>
+      <span class="muted">{{ check() | tm }}</span>
       <button
         type="button"
-        title="Replace the form with dictionary data"
+        [title]="'Replace the form with dictionary data' | t"
         (click)="fillFromDictionary()"
       >
-        ↻ Fill from dictionary
+        ↻ {{ 'Fill from dictionary' | t }}
       </button>
     </div>
     <div class="row">
-      <label class="grow">Pinyin <input formControlName="pinyin" placeholder="ma1 or mā" /></label>
+      <label class="grow"
+        >{{ 'Pinyin' | t }} <input formControlName="pinyin" [placeholder]="'ma1 or mā' | t"
+      /></label>
       <span class="pinyin-preview"><app-pinyin [text]="pinyinPreview()" /></span>
     </div>
-    <label>Meaning <input formControlName="meaning" placeholder="mother" /></label>
+    <label
+      >{{ 'Meaning' | t }} <input formControlName="meaning" [placeholder]="'mother' | t"
+    /></label>
     <label>
-      Type
+      {{ 'Type' | t }}
       <select formControlName="type">
-        <option value="">— unknown —</option>
-        @for (t of types; track t[0]) {
-          <option [value]="t[0]">{{ t[1].name }} ({{ t[1].chinese }})</option>
+        <option value="">{{ '— unknown —' | t }}</option>
+        @for (ty of types; track ty[0]) {
+          <option [value]="ty[0]">{{ ty[1].name | t }} ({{ ty[1].chinese }})</option>
         }
       </select>
     </label>
     <label>
-      <span>Label <span class="muted">(optional, to group and filter your characters)</span></span>
+      <span
+        >{{ 'Label' | t }}
+        <span class="muted">{{ '(optional, to group and filter your characters)' | t }}</span></span
+      >
       <app-label-picker [value]="value().label" (changed)="form.controls.label.setValue($event)" />
     </label>
 
     <fieldset formArrayName="components">
-      <legend>Components (in writing order)</legend>
+      <legend>{{ 'Components (in writing order)' | t }}</legend>
       @for (part of parts.controls; track part; let i = $index) {
         <div class="component-row" [formGroupName]="i">
           <input
@@ -96,41 +114,44 @@
             placeholder="女"
             class="short char"
             list="known-characters"
-            title="Pick one of your characters, or type any character"
+            [title]="'Pick one of your characters, or type any character' | t"
           />
           @if (isKnown(part.controls.character.value.trim())) {
             <a
               class="known-part"
               [routerLink]="['/study', part.controls.character.value.trim()]"
-              title="One of your characters: pinyin and meaning taken from your list"
+              [title]="'One of your characters: pinyin and meaning taken from your list' | t"
               >✓</a
             >
           }
           <select formControlName="role">
             @for (r of roles; track r[0]) {
-              <option [value]="r[0]">{{ r[1].name }}</option>
+              <option [value]="r[0]">{{ r[1].name | t }}</option>
             }
           </select>
-          <input formControlName="pinyin" placeholder="pinyin (nü3)" />
-          <input formControlName="meaning" placeholder="meaning (woman)" />
+          <input formControlName="pinyin" [placeholder]="'pinyin (nü3)' | t" />
+          <input formControlName="meaning" [placeholder]="'meaning (woman)' | t" />
           <input
             formControlName="strokes"
-            placeholder="strokes"
+            [placeholder]="'strokes' | t"
             class="short"
-            title="Optional, e.g. 1-3"
+            [title]="'Optional, e.g. 1-3' | t"
           />
-          <button type="button" title="Remove" (click)="parts.removeAt(i)">×</button>
+          <button type="button" [title]="'Remove' | t" (click)="parts.removeAt(i)">×</button>
         </div>
       }
       <div class="buttons">
-        <button type="button" (click)="addPart()">+ Add a component</button>
+        <button type="button" (click)="addPart()">{{ '+ Add a component' | t }}</button>
         <button
           type="button"
           [disabled]="!value().character?.trim()"
-          title="For a base character (人, 木, 口…) that is a component on its own"
+          [title]="'For a base character (人, 木, 口…) that is a component on its own' | t"
           (click)="useSelfAsComponent()"
         >
-          Use {{ value().character?.trim() || 'this character' }} as its own component
+          {{
+            'Use {char} as its own component'
+              | t: { char: value().character?.trim() || ('this character' | t) }
+          }}
         </button>
       </div>
       <datalist id="known-characters">
@@ -141,20 +162,20 @@
     </fieldset>
 
     <label>
-      <span>Words (one per line: <code>妈妈 | ma1ma5 | mum</code>)</span>
+      <span>{{ 'Words (one per line:' | t }} <code>妈妈 | ma1ma5 | mum</code>)</span>
       <textarea formControlName="words" rows="3"></textarea>
     </label>
-    <label>Notes <textarea formControlName="notes" rows="2"></textarea></label>
+    <label>{{ 'Notes' | t }} <textarea formControlName="notes" rows="2"></textarea></label>
 
     <div class="buttons form-actions">
-      <button type="button" (click)="clear()">New</button>
+      <button type="button" (click)="clear()">{{ 'New' | t }}</button>
       @if (editing()) {
-        <button type="button" class="danger" (click)="remove()">Delete</button>
+        <button type="button" class="danger" (click)="remove()">{{ 'Delete' | t }}</button>
       }
       <button type="submit" class="primary" [disabled]="saving() || !!characters.error()">
-        {{ editing() ? 'Save changes' : 'Save' }}
+        {{ (editing() ? 'Save changes' : 'Save') | t }}
       </button>
     </div>
-    <p class="message" [class]="status().kind">{{ status().text }}</p>
+    <p class="message" [class]="status().kind">{{ status().text | tm }}</p>
   </form>
 </section>

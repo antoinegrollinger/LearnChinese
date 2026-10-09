@@ -1,12 +1,18 @@
 <section class="view paper">
   <div class="paper-setup">
-    <h2>Train on paper</h2>
+    <h2>{{ 'Train on paper' | t }}</h2>
     <p class="muted">
-      Print practice sheets: each character with its model, shadows to trace and boxes to fill.
+      {{
+        'Print practice sheets: each character with its model, shadows to trace and boxes to fill.'
+          | t
+      }}
     </p>
 
     <label>
-      <span>Characters <span class="muted">(in order; repeat one to practise it more)</span></span>
+      <span
+        >{{ 'Characters' | t }}
+        <span class="muted">{{ '(in order; repeat one to practise it more)' | t }}</span></span
+      >
       <textarea
         lang="zh"
         rows="3"
@@ -18,29 +24,31 @@
     </label>
     <div class="paper-count">
       <span class="muted">
-        {{ sequence().length }} character{{ sequence().length === 1 ? '' : 's' }}
+        {{ sequence().length | tn: '{n} character' : '{n} characters' }}
         @if (pages().length) {
-          · {{ pages().length }} page{{ pages().length === 1 ? '' : 's' }}
+          · {{ pages().length | tn: '{n} page' : '{n} pages' }}
         }
         @if (loading()) {
-          · loading…
+          · {{ 'loading…' | t }}
         }
       </span>
       @if (text()) {
-        <button type="button" (click)="text.set('')">Clear</button>
+        <button type="button" (click)="text.set('')">{{ 'Clear' | t }}</button>
       }
     </div>
     @if (missing().length) {
-      <p class="warning">No stroke data for {{ missing().join(' ') }}: left out.</p>
+      <p class="warning">
+        {{ 'No stroke data for {chars}: left out.' | t: { chars: missing().join(' ') } }}
+      </p>
     }
 
     @if (characters.list().length || words.list().length) {
       <details class="paper-pick">
-        <summary>Add from your characters and words</summary>
+        <summary>{{ 'Add from your characters and words' | t }}</summary>
         <div class="label-groups">
           @if (characters.list().length) {
             <button type="button" (click)="appendAllCharacters()">
-              All my characters ({{ characters.list().length }})
+              {{ 'All my characters' | t }} ({{ characters.list().length }})
             </button>
           }
           @for (g of labelGroups(); track g.name) {
@@ -50,7 +58,7 @@
           }
         </div>
         @if (characters.list().length) {
-          <p class="muted">Characters:</p>
+          <p class="muted">{{ 'Characters:' | t }}</p>
           <div class="paper-chips" lang="zh">
             @for (c of characters.list(); track c.character) {
               <button type="button" [title]="c.meaning ?? ''" (click)="append(c.character)">
@@ -60,7 +68,7 @@
           </div>
         }
         @if (words.list().length) {
-          <p class="muted">Words:</p>
+          <p class="muted">{{ 'Words:' | t }}</p>
           <div class="paper-chips" lang="zh">
             @for (w of words.list(); track w.word) {
               <button type="button" [title]="w.meaning ?? ''" (click)="append(w.word)">
@@ -72,23 +80,24 @@
       </details>
     } @else if (characters.loaded()) {
       <p class="muted">
-        Type any characters above, or <a routerLink="/add">add some to your list</a> to pick them
-        here.
+        {{ 'Type any characters above, or' | t }}
+        <a routerLink="/add">{{ 'add some to your list' | t }}</a>
+        {{ 'to pick them here.' | t }}
       </p>
     }
 
     <fieldset class="paper-options">
-      <legend>Layout</legend>
+      <legend>{{ 'Layout' | t }}</legend>
       <label class="check">
         <input
           type="checkbox"
           [checked]="options().shadows > 0"
           (change)="setShadows($any($event.target).checked)"
         />
-        Grey shadows to trace
+        {{ 'Grey shadows to trace' | t }}
         @if (options().shadows > 0) {
           <select
-            aria-label="Number of shadows"
+            [attr.aria-label]="'Number of shadows' | t"
             (change)="set('shadows', +$any($event.target).value)"
           >
             @for (n of shadowCounts(); track n) {
@@ -103,7 +112,7 @@
           [checked]="options().strokeOrder"
           (change)="set('strokeOrder', $any($event.target).checked)"
         />
-        Stroke order above each row
+        {{ 'Stroke order above each row' | t }}
       </label>
       <label class="check">
         <input
@@ -111,12 +120,12 @@
           [checked]="options().pinyin"
           (change)="set('pinyin', $any($event.target).checked)"
         />
-        Pinyin
+        {{ 'Pinyin' | t }}
       </label>
 
       <div class="paper-field">
-        <span>Box size</span>
-        <div class="layout-toggle segmented" appSlidingThumb role="group" aria-label="Box size">
+        <span>{{ 'Box size' | t }}</span>
+        <div class="layout-toggle segmented" appSlidingThumb role="group" [attr.aria-label]="'Box size' | t">
           @for (s of sizes; track s.boxes) {
             <button
               type="button"
@@ -124,33 +133,34 @@
               [attr.aria-pressed]="options().boxesPerRow === s.boxes"
               (click)="setBoxes(s.boxes)"
             >
-              {{ s.name }}
+              {{ s.name | t }}
             </button>
           }
         </div>
       </div>
       <label class="paper-field">
-        <span>Guide lines</span>
+        <span>{{ 'Guide lines' | t }}</span>
         <select (change)="set('grid', $any($event.target).value)">
           @for (g of grids; track g[0]) {
-            <option [value]="g[0]" [selected]="g[0] === options().grid">{{ g[1] }}</option>
+            <option [value]="g[0]" [selected]="g[0] === options().grid">{{ g[1] | t }}</option>
           }
         </select>
       </label>
       <label class="paper-field">
-        <span>Rows per character</span>
+        <span>{{ 'Rows per character' | t }}</span>
         <select (change)="set('rowsPerCharacter', +$any($event.target).value)">
           @for (n of [1, 2, 3, 4]; track n) {
             <option [value]="n" [selected]="n === options().rowsPerCharacter">
-              {{ n }}{{ n > 1 ? ' (the next ones without shadows)' : '' }}
+              {{ n }}{{ n > 1 ? ' ' + ('(the next ones without shadows)' | t) : '' }}
             </option>
           }
         </select>
       </label>
       <label class="paper-field">
-        <span>Title</span>
+        <span>{{ 'Title' | t }}</span>
         <input
           [value]="options().title"
+          [placeholder]="defaultTitle | t"
           maxlength="80"
           (input)="set('title', $any($event.target).value)"
         />
@@ -167,23 +177,23 @@
       >
         {{
           downloading()
-            ? 'Making the PDF…'
-            : 'Download the PDF' +
-              (pages().length > 1 ? ' (' + pages().length + ' pages)' : '')
+            ? ('Making the PDF…' | t)
+            : ('Download the PDF' | t) +
+              (pages().length > 1 ? ' (' + (pages().length | tn: '{n} page' : '{n} pages') + ')' : '')
         }}
       </button>
       @if (error(); as e) {
-        <p class="message error">{{ e }}</p>
+        <p class="message error">{{ e | tm }}</p>
       }
     </div>
   </div>
 
-  <div class="paper-preview" aria-label="Preview">
+  <div class="paper-preview" [attr.aria-label]="'Preview' | t">
     @for (p of pages(); track $index) {
       <svg
         class="sheet-page"
         role="img"
-        [attr.aria-label]="'Page ' + ($index + 1)"
+        [attr.aria-label]="'Page {n}' | t: { n: $index + 1 }"
         [attr.viewBox]="'0 0 ' + page.width + ' ' + page.height"
       >
         <rect [attr.width]="page.width" [attr.height]="page.height" fill="#fff" />
@@ -225,9 +235,9 @@
       <div class="sheet-page sheet-empty">
         <p class="muted">
           @if (loading()) {
-            Loading the strokes…
+            {{ 'Loading the strokes…' | t }}
           } @else {
-            Type or pick characters: the preview of the sheets shows here.
+            {{ 'Type or pick characters: the preview of the sheets shows here.' | t }}
           }
         </p>
       </div>
