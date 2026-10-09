@@ -8,6 +8,9 @@
  *   DELETE /api/characters/:character  → delete one character
  *   GET    /api/labels                 → the labels ({ name, color }); same POST and DELETE routes
  *                                         (a character's label is also created when it is saved)
+ *   GET    /api/reviews                → completed review sessions, newest first
+ *   POST   /api/reviews                → save one (body: ReviewSession) → { entry, created }
+ *   DELETE /api/reviews/:id            → delete one
  *   GET    /api/lookup/:word           → CC-CEDICT entries for a word (see cedict.ts)
  *
  * During development (npm start) Angular's dev server forwards /api to this server (proxy.conf.json).
@@ -21,6 +24,7 @@ import { User } from '../src/app/core/auth.model.ts';
 import { AuthError, createAuth } from './auth.ts';
 import { CHARACTERS, ListFile, ROOT, WORDS } from './data-files.ts';
 import { Label, cleanLabel } from '../src/app/core/character.model.ts';
+import { cleanReview } from '../src/app/core/review.model.ts';
 import { ListStore, createStores } from './store.ts';
 
 const DIST = join(ROOT, 'dist', 'hanzi-workshop', 'browser');
@@ -137,6 +141,35 @@ async function handleAuth(req: IncomingMessage, res: ServerResponse, action?: st
   sendJson(res, 404, { error: 'Unknown API route.' });
 }
 
+/** /api/reviews: the completed review sessions. */
+async function handleReviews(
+  user: User,
+  req: IncomingMessage,
+  res: ServerResponse,
+  param?: string,
+): Promise<void> {
+  if (req.method === 'GET' && !param) return sendJson(res, 200, await stores.reviews.all(user.id));
+
+  if (req.method === 'POST' && !param) {
+    const session = cleanReview(await readJson(req));
+    if (!session.finishedAt || !session.results.length) {
+      return sendJson(res, 400, { error: 'The session needs a date and at least one character.' });
+    }
+    const entry = await stores.reviews.add(user.id, session);
+    console.log(`Saved review ${entry.id} of ${session.results.length} characters (user ${user.id})`);
+    return sendJson(res, 200, { entry, created: true });
+  }
+
+  if (req.method === 'DELETE' && param) {
+    if (!(await stores.reviews.remove(user.id, Number(param)))) {
+      return sendJson(res, 404, { error: 'Not found.' });
+    }
+    return sendJson(res, 200, { ok: true });
+  }
+
+  sendJson(res, 405, { error: 'Method not allowed.' });
+}
+
 /** CRUD routes for one list: GET /api/<name>, POST /api/<name>, DELETE /api/<name>/:key */
 async function handleList<T>(
   list: ListFile<T>,
@@ -177,6 +210,7 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, url: URL): P
   if (resource === 'characters') return handleList(CHARACTERS, stores.characters, user, req, res, param);
   if (resource === 'words') return handleList(WORDS, stores.words, user, req, res, param);
   if (resource === 'labels') return handleList(LABELS, stores.labels, user, req, res, param);
+  if (resource === 'reviews') return handleReviews(user, req, res, param);
   if (resource === 'lookup' && param && req.method === 'GET') {
     return sendJson(res, 200, await lookupWord(decodeURIComponent(param)));
   }

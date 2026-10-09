@@ -1,0 +1,169 @@
+<section class="view centered">
+  <div class="dashboard">
+    <div class="dashboard-header">
+      <h2>Your reviews</h2>
+      <div class="buttons">
+        @if (rows()[0]; as last) {
+          <button
+            type="button"
+            class="primary"
+            [disabled]="!last.available"
+            (click)="reviewSession(last.session)"
+          >
+            ↻ Repeat the last review ({{ last.available }})
+          </button>
+        }
+        <a class="button" routerLink="/review">New review</a>
+      </div>
+    </div>
+
+    @if (reviews.error(); as error) {
+      <p class="banner error">{{ error }}</p>
+    } @else if (!reviews.loaded()) {
+      <p class="muted">Loading…</p>
+    } @else if (!rows().length) {
+      <p class="muted">
+        No reviews yet. Finish a <a routerLink="/review">review</a> to see it here.
+      </p>
+    } @else {
+      <dl class="session-stats">
+        <div>
+          <dt>Reviews</dt>
+          <dd>{{ totals().sessions }}</dd>
+        </div>
+        <div>
+          <dt>Characters</dt>
+          <dd>{{ totals().characters }}</dd>
+        </div>
+        <div>
+          <dt>Right first try</dt>
+          <dd>{{ totals().firstTryRate }}%</dd>
+        </div>
+        <div>
+          <dt>Time</dt>
+          <dd>{{ totals().time }}</dd>
+        </div>
+      </dl>
+
+      @if (hardest().length) {
+        <div class="hardest">
+          <h3>Hardest characters</h3>
+          <ul class="missed">
+            @for (h of hardest(); track h.entry!.character) {
+              <li
+                [title]="
+                  toPinyin(h.entry!.pinyin) +
+                  ' — ' +
+                  (h.entry!.meaning ?? '') +
+                  ' · ' +
+                  h.extraTries +
+                  ' extra tries'
+                "
+              >
+                <a class="missed-char" [routerLink]="['/study', h.entry!.character]">{{
+                  h.entry!.character
+                }}</a>
+                <span class="muted">+{{ h.extraTries }}</span>
+              </li>
+            }
+          </ul>
+          <button type="button" (click)="reviewHardest()">Review these</button>
+        </div>
+      }
+
+      <h3>History</h3>
+      <ul class="sessions">
+        @for (row of rows(); track row.session.id) {
+          <li class="session">
+            <div class="session-top">
+              <div class="session-info">
+                <strong>{{ row.date }}</strong>
+                <span class="muted">
+                  {{ row.stats.count }} character{{ row.stats.count === 1 ? '' : 's' }} ·
+                  {{ row.stats.firstTry }}/{{ row.stats.count }} first try ({{ row.firstTryRate }}%)
+                  · {{ row.stats.mistakes }} mistake{{ row.stats.mistakes === 1 ? '' : 's' }} ·
+                  {{ formatDuration(row.stats.seconds) }}
+                </span>
+                @if (row.labels.length) {
+                  <span class="session-labels">
+                    @for (l of row.labels; track l) {
+                      <span class="session-label">
+                        <span class="label-dot" [style.background]="labels.colorOf(l)"></span>
+                        {{ l }}
+                      </span>
+                    }
+                  </span>
+                }
+              </div>
+              <div class="buttons">
+                <button
+                  type="button"
+                  class="primary"
+                  [disabled]="!row.available"
+                  [title]="
+                    row.available < row.stats.count
+                      ? row.stats.count -
+                        row.available +
+                        ' of its characters are no longer in your list'
+                      : ''
+                  "
+                  (click)="reviewSession(row.session)"
+                >
+                  ↻ Review again
+                </button>
+                <button
+                  type="button"
+                  [attr.aria-expanded]="expanded() === row.session.id"
+                  (click)="toggle(row.session.id)"
+                >
+                  {{ expanded() === row.session.id ? 'Hide' : 'Details' }}
+                </button>
+                <button
+                  type="button"
+                  class="danger"
+                  title="Delete from your history"
+                  (click)="remove(row.session)"
+                >
+                  🗑
+                </button>
+              </div>
+            </div>
+            @if (expanded() === row.session.id) {
+              <ul class="session-results">
+                @for (r of row.results; track r.character) {
+                  <li
+                    [class.first-try]="r.tries === 1"
+                    [class.gone]="!r.entry"
+                    [title]="
+                      r.entry
+                        ? toPinyin(r.entry.pinyin) + ' — ' + (r.entry.meaning ?? '')
+                        : 'No longer in your list'
+                    "
+                  >
+                    <span class="result-char">{{ r.character }}</span>
+                    <small
+                      >{{ r.tries === 1 ? '✓' : '×' + r.tries }}
+                      @if (r.mistakes) {
+                        · {{ r.mistakes }} err
+                      }
+                    </small>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="session-preview">
+                @for (r of row.results.slice(0, 24); track r.character) {
+                  <span [class.missed-once]="r.tries > 1">{{ r.character }}</span>
+                }
+                @if (row.results.length > 24) {
+                  <span class="muted">+{{ row.results.length - 24 }}</span>
+                }
+              </p>
+            }
+          </li>
+        }
+      </ul>
+      <p class="message" [class]="message().kind">{{ message().text }}</p>
+    }
+  </div>
+</section>

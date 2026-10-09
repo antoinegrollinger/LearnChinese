@@ -5,24 +5,10 @@ import { CharactersService, errorMessage } from '../../core/characters.service';
 import { DEFAULT_TYPE, TYPES, typeOf } from '../../core/config';
 import { LabelsService } from '../../core/labels.service';
 import { stripTones, toPinyin } from '../../core/pinyin';
+import { readSetting, writeSetting } from '../../core/settings';
 import { CharacterCard } from './character-card';
 
 const LAYOUT_KEY = 'hanzi-workshop-study-layout';
-
-/** localStorage can be unavailable (private browsing): then the setting is just not kept. */
-function readSetting(key: string): string | null {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function writeSetting(key: string, value: string): void {
-  try {
-    localStorage.setItem(key, value);
-  } catch {}
-}
 
 @Component({
   selector: 'app-study',

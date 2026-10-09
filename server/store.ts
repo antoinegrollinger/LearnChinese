@@ -16,6 +16,7 @@ import {
   cleanEntry,
   cleanLabel,
 } from '../src/app/core/character.model.ts';
+import { ReviewSession, cleanReview } from '../src/app/core/review.model.ts';
 import { WordEntry, cleanWord } from '../src/app/core/word.model.ts';
 
 /** A list; user is the app_user.id whose list it is. */
@@ -33,10 +34,20 @@ export interface Stores {
   words: ListStore<WordEntry>;
   /** The user's labels, sorted by name; save() sets a label's colour (creating it if needed). */
   labels: ListStore<Label>;
+  reviews: ReviewStore;
   /** For the startup log. */
   description: string;
   /** Fails if the database can't be reached or has no tables. */
   check(): Promise<void>;
+}
+
+/** The user's completed review sessions. */
+export interface ReviewStore {
+  /** Newest first. */
+  all(user: number): Promise<ReviewSession[]>;
+  /** Returns the session with its new id. */
+  add(user: number, session: ReviewSession): Promise<ReviewSession>;
+  remove(user: number, id: number): Promise<boolean>;
 }
 
 type Db = mysql.Pool | mysql.PoolConnection | mysql.Connection;
@@ -271,6 +282,41 @@ function labelsStore(pool: mysql.Pool): ListStore<Label> {
   };
 }
 
+function reviewsStore(pool: mysql.Pool): ReviewStore {
+  return {
+    async all(user) {
+      const [rows] = await pool.query<Rows>(
+        `SELECT id, started_at, finished_at, results FROM review_sessions
+         WHERE user_id = ? ORDER BY finished_at DESC, id DESC`,
+        [user],
+      );
+      return rows.map((r) =>
+        cleanReview({
+          id: r['id'],
+          startedAt: r['started_at'],
+          finishedAt: r['finished_at'],
+          results: parseJson(r['results']),
+        }),
+      );
+    },
+    async add(user, session) {
+      // Dates go in and come back as Date objects (mysql2 converts them the same way both times).
+      const [result] = await pool.query<Result>(
+        `INSERT INTO review_sessions (user_id, started_at, finished_at, results) VALUES (?, ?, ?, ?)`,
+        [user, new Date(session.startedAt), new Date(session.finishedAt), JSON.stringify(session.results)],
+      );
+      return { ...session, id: result.insertId };
+    },
+    async remove(user, id) {
+      const [result] = await pool.query<Result>(
+        `DELETE FROM review_sessions WHERE user_id = ? AND id = ?`,
+        [user, id],
+      );
+      return result.affectedRows > 0;
+    },
+  };
+}
+
 /** One component of a character. New components take this part's pinyin and meaning. */
 async function saveLink(db: Db, user: number, characterId: number, position: number, part: CharacterPart) {
   const pinyin = part.pinyin ?? null;
@@ -325,6 +371,7 @@ export function createStores(): Stores {
     characters: charactersStore(pool),
     words: tableStore(pool, WORDS_TABLE),
     labels: labelsStore(pool),
+    reviews: reviewsStore(pool),
     description: `MySQL ${safeUrl(url)}`,
     check: async () => void (await pool.query(`SELECT 1 FROM sessions LIMIT 1`)),
   };

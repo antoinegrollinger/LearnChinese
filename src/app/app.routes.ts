@@ -2,6 +2,7 @@ import { Routes, UrlMatcher } from '@angular/router';
 import { loggedIn, loggedOut } from './core/auth.guard';
 import { Account } from './features/account/account';
 import { Add } from './features/add/add';
+import { Dashboard } from './features/dashboard/dashboard';
 import { Login } from './features/login/login';
 import { Review } from './features/review/review';
 import { Study } from './features/study/study';
@@ -22,6 +23,7 @@ const pages: Routes = [
     title: 'Study · Hanzi Workshop',
   },
   { path: 'review', component: Review, title: 'Review · Hanzi Workshop' },
+  { path: 'dashboard', component: Dashboard, title: 'Dashboard · Hanzi Workshop' },
   { matcher: withOptionalParam('add', 'character'), component: Add, title: 'Add · Hanzi Workshop' },
   {
     matcher: withOptionalParam('words', 'word'),
@@ -34,5 +36,9 @@ const pages: Routes = [
 export const routes: Routes = [
   { path: 'login', component: Login, canActivate: [loggedOut], title: 'Log in · Hanzi Workshop' },
   // Everything else needs a login.
-  { path: '', canActivateChild: [loggedIn], children: [...pages, { path: '**', redirectTo: 'study' }] },
+  {
+    path: '',
+    canActivateChild: [loggedIn],
+    children: [...pages, { path: '**', redirectTo: 'study' }],
+  },
 ];

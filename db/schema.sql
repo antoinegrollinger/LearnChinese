@@ -141,6 +141,19 @@ CREATE TABLE IF NOT EXISTS words (
   CONSTRAINT words_word_not_empty CHECK (word <> '')
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin;
 
+-- One row per completed review session (ReviewSession in src/app/core/review.model.ts). The
+-- characters are kept by hanzi, so the history stays when a character is deleted.
+CREATE TABLE IF NOT EXISTS review_sessions (
+  id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  user_id     BIGINT UNSIGNED NOT NULL,
+  started_at  DATETIME NOT NULL,
+  finished_at DATETIME NOT NULL,
+  results     JSON NOT NULL,                -- [{"character": "妈", "tries": 2, "mistakes": 3}, ...]
+  KEY review_sessions_user (user_id, finished_at),
+  CONSTRAINT review_sessions_user FOREIGN KEY (user_id) REFERENCES app_user (id) ON DELETE CASCADE,
+  CONSTRAINT review_sessions_results_array CHECK (JSON_TYPE(results) = 'ARRAY')
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin;
+
 -- A character with its components by name, for browsing (e.g. in phpMyAdmin or Adminer):
 --   SELECT * FROM character_components_view WHERE hanzi = '妈';
 CREATE OR REPLACE VIEW character_components_view AS
