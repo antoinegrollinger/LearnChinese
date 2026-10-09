@@ -1,8 +1,6 @@
 import { Routes, UrlMatcher, UrlSegment } from '@angular/router';
 import { loggedIn, loggedOut } from './core/auth.guard';
 import { Account } from './features/account/account';
-import { Add } from './features/add/add';
-import { AddWord } from './features/add/add-word';
 import { Login } from './features/login/login';
 import { Review } from './features/review/review';
 import { Study } from './features/study/study';
@@ -75,14 +73,15 @@ const pages: Routes = [
     component: TabbedPage,
     data: { tabs: ADD_TABS, label: 'Add' },
     children: [
+      // Loaded when first opened (keeps the first download small).
       {
         matcher: withOptionalParam('word', 'word'),
-        component: AddWord,
+        loadComponent: () => import('./features/add/add-word').then((m) => m.AddWord),
         title: 'Word · Add · Hanzi Workshop',
       },
       {
         matcher: optionalParamExcept('word', 'character'),
-        component: Add,
+        loadComponent: () => import('./features/add/add').then((m) => m.Add),
         title: 'Character · Add · Hanzi Workshop',
       },
     ],

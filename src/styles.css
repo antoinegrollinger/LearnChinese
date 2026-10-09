@@ -1666,6 +1666,10 @@ fieldset {
 .theme-toggle:hover svg {
   transform: rotate(-20deg);
 }
+/* Log out: text, or an icon on phones (see the max-width: 700px rules). */
+.logout-icon {
+  display: none;
+}
 /* Your username in the header: a quiet pill */
 .account > a {
   padding: 6px 12px;
@@ -1710,6 +1714,34 @@ fieldset {
     top: 6px;
     margin: 6px 8px 0;
     padding: 8px 8px 8px 14px;
+  }
+  /* Two compact rows: the logo and your buttons, then the menu. */
+  .header {
+    row-gap: 6px;
+  }
+  .header h1 {
+    font-size: 1.05rem;
+  }
+  .account {
+    gap: 6px;
+    min-width: 0;
+  }
+  .account > a {
+    max-width: 96px;
+    padding: 6px 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .logout {
+    padding: 6px 8px;
+    line-height: 0;
+  }
+  .logout-text {
+    display: none;
+  }
+  .logout-icon {
+    display: inline;
   }
   /* The navigation: one row below the logo and account, swiped sideways. */
   .tabs {

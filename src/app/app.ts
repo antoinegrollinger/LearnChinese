@@ -34,7 +34,28 @@ import { ThemeToggle } from './shared/theme-toggle';
           <a routerLink="/account" routerLinkActive="active" [title]="user.email">{{
             user.username ?? user.email
           }}</a>
-          <button type="button" (click)="auth.logout()">Log out</button>
+          <button
+            type="button"
+            class="logout"
+            title="Log out"
+            aria-label="Log out"
+            (click)="auth.logout()"
+          >
+            <!-- Icon on phones, text on wider screens (styles.css) -->
+            <svg class="logout-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+              <g
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" />
+                <path d="M10 16l-4-4 4-4M6 12h10" />
+              </g>
+            </svg>
+            <span class="logout-text">Log out</span>
+          </button>
         </div>
       } @else {
         <div class="account"><app-theme-toggle /></div>
