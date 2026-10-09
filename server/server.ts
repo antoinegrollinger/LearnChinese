@@ -19,7 +19,7 @@
  *   POST   /api/friends/:username/accept
  *   DELETE /api/friends/:username      → remove a friend, decline or cancel a request
  *   GET    /api/friends/:username      → a friend's counts, and reviews if they share them
- *   GET    /api/communities?q=…        → communities matching q (yours without q)
+ *   GET    /api/communities?q=…&all=1  → yours, or all of them (all=1), whose name contains q
  *   POST   /api/communities            → create one { name, description } and join it
  *   GET    /api/communities/:name      → its counts; members only for members
  *   POST   /api/communities/:name/join     → joins, or asks to join (join policy "approval")
@@ -234,7 +234,8 @@ async function handleSocial(
 
   if (resource === 'communities') {
     if (!name && method === 'GET') {
-      return sendJson(res, 200, await social.searchCommunities(user, url.searchParams.get('q') ?? ''));
+      const all = url.searchParams.get('all') === '1';
+      return sendJson(res, 200, await social.searchCommunities(user, url.searchParams.get('q') ?? '', all));
     }
     if (!name && method === 'POST') {
       return sendJson(res, 200, await social.createCommunity(user, await readJson(req)));

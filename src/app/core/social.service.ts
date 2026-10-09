@@ -102,11 +102,11 @@ export class SocialService {
     return { ...profile, sessions: profile.sessions.map(cleanReview) };
   }
 
-  /** Communities whose name contains the query, or yours when it's empty. */
-  searchCommunities(query: string): Promise<CommunitySummary[]> {
-    return firstValueFrom(
-      this.http.get<CommunitySummary[]>('/api/communities', { params: { q: query.trim() } }),
-    );
+  /** Your communities, or all of them (all), whose name contains the query (any when empty). */
+  searchCommunities(query: string, all = false): Promise<CommunitySummary[]> {
+    const params: Record<string, string> = { q: query.trim() };
+    if (all) params['all'] = '1';
+    return firstValueFrom(this.http.get<CommunitySummary[]>('/api/communities', { params }));
   }
 
   createCommunity(

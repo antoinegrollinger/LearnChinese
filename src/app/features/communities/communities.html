@@ -2,26 +2,54 @@
   <div class="social-page">
     <div class="dashboard-header">
       <h2>Communities</h2>
-      <a routerLink="/friends">Your friends →</a>
+      <a class="button" routerLink="/friends">Your friends →</a>
     </div>
     <p class="muted">
       Join communities to meet other learners and add them as friends. You see how many of your
       friends are already in each one.
     </p>
 
-    <input
-      type="search"
-      aria-label="Search communities by name"
-      placeholder="Search communities by name: HSK 1, Paris…"
-      [value]="query()"
-      (input)="onQuery($any($event.target).value)"
-    />
+    <div class="community-browse">
+      <div class="layout-toggle segmented" appSlidingThumb role="group" aria-label="Show">
+        <button
+          type="button"
+          [class.active]="scope() === 'mine'"
+          [attr.aria-pressed]="scope() === 'mine'"
+          (click)="setScope('mine')"
+        >
+          Yours
+        </button>
+        <button
+          type="button"
+          [class.active]="scope() === 'all'"
+          [attr.aria-pressed]="scope() === 'all'"
+          (click)="setScope('all')"
+        >
+          All communities
+        </button>
+      </div>
+      <input
+        type="search"
+        [attr.aria-label]="scope() === 'all' ? 'Search all communities' : 'Search your communities'"
+        [placeholder]="
+          scope() === 'all' ? 'Search all communities: HSK 1, Paris…' : 'Search your communities'
+        "
+        [value]="query()"
+        (input)="onQuery($any($event.target).value)"
+      />
+    </div>
 
-    <h3>{{ query().trim() ? 'Results' : 'Your communities' }}</h3>
+    <h3>
+      {{ scope() === 'all' ? 'All communities' : 'Your communities' }}
+      @if (!loading()) {
+        <span class="muted">({{ results().length }})</span>
+      }
+    </h3>
     @if (results().length) {
       <ul class="people">
         @for (c of results(); track c.name) {
-          <li>
+          <!-- The whole pill opens the community (its link covers it); the buttons stay on top. -->
+          <li class="clickable">
             <a class="person" [routerLink]="['/communities', c.name]">
               <strong>{{ c.name }}</strong>
               @if (c.description) {
@@ -62,11 +90,22 @@
       </ul>
     } @else if (!loading()) {
       <p class="muted">
-        {{
-          query().trim()
-            ? 'No community with this name. Create it below!'
-            : "You haven't joined a community yet. Search for one above, or create one."
-        }}
+        @if (query().trim()) {
+          No community with this name{{ scope() === 'mine' ? ' among yours' : '' }}.
+          @if (scope() === 'mine') {
+            <button type="button" class="link" (click)="setScope('all')">
+              Search all communities
+            </button>
+          } @else {
+            Create it below!
+          }
+        } @else if (scope() === 'mine') {
+          You haven't joined a community yet.
+          <button type="button" class="link" (click)="setScope('all')">See all communities</button>
+          or create one below.
+        } @else {
+          There is no community yet: create the first one below!
+        }
       </p>
     }
 

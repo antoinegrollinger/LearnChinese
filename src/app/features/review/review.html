@@ -3,7 +3,7 @@
     <div class="review-setup">
       <div class="setup-header">
         <h2>Choose the {{ one() }}s for your training session</h2>
-        <a [routerLink]="dashboardLink()">Past training sessions →</a>
+        <a class="button" [routerLink]="dashboardLink()">Past training sessions →</a>
       </div>
 
       @if (lastReview(); as last) {

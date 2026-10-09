@@ -184,7 +184,7 @@ export function createSocial(pool: mysql.Pool, reviews: ReviewStore) {
          EXISTS (SELECT 1 FROM community_join_requests r WHERE r.community_id = c.id AND r.user_id = ?)
            AS pending
        FROM communities c WHERE ${where}
-       ORDER BY role IS NULL, member_count DESC, c.name LIMIT 50`,
+       ORDER BY role IS NULL, member_count DESC, c.name LIMIT 200`,
       [me, me, me, me, ...values],
     );
     return rows.map((r) => ({
@@ -330,16 +330,21 @@ export function createSocial(pool: mysql.Pool, reviews: ReviewStore) {
 
     // ---------- Communities ----------
     /** Communities whose name contains the query, or yours (and those you asked to join) without one. */
-    async searchCommunities(me: User, query: string): Promise<CommunitySummary[]> {
+    /** Yours (joined or requested), or all of them (all); only those whose name contains query. */
+    async searchCommunities(me: User, query: string, all = false): Promise<CommunitySummary[]> {
       const q = communityKey(query);
-      return q
-        ? communities(me.id, `c.name_key LIKE ?`, [`%${escapeLike(q)}%`])
-        : communities(
-            me.id,
-            `c.id IN (SELECT community_id FROM community_members WHERE user_id = ?
-                      UNION SELECT community_id FROM community_join_requests WHERE user_id = ?)`,
-            [me.id, me.id],
-          );
+      const where: string[] = [];
+      const values: unknown[] = [];
+      if (!all) {
+        where.push(`c.id IN (SELECT community_id FROM community_members WHERE user_id = ?
+                    UNION SELECT community_id FROM community_join_requests WHERE user_id = ?)`);
+        values.push(me.id, me.id);
+      }
+      if (q) {
+        where.push(`c.name_key LIKE ?`);
+        values.push(`%${escapeLike(q)}%`);
+      }
+      return communities(me.id, where.join(' AND ') || 'TRUE', values);
     },
 
     /** Creates a community; you are its owner. */

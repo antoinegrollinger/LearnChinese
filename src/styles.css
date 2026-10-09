@@ -23,8 +23,9 @@
   --outline: #e2d8c8;
   --drawing: #c0392b;
   --accent: #c0392b;
-  /* Main actions (button.cta): readable white text on it. */
-  --cta: var(--accent);
+  /* Main actions (button.cta: start, download…): a confident blue, apart from the red accent
+     used for choices and alternatives; white text stays readable on it. */
+  --cta: #1f63d6;
   --grid: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cg stroke='%23e3bf9b' stroke-width='0.5' stroke-dasharray='2 2' fill='none'%3E%3Cpath d='M0 0L100 100M100 0L0 100M50 0V100M0 50H100'/%3E%3C/g%3E%3C/svg%3E");
   --tone1: #d63031;
   --tone2: #e17f0e;
@@ -58,7 +59,7 @@
     --outline: #45403a;
     --drawing: #ff6b5b;
     --accent: #ff6b5b;
-    --cta: #c9483b;
+    --cta: #2f6fe0;
     --grid: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cg stroke='%23604a38' stroke-width='0.5' stroke-dasharray='2 2' fill='none'%3E%3Cpath d='M0 0L100 100M100 0L0 100M50 0V100M0 50H100'/%3E%3C/g%3E%3C/svg%3E");
     --tone1: #ff6b6b;
     --tone2: #ffa94d;
@@ -88,7 +89,7 @@
   --outline: #45403a;
   --drawing: #ff6b5b;
   --accent: #ff6b5b;
-  --cta: #c9483b;
+  --cta: #2f6fe0;
   --grid: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cg stroke='%23604a38' stroke-width='0.5' stroke-dasharray='2 2' fill='none'%3E%3Cpath d='M0 0L100 100M100 0L0 100M50 0V100M0 50H100'/%3E%3C/g%3E%3C/svg%3E");
   --tone1: #ff6b6b;
   --tone2: #ffa94d;
@@ -138,8 +139,8 @@ a.button:hover {
   border-color: var(--accent);
 }
 button.primary {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--cta);
+  border-color: var(--cta);
   color: #fff;
 }
 button.active,
@@ -1184,6 +1185,18 @@ label.checkbox {
 .dashboard-header h2 .mode-tag {
   vertical-align: middle;
 }
+.community-browse {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.community-browse .segmented {
+  align-self: flex-start;
+}
+.community-browse .segmented > button {
+  white-space: nowrap;
+  padding-inline: 16px;
+}
 .create-community {
   display: flex;
   flex-direction: column;
@@ -1846,25 +1859,27 @@ a.button:active {
   transform: scale(0.97);
   box-shadow: var(--glass-sheen), 0 1px 2px rgb(0 0 0 / 0.1);
 }
+/* Confirming actions (start, save, join, send…): blue. The red accent marks choices and
+   alternatives. */
 button.primary {
   color: #fff;
-  border-color: color-mix(in srgb, var(--accent) 60%, white);
+  border-color: color-mix(in srgb, var(--cta) 70%, white);
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--accent) 78%, white),
-    var(--accent) 55%,
-    color-mix(in srgb, var(--accent) 85%, black)
+    color-mix(in srgb, var(--cta) 85%, white),
+    var(--cta) 55%,
+    color-mix(in srgb, var(--cta) 88%, black)
   );
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.45),
-    0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent);
-  text-shadow: 0 1px 1px rgb(0 0 0 / 0.15);
+    inset 0 1px 0 rgb(255 255 255 / 0.4),
+    0 4px 14px color-mix(in srgb, var(--cta) 30%, transparent);
+  text-shadow: 0 1px 1px rgb(0 0 0 / 0.2);
 }
 button.primary:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--accent) 60%, white);
+  border-color: color-mix(in srgb, var(--cta) 70%, white);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.5),
-    0 6px 20px color-mix(in srgb, var(--accent) 45%, transparent);
+    inset 0 1px 0 rgb(255 255 255 / 0.45),
+    0 6px 20px color-mix(in srgb, var(--cta) 40%, transparent);
 }
 button.active,
 a.button.active {
@@ -3134,8 +3149,8 @@ app-speaker-icon svg {
   }
 }
 
-/* The main action of a page (Start the training session, Download the PDF): full width, larger,
-   and a deeper red than the accent so the white text stays readable in both themes. */
+/* The main action of a page (Start the training session, Download the PDF): a primary button,
+   full width and larger. */
 button.cta {
   align-self: stretch;
   width: 100%;
@@ -3145,14 +3160,47 @@ button.cta {
   font-size: 1rem;
   font-weight: 600;
   letter-spacing: 0.01em;
-  border-color: color-mix(in srgb, var(--cta) 70%, white);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--cta) 88%, white), var(--cta));
-  text-shadow: 0 1px 1px rgb(0 0 0 / 0.25);
-}
-button.cta:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--cta) 70%, white);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--cta) 80%, white), var(--cta));
 }
 button.cta:disabled {
   opacity: 0.45;
+}
+
+/* "← Communities", "← Friends": a button back to the list, at the top left of the page. */
+.back-link {
+  align-self: flex-start;
+}
+
+/* A list pill that opens its page anywhere you click (Communities): the link's ::after covers the
+   pill; the buttons stay above it. */
+.people > li.clickable {
+  position: relative;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.people > li.clickable a.person::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.people > li.clickable .buttons {
+  position: relative;
+  z-index: 1;
+}
+.people > li.clickable:hover {
+  background: var(--surface-strong);
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.people > li.clickable:hover a.person strong {
+  color: var(--accent);
+}
+.people > li.clickable:has(a.person:focus-visible) {
+  outline: 2px solid color-mix(in srgb, var(--accent) 70%, transparent);
+  outline-offset: 2px;
+}
+.people > li.clickable a.person:focus-visible {
+  outline: none;
 }
