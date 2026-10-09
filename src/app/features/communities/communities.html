@@ -1,0 +1,111 @@
+<section class="view centered">
+  <div class="social-page">
+    <div class="dashboard-header">
+      <h2>Communities</h2>
+      <a routerLink="/friends">Your friends →</a>
+    </div>
+    <p class="muted">
+      Join communities to meet other learners and add them as friends. You see how many of your
+      friends are already in each one.
+    </p>
+
+    <input
+      type="search"
+      aria-label="Search communities by name"
+      placeholder="Search communities by name: HSK 1, Paris…"
+      [value]="query()"
+      (input)="onQuery($any($event.target).value)"
+    />
+
+    <h3>{{ query().trim() ? 'Results' : 'Your communities' }}</h3>
+    @if (results().length) {
+      <ul class="people">
+        @for (c of results(); track c.name) {
+          <li>
+            <a class="person" [routerLink]="['/communities', c.name]">
+              <strong>{{ c.name }}</strong>
+              @if (c.description) {
+                <span class="community-description">{{ c.description }}</span>
+              }
+              <span class="muted"
+                >{{ c.memberCount }} member{{ c.memberCount === 1 ? '' : 's' }} ·
+                <span [class.friends-inside]="c.friendCount > 0"
+                  >{{ c.friendCount }} of your friends</span
+                ></span
+              >
+            </a>
+            <div class="buttons">
+              @if (c.joinPolicy === 'approval') {
+                <span class="mode-tag" title="An owner or admin approves each new member"
+                  >🔒 Approval</span
+                >
+              }
+              @if (c.joined) {
+                <span class="mode-tag">{{
+                  c.role === 'member' ? 'Joined ✓' : roleNames[c.role!]
+                }}</span>
+              } @else if (c.pending) {
+                <span class="mode-tag">Requested…</span>
+              } @else {
+                <button
+                  type="button"
+                  class="primary"
+                  [disabled]="busy() || !auth.user()?.username"
+                  (click)="join(c)"
+                >
+                  {{ c.joinPolicy === 'approval' ? 'Request to join' : 'Join' }}
+                </button>
+              }
+            </div>
+          </li>
+        }
+      </ul>
+    } @else if (!loading()) {
+      <p class="muted">
+        {{
+          query().trim()
+            ? 'No community with this name. Create it below!'
+            : "You haven't joined a community yet. Search for one above, or create one."
+        }}
+      </p>
+    }
+
+    <h3>Create a community</h3>
+    @if (!auth.user()?.username) {
+      <p class="banner">Choose a username first: <a routerLink="/account">Account →</a></p>
+    } @else {
+      <form class="create-community" (submit)="$event.preventDefault(); create()">
+        <input
+          aria-label="Name of the community"
+          placeholder="Name (3 to 64 characters)"
+          [maxLength]="nameMax"
+          [value]="newName()"
+          (input)="newName.set($any($event.target).value)"
+        />
+        <textarea
+          aria-label="Description (optional)"
+          placeholder="Description (optional)"
+          rows="2"
+          [maxLength]="descriptionMax"
+          [value]="newDescription()"
+          (input)="newDescription.set($any($event.target).value)"
+        ></textarea>
+        <label class="checkbox">
+          <input
+            type="checkbox"
+            [checked]="newNeedsApproval()"
+            (change)="newNeedsApproval.set($any($event.target).checked)"
+          />
+          New members need your approval
+        </label>
+        <p class="muted">
+          You will be its owner: you can change its settings and name admins at any time.
+        </p>
+        <button type="submit" class="primary" [disabled]="busy() || !newName().trim()">
+          Create and join
+        </button>
+      </form>
+    }
+    <p class="message" [class]="status().kind" role="status">{{ status().text }}</p>
+  </div>
+</section>

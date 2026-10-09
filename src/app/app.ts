@@ -2,10 +2,11 @@ import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/auth.service';
 import { CharactersService } from './core/characters.service';
+import { NotificationBell } from './shared/notification-bell';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, NotificationBell],
   template: `
     <header class="header">
       <h1><span class="logo">汉字</span> Workshop</h1>
@@ -16,8 +17,11 @@ import { CharactersService } from './core/characters.service';
           <a class="button" routerLink="/review" routerLinkActive="active">Review</a>
           <a class="button" routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
           <a class="button" routerLink="/add" routerLinkActive="active">Add</a>
+          <a class="button" routerLink="/friends" routerLinkActive="active">Friends</a>
+          <a class="button" routerLink="/communities" routerLinkActive="active">Communities</a>
         </nav>
         <div class="account">
+          <app-notification-bell />
           <a routerLink="/account" routerLinkActive="active" [title]="user.email">{{
             user.username ?? user.email
           }}</a>
@@ -27,9 +31,7 @@ import { CharactersService } from './core/characters.service';
     </header>
     @if (auth.user(); as user) {
       @if (!user.username) {
-        <p class="banner">
-          Choose a username: <a routerLink="/account">Account →</a>
-        </p>
+        <p class="banner">Choose a username: <a routerLink="/account">Account →</a></p>
       }
     }
     @if (auth.user() && characters.error(); as error) {

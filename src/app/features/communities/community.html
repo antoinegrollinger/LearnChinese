@@ -1,0 +1,225 @@
+<section class="view centered">
+  <div class="social-page">
+    <a routerLink="/communities">← Communities</a>
+
+    @if (community.error(); as err) {
+      <p class="banner error">
+        {{
+          isNotFound(err)
+            ? 'This community does not exist (any more).'
+            : 'Could not load it: ' + errorMessage(err)
+        }}
+      </p>
+    } @else if (community.isLoading() && !community.value()) {
+      <p class="muted">Loading…</p>
+    } @else if (community.value(); as c) {
+      <div class="dashboard-header">
+        <h2>
+          {{ c.name }}
+          @if (c.role && c.role !== 'member') {
+            <span class="mode-tag"
+              >You are {{ c.role === 'owner' ? 'the owner' : 'an admin' }}</span
+            >
+          }
+        </h2>
+        <div class="buttons">
+          @if (isOwner() && !settingsOpen()) {
+            <button type="button" (click)="openSettings()">⚙ Settings</button>
+          }
+          @if (c.joined) {
+            <button type="button" [disabled]="busy()" (click)="leave()">Leave</button>
+          } @else if (c.pending) {
+            <span class="mode-tag">Request pending</span>
+            <button type="button" [disabled]="busy()" (click)="cancelRequest()">
+              Withdraw request
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="primary"
+              [disabled]="busy() || !auth.user()?.username"
+              (click)="join()"
+            >
+              {{ c.joinPolicy === 'approval' ? 'Request to join' : 'Join' }}
+            </button>
+          }
+        </div>
+      </div>
+      @if (c.description) {
+        <p class="community-description">{{ c.description }}</p>
+      }
+      <p class="muted">
+        {{ c.memberCount }} member{{ c.memberCount === 1 ? '' : 's' }} ·
+        <span [class.friends-inside]="c.friendCount > 0">{{ c.friendCount }} of your friends</span>
+        · {{ c.joinPolicy === 'approval' ? '🔒 New members need approval' : 'Anyone can join' }}
+      </p>
+      <p class="message" [class]="status().kind" role="status">{{ status().text }}</p>
+
+      @if (settingsOpen()) {
+        <form class="community-settings" (submit)="$event.preventDefault(); saveSettings()">
+          <h3>Settings</h3>
+          <label>
+            Description
+            <textarea
+              rows="2"
+              [maxLength]="descriptionMax"
+              [value]="draft().description"
+              (input)="updateDraft({ description: $any($event.target).value })"
+            ></textarea>
+          </label>
+          <fieldset>
+            <legend>Who can join</legend>
+            @for (p of joinPolicies; track p[0]) {
+              <label class="checkbox">
+                <input
+                  type="radio"
+                  name="joinPolicy"
+                  [checked]="draft().joinPolicy === p[0]"
+                  (change)="updateDraft({ joinPolicy: p[0] })"
+                />
+                {{ p[1] }}
+              </label>
+            }
+          </fieldset>
+          <fieldset>
+            <legend>Member list</legend>
+            @for (v of memberLists; track v[0]) {
+              <label class="checkbox">
+                <input
+                  type="radio"
+                  name="memberList"
+                  [checked]="draft().memberList === v[0]"
+                  (change)="updateDraft({ memberList: v[0] })"
+                />
+                {{ v[1] }}
+              </label>
+            }
+          </fieldset>
+          <p class="muted">
+            Admins approve or reject join requests and remove regular members. Name them in the
+            member list below.
+          </p>
+          <div class="buttons">
+            <button type="button" (click)="settingsOpen.set(false)">Cancel</button>
+            <button type="submit" class="primary" [disabled]="busy()">Save settings</button>
+          </div>
+        </form>
+      }
+
+      @if (c.requests; as requests) {
+        <h3>Join requests ({{ requests.length }})</h3>
+        @if (requests.length) {
+          <ul class="people">
+            @for (r of requests; track r.username) {
+              <li>
+                <span class="person"
+                  ><strong>{{ r.username }}</strong>
+                  <span class="muted"
+                    >asked {{ date(r.at)
+                    }}{{ r.relation === 'friend' ? ' · your friend' : '' }}</span
+                  ></span
+                >
+                <div class="buttons">
+                  <button
+                    type="button"
+                    class="primary"
+                    [disabled]="busy()"
+                    (click)="answer(r.username, true)"
+                  >
+                    Approve
+                  </button>
+                  <button type="button" [disabled]="busy()" (click)="answer(r.username, false)">
+                    Reject
+                  </button>
+                </div>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="muted">
+            {{
+              c.joinPolicy === 'approval'
+                ? 'No one is waiting. New requests also appear in your notifications 🔔.'
+                : 'Anyone can join, so there are no requests to answer.'
+            }}
+          </p>
+        }
+      }
+
+      @if (c.members; as members) {
+        <h3>Members</h3>
+        <ul class="people">
+          @for (m of members; track m.username) {
+            <li>
+              <span class="person"
+                ><strong
+                  >{{ m.username }}
+                  @if (m.role !== 'member') {
+                    <span class="mode-tag">{{ roleNames[m.role] }}</span>
+                  }
+                </strong></span
+              >
+              <div class="buttons">
+                @switch (m.relation) {
+                  @case ('me') {
+                    <span class="muted">you</span>
+                  }
+                  @case ('friend') {
+                    <a class="button" [routerLink]="['/friends', m.username]">Friend · View</a>
+                  }
+                  @case ('outgoing') {
+                    <span class="mode-tag">Request sent</span>
+                  }
+                  @case ('incoming') {
+                    <button
+                      type="button"
+                      class="primary"
+                      [disabled]="busy()"
+                      (click)="addFriend(m)"
+                    >
+                      Accept their request
+                    </button>
+                  }
+                  @default {
+                    <button type="button" [disabled]="busy()" (click)="addFriend(m)">
+                      + Add friend
+                    </button>
+                  }
+                }
+                @if (isOwner() && m.relation !== 'me') {
+                  @if (m.role === 'member') {
+                    <button type="button" [disabled]="busy()" (click)="setRole(m, 'admin')">
+                      Make admin
+                    </button>
+                  } @else if (m.role === 'admin') {
+                    <button type="button" [disabled]="busy()" (click)="setRole(m, 'member')">
+                      Remove admin
+                    </button>
+                    <button type="button" [disabled]="busy()" (click)="setRole(m, 'owner')">
+                      Make owner
+                    </button>
+                  }
+                }
+                @if (canRemove(m)) {
+                  <button
+                    type="button"
+                    class="danger"
+                    [disabled]="busy()"
+                    (click)="removeMember(m)"
+                  >
+                    Remove
+                  </button>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="muted">
+          Only members see who the members are.
+          {{ c.pending ? 'Your request is waiting for an answer.' : 'Join to see them.' }}
+        </p>
+      }
+    }
+  </div>
+</section>

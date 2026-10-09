@@ -11,6 +11,28 @@
  *   GET    /api/reviews                → completed review sessions, newest first
  *   POST   /api/reviews                → save one (body: ReviewSession) → { entry, created }
  *   DELETE /api/reviews/:id            → delete one
+ *
+ *   Friends and communities (see social.ts):
+ *   GET    /api/social/settings        → { shareReviews }; PATCH { shareReviews } to change it
+ *   GET    /api/friends                → { friends, incoming, outgoing }
+ *   POST   /api/friends                → send a friend request { username } (accepts theirs, if any)
+ *   POST   /api/friends/:username/accept
+ *   DELETE /api/friends/:username      → remove a friend, decline or cancel a request
+ *   GET    /api/friends/:username      → a friend's counts, and reviews if they share them
+ *   GET    /api/communities?q=…        → communities matching q (yours without q)
+ *   POST   /api/communities            → create one { name, description } and join it
+ *   GET    /api/communities/:name      → its counts; members only for members
+ *   POST   /api/communities/:name/join     → joins, or asks to join (join policy "approval")
+ *   POST   /api/communities/:name/cancel   → withdraws your join request
+ *   POST   /api/communities/:name/leave
+ *   PATCH  /api/communities/:name          → owner: { description, joinPolicy, memberList }
+ *   POST   /api/communities/:name/approve, /reject  { username } → owner or admin
+ *   POST   /api/communities/:name/role     { username, role } → owner: "admin", "member" or "owner"
+ *   POST   /api/communities/:name/remove   { username } → owner, or admin for regular members
+ *   GET    /api/notifications          → requests waiting for you and the latest updates
+ *   POST   /api/notifications/read     → marks the updates as read
+ *   DELETE /api/notifications/:id      → dismisses one update
+ *
  *   GET    /api/lookup/:word           → CC-CEDICT entries for a word (see cedict.ts)
  *
  * During development (npm start) Angular's dev server forwards /api to this server (proxy.conf.json).
@@ -25,6 +47,7 @@ import { AuthError, createAuth } from './auth.ts';
 import { CHARACTERS, ListFile, ROOT, WORDS } from './data-files.ts';
 import { Label, cleanLabel } from '../src/app/core/character.model.ts';
 import { cleanReview } from '../src/app/core/review.model.ts';
+import { createSocial } from './social.ts';
 import { ListStore, createStores } from './store.ts';
 
 const DIST = join(ROOT, 'dist', 'hanzi-workshop', 'browser');
@@ -38,6 +61,7 @@ const stores = (() => {
   }
 })();
 const auth = createAuth(stores.pool);
+const social = createSocial(stores.pool, stores.reviews);
 /** The labels are only in the database (no JSON file). */
 const LABELS: ListFile<Label> = { name: 'labels', key: 'name', clean: cleanLabel };
 /** Set by the host in production (a port number or a socket path); 8642 on your computer. */
@@ -170,6 +194,90 @@ async function handleReviews(
   sendJson(res, 405, { error: 'Method not allowed.' });
 }
 
+/** /api/social, /api/friends and /api/communities (see social.ts). */
+async function handleSocial(
+  user: User,
+  req: IncomingMessage,
+  res: ServerResponse,
+  url: URL,
+  resource: string,
+  param?: string,
+  action?: string,
+): Promise<void> {
+  const name = param ? decodeURIComponent(param) : undefined;
+  const { method } = req;
+
+  if (resource === 'social' && name === 'settings' && !action) {
+    if (method === 'GET') return sendJson(res, 200, await social.settings(user));
+    if (method === 'PATCH') return sendJson(res, 200, await social.setSettings(user, await readJson(req)));
+  }
+
+  if (resource === 'friends') {
+    if (!name && method === 'GET') return sendJson(res, 200, await social.overview(user));
+    if (!name && method === 'POST') {
+      const relation = await social.request(user, (await readJson(req))['username']);
+      return sendJson(res, 200, { relation });
+    }
+    if (name && action === 'accept' && method === 'POST') {
+      return sendJson(res, 200, { relation: await social.accept(user, name) });
+    }
+    if (name && !action && method === 'DELETE') {
+      await social.remove(user, name);
+      return sendJson(res, 200, { ok: true });
+    }
+    if (name && !action && method === 'GET') return sendJson(res, 200, await social.profile(user, name));
+  }
+
+  if (resource === 'communities') {
+    if (!name && method === 'GET') {
+      return sendJson(res, 200, await social.searchCommunities(user, url.searchParams.get('q') ?? ''));
+    }
+    if (!name && method === 'POST') {
+      return sendJson(res, 200, await social.createCommunity(user, await readJson(req)));
+    }
+    if (name && !action && method === 'GET') return sendJson(res, 200, await social.community(user, name));
+    if (name && action === 'join' && method === 'POST') {
+      return sendJson(res, 200, await social.join(user, name));
+    }
+    if (name && action === 'leave' && method === 'POST') {
+      await social.leave(user, name);
+      return sendJson(res, 200, { ok: true });
+    }
+    if (name && action === 'cancel' && method === 'POST') {
+      return sendJson(res, 200, await social.cancelRequest(user, name));
+    }
+    if (name && !action && method === 'PATCH') {
+      return sendJson(res, 200, await social.updateCommunity(user, name, await readJson(req)));
+    }
+    if (name && (action === 'approve' || action === 'reject') && method === 'POST') {
+      const { username } = await readJson(req);
+      return sendJson(res, 200, await social.answerRequest(user, name, username, action === 'approve'));
+    }
+    if (name && action === 'role' && method === 'POST') {
+      const { username, role } = await readJson(req);
+      return sendJson(res, 200, await social.setRole(user, name, username, role));
+    }
+    if (name && action === 'remove' && method === 'POST') {
+      const { username } = await readJson(req);
+      return sendJson(res, 200, await social.removeMember(user, name, username));
+    }
+  }
+
+  if (resource === 'notifications') {
+    if (!name && method === 'GET') return sendJson(res, 200, await social.notifications(user));
+    if (name === 'read' && method === 'POST') {
+      await social.markNotificationsRead(user);
+      return sendJson(res, 200, { ok: true });
+    }
+    if (name && !action && method === 'DELETE') {
+      await social.dismissNotification(user, Number(name));
+      return sendJson(res, 200, { ok: true });
+    }
+  }
+
+  sendJson(res, 404, { error: 'Unknown API route.' });
+}
+
 /** CRUD routes for one list: GET /api/<name>, POST /api/<name>, DELETE /api/<name>/:key */
 async function handleList<T>(
   list: ListFile<T>,
@@ -201,7 +309,8 @@ async function handleList<T>(
 }
 
 async function handleApi(req: IncomingMessage, res: ServerResponse, url: URL): Promise<void> {
-  const [, , resource, param] = url.pathname.split('/'); // "", "api", "characters", ":character"
+  // "", "api", "characters", ":character" (and "accept", "join"… for friends and communities)
+  const [, , resource, param, action] = url.pathname.split('/');
   if (resource === 'auth') return handleAuth(req, res, param);
 
   // Everything else: only for a logged-in user, on their own data.
@@ -211,6 +320,9 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, url: URL): P
   if (resource === 'words') return handleList(WORDS, stores.words, user, req, res, param);
   if (resource === 'labels') return handleList(LABELS, stores.labels, user, req, res, param);
   if (resource === 'reviews') return handleReviews(user, req, res, param);
+  if (['social', 'friends', 'communities', 'notifications'].includes(resource)) {
+    return handleSocial(user, req, res, url, resource, param, action);
+  }
   if (resource === 'lookup' && param && req.method === 'GET') {
     return sendJson(res, 200, await lookupWord(decodeURIComponent(param)));
   }
@@ -278,7 +390,11 @@ const onListening = () => {
       ),
   );
   loadCedict().catch(() => {}); // warm up the word dictionary
-  const cleanup = () => auth.cleanup().catch(() => {}); // expired sessions
+  // Expired sessions and old notifications
+  const cleanup = () => {
+    auth.cleanup().catch(() => {});
+    social.cleanup().catch(() => {});
+  };
   setInterval(cleanup, 3600 * 1000).unref();
   cleanup();
 };

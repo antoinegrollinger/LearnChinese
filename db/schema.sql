@@ -29,6 +29,9 @@ ALTER TABLE app_user
   ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP NULL,
   MODIFY username VARCHAR(64) NULL;
 
+-- Upgrade from the version without friends: your friends see your reviews only when this is on.
+ALTER TABLE app_user ADD COLUMN IF NOT EXISTS share_reviews BOOLEAN NOT NULL DEFAULT FALSE;
+
 INSERT IGNORE INTO app_user (username, display_name) VALUES ('default', 'Default');
 
 -- One row per login. The token is only sent to the browser; this table keeps its SHA-256 hash, so
@@ -157,6 +160,98 @@ CREATE TABLE IF NOT EXISTS review_sessions (
 
 -- Upgrade from the version without review modes.
 ALTER TABLE review_sessions ADD COLUMN IF NOT EXISTS mode VARCHAR(16) NOT NULL DEFAULT 'write' AFTER user_id;
+
+-- Friends: one row per pair. A request is 'pending' until the other user accepts it; then both
+-- are friends and see each other's counts (and reviews, if they share them: app_user.share_reviews).
+CREATE TABLE IF NOT EXISTS friendships (
+  id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  requester_id BIGINT UNSIGNED NOT NULL,
+  addressee_id BIGINT UNSIGNED NOT NULL,
+  status       VARCHAR(16) NOT NULL DEFAULT 'pending',
+  created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  accepted_at  TIMESTAMP NULL,
+  UNIQUE KEY friendships_pair (requester_id, addressee_id),
+  KEY friendships_addressee (addressee_id),
+  CONSTRAINT friendships_requester FOREIGN KEY (requester_id) REFERENCES app_user (id) ON DELETE CASCADE,
+  CONSTRAINT friendships_addressee FOREIGN KEY (addressee_id) REFERENCES app_user (id) ON DELETE CASCADE,
+  CONSTRAINT friendships_not_self CHECK (requester_id <> addressee_id),
+  CONSTRAINT friendships_status CHECK (status IN ('pending', 'accepted'))
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin;
+
+-- Communities anyone can create and join by name. name_key (lower case) keeps names unique
+-- without regard to case. A community is deleted when its last member leaves.
+CREATE TABLE IF NOT EXISTS communities (
+  id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  name        VARCHAR(64) NOT NULL,
+  name_key    VARCHAR(64) NOT NULL,
+  description VARCHAR(500),
+  created_by  BIGINT UNSIGNED,
+  created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY communities_name (name_key),
+  CONSTRAINT communities_creator FOREIGN KEY (created_by) REFERENCES app_user (id) ON DELETE SET NULL
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin;
+
+CREATE TABLE IF NOT EXISTS community_members (
+  community_id BIGINT UNSIGNED NOT NULL,
+  user_id      BIGINT UNSIGNED NOT NULL,
+  joined_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (community_id, user_id),
+  KEY community_members_user (user_id),
+  CONSTRAINT community_members_community FOREIGN KEY (community_id)
+    REFERENCES communities (id) ON DELETE CASCADE,
+  CONSTRAINT community_members_user FOREIGN KEY (user_id) REFERENCES app_user (id) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin;
+
+-- Upgrade from the version without community settings and roles.
+--   join_policy: 'open' (anyone joins) or 'approval' (an owner or admin approves each request)
+--   member_list: 'members' (only members see the members) or 'everyone'
+--   role: 'owner' (settings and admins), 'admin' (approves requests, removes members), 'member'
+ALTER TABLE communities
+  ADD COLUMN IF NOT EXISTS join_policy VARCHAR(16) NOT NULL DEFAULT 'open' AFTER description,
+  ADD COLUMN IF NOT EXISTS member_list VARCHAR(16) NOT NULL DEFAULT 'members' AFTER join_policy;
+ALTER TABLE community_members
+  ADD COLUMN IF NOT EXISTS role VARCHAR(16) NOT NULL DEFAULT 'member' AFTER user_id;
+
+-- Communities created before roles existed: their creator (or else their first member) owns them.
+UPDATE community_members m JOIN communities c ON c.id = m.community_id
+SET m.role = 'owner'
+WHERE m.user_id = c.created_by
+  AND c.id NOT IN (SELECT community_id FROM (
+    SELECT community_id FROM community_members WHERE role = 'owner') AS owned);
+UPDATE community_members m
+JOIN (SELECT community_id, MIN(joined_at) AS first_join FROM community_members
+      GROUP BY community_id HAVING SUM(role = 'owner') = 0) AS unowned
+  ON unowned.community_id = m.community_id AND m.joined_at = unowned.first_join
+SET m.role = 'owner';
+
+-- Requests to join a community whose join_policy is 'approval'.
+CREATE TABLE IF NOT EXISTS community_join_requests (
+  community_id BIGINT UNSIGNED NOT NULL,
+  user_id      BIGINT UNSIGNED NOT NULL,
+  created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (community_id, user_id),
+  KEY community_join_requests_user (user_id),
+  CONSTRAINT community_join_requests_community FOREIGN KEY (community_id)
+    REFERENCES communities (id) ON DELETE CASCADE,
+  CONSTRAINT community_join_requests_user FOREIGN KEY (user_id)
+    REFERENCES app_user (id) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin;
+
+-- What happened to you (InfoType in src/app/core/social.model.ts), for the notification menu.
+-- Requests waiting for your answer are not stored here: they come from friendships and
+-- community_join_requests. The community is kept by name, so a notice survives its deletion.
+CREATE TABLE IF NOT EXISTS notifications (
+  id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  user_id    BIGINT UNSIGNED NOT NULL,
+  type       VARCHAR(32) NOT NULL,
+  actor_id   BIGINT UNSIGNED,              -- who did it
+  community  VARCHAR(64),
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  read_at    TIMESTAMP NULL,
+  KEY notifications_user (user_id, created_at),
+  CONSTRAINT notifications_user FOREIGN KEY (user_id) REFERENCES app_user (id) ON DELETE CASCADE,
+  CONSTRAINT notifications_actor FOREIGN KEY (actor_id) REFERENCES app_user (id) ON DELETE SET NULL
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin;
 
 -- A character with its components by name, for browsing (e.g. in phpMyAdmin or Adminer):
 --   SELECT * FROM character_components_view WHERE hanzi = '妈';

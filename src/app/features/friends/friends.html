@@ -1,0 +1,159 @@
+<section class="view centered">
+  <div class="social-page">
+    <div class="dashboard-header">
+      <h2>Friends</h2>
+      <a routerLink="/communities">Find friends in communities →</a>
+    </div>
+
+    @if (!auth.user()?.username) {
+      <p class="banner">
+        Choose a username first, so your friends can find you:
+        <a routerLink="/account">Account →</a>
+      </p>
+    } @else {
+      <p class="muted">
+        Your username is <strong>{{ auth.user()?.username }}</strong
+        >: your friends add you with it.
+      </p>
+
+      <form class="add-friend" (submit)="$event.preventDefault(); addFriend()">
+        <input
+          aria-label="Username of your friend"
+          placeholder="Username of your friend"
+          autocomplete="off"
+          autocapitalize="none"
+          spellcheck="false"
+          maxlength="32"
+          [value]="username()"
+          (input)="username.set($any($event.target).value)"
+        />
+        <button type="submit" class="primary" [disabled]="busy() || !username().trim()">
+          Send a friend request
+        </button>
+      </form>
+      <p class="message" [class]="status().kind" role="status">{{ status().text }}</p>
+
+      <label class="share-setting">
+        <input
+          type="checkbox"
+          [checked]="social.settings().shareReviews"
+          [disabled]="busy()"
+          (change)="setShare($any($event.target).checked)"
+        />
+        <span>
+          <strong>Share my reviews with my friends</strong>
+          <span class="muted"
+            >They can then see your review history (read only). They always see how many characters
+            and words you have.</span
+          >
+        </span>
+      </label>
+    }
+
+    @if (social.overview().incoming.length) {
+      <h3>Friend requests</h3>
+      <ul class="people">
+        @for (r of social.overview().incoming; track r.username) {
+          <li>
+            <span class="person"
+              ><strong>{{ r.username }}</strong>
+              <span class="muted">wants to be your friend · {{ date(r.at) }}</span></span
+            >
+            <div class="buttons">
+              <button
+                type="button"
+                class="primary"
+                [disabled]="busy()"
+                (click)="accept(r.username)"
+              >
+                Accept
+              </button>
+              <button
+                type="button"
+                [disabled]="busy()"
+                (click)="
+                  remove(r.username, 'Decline the request of ' + r.username + '?', 'Declined.')
+                "
+              >
+                Decline
+              </button>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+
+    <h3>Your friends ({{ social.overview().friends.length }})</h3>
+    @if (social.overview().friends.length) {
+      <ul class="people">
+        @for (f of social.overview().friends; track f.username) {
+          <li>
+            <a class="person" [routerLink]="['/friends', f.username]">
+              <strong>{{ f.username }}</strong>
+              <span class="muted"
+                >{{ f.characters }} character{{ f.characters === 1 ? '' : 's' }} ·
+                {{ f.words }} word{{ f.words === 1 ? '' : 's' }} ·
+                {{
+                  f.reviews === null
+                    ? 'reviews private'
+                    : f.reviews + ' review' + (f.reviews === 1 ? '' : 's')
+                }}
+                · friends since {{ date(f.since) }}</span
+              >
+            </a>
+            <div class="buttons">
+              <a class="button" [routerLink]="['/friends', f.username]">View</a>
+              <button
+                type="button"
+                class="danger"
+                title="Remove from your friends"
+                [disabled]="busy()"
+                (click)="
+                  remove(
+                    f.username,
+                    'Remove ' + f.username + ' from your friends?',
+                    f.username + ' is no longer your friend.'
+                  )
+                "
+              >
+                Remove
+              </button>
+            </div>
+          </li>
+        }
+      </ul>
+    } @else if (social.loaded()) {
+      <p class="muted">
+        No friends yet. Add one with their username, or find people in a
+        <a routerLink="/communities">community</a>.
+      </p>
+    }
+
+    @if (social.overview().outgoing.length) {
+      <h3>Requests you sent</h3>
+      <ul class="people">
+        @for (r of social.overview().outgoing; track r.username) {
+          <li>
+            <span class="person"
+              ><strong>{{ r.username }}</strong>
+              <span class="muted">waiting for an answer · {{ date(r.at) }}</span></span
+            >
+            <button
+              type="button"
+              [disabled]="busy()"
+              (click)="
+                remove(
+                  r.username,
+                  'Cancel your request to ' + r.username + '?',
+                  'Request cancelled.'
+                )
+              "
+            >
+              Cancel
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</section>

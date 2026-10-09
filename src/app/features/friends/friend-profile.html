@@ -1,0 +1,105 @@
+<section class="view centered">
+  <div class="social-page">
+    <a routerLink="/friends">← Friends</a>
+
+    @if (error(); as e) {
+      <p class="banner error">{{ e }}</p>
+    } @else if (profile.isLoading() && !profile.value()) {
+      <p class="muted">Loading…</p>
+    } @else if (profile.value(); as p) {
+      <div class="dashboard-header">
+        <h2>{{ p.username }}</h2>
+        <span class="muted">Friends since {{ friendsSince() }}</span>
+      </div>
+
+      <dl class="session-stats">
+        <div>
+          <dt>Characters</dt>
+          <dd>{{ p.characters }}</dd>
+        </div>
+        <div>
+          <dt>Words</dt>
+          <dd>{{ p.words }}</dd>
+        </div>
+        <div>
+          <dt>Reviews</dt>
+          <dd>{{ p.sharesReviews ? p.reviews : '—' }}</dd>
+        </div>
+        <div>
+          <dt>Right first try</dt>
+          <dd>{{ p.sharesReviews && rows().length ? totals().firstTryRate + '%' : '—' }}</dd>
+        </div>
+      </dl>
+
+      @if (!p.sharesReviews) {
+        <p class="muted">{{ p.username }} doesn't share their reviews.</p>
+      } @else if (!rows().length) {
+        <p class="muted">{{ p.username }} hasn't finished a review yet.</p>
+      } @else {
+        <h3>Their reviews</h3>
+        <p class="muted">
+          {{ totals().characters }} characters reviewed in {{ totals().time }}. Read only.
+        </p>
+        <ul class="sessions">
+          @for (row of rows(); track row.session.id) {
+            <li class="session">
+              <div class="session-top">
+                <div class="session-info">
+                  <strong
+                    >{{ row.date }}
+                    <span class="mode-tag"
+                      >{{ modeInfo[row.session.mode].icon }}
+                      {{ modeInfo[row.session.mode].name }}</span
+                    ></strong
+                  >
+                  <span class="muted">
+                    {{ row.stats.count }} character{{ row.stats.count === 1 ? '' : 's' }} ·
+                    {{ row.stats.firstTry }}/{{ row.stats.count }} first try ({{
+                      row.firstTryRate
+                    }}%) · {{ row.stats.mistakes }} mistake{{
+                      row.stats.mistakes === 1 ? '' : 's'
+                    }}
+                    · {{ formatDuration(row.stats.seconds) }}
+                  </span>
+                </div>
+                <div class="buttons">
+                  <button
+                    type="button"
+                    [attr.aria-expanded]="expanded() === row.session.id"
+                    (click)="toggle(row.session.id)"
+                  >
+                    {{ expanded() === row.session.id ? 'Hide' : 'Details' }}
+                  </button>
+                </div>
+              </div>
+              @if (expanded() === row.session.id) {
+                <ul class="session-results">
+                  @for (r of row.session.results; track r.character) {
+                    <li [class.first-try]="r.tries === 1">
+                      <span class="result-char">{{ r.character }}</span>
+                      <small
+                        >{{ r.tries === 1 ? '✓' : '×' + r.tries }}
+                        @if (r.mistakes) {
+                          · {{ r.mistakes }} err
+                        }
+                      </small>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <p class="session-preview">
+                  @for (r of row.session.results.slice(0, 24); track r.character) {
+                    <span [class.missed-once]="r.tries > 1">{{ r.character }}</span>
+                  }
+                  @if (row.session.results.length > 24) {
+                    <span class="muted">+{{ row.session.results.length - 24 }}</span>
+                  }
+                </p>
+              }
+            </li>
+          }
+        </ul>
+      }
+    }
+  </div>
+</section>

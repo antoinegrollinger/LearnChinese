@@ -1,0 +1,106 @@
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../core/auth.service';
+import { errorMessage } from '../../core/characters.service';
+import {
+  COMMUNITY_DESCRIPTION_MAX_LENGTH,
+  COMMUNITY_NAME_MAX_LENGTH,
+  CommunitySummary,
+  ROLE_NAMES,
+  communityNameError,
+} from '../../core/social.model';
+import { SocialService } from '../../core/social.service';
+
+/** Your communities, searching and joining others, creating one (/communities). */
+@Component({
+  selector: 'app-communities',
+  imports: [RouterLink],
+  templateUrl: './communities.html',
+})
+export class Communities {
+  protected readonly auth = inject(AuthService);
+  private readonly social = inject(SocialService);
+  private readonly router = inject(Router);
+
+  protected readonly nameMax = COMMUNITY_NAME_MAX_LENGTH;
+  protected readonly descriptionMax = COMMUNITY_DESCRIPTION_MAX_LENGTH;
+  protected readonly query = signal('');
+  /** Search results, or your communities when the query is empty. */
+  protected readonly results = signal<CommunitySummary[]>([]);
+  protected readonly loading = signal(true);
+  protected readonly newName = signal('');
+  protected readonly newDescription = signal('');
+  protected readonly newNeedsApproval = signal(false);
+  protected readonly roleNames = ROLE_NAMES;
+  protected readonly busy = signal(false);
+  protected readonly status = signal<{ text: string; kind?: 'ok' | 'error' }>({ text: '' });
+
+  private searchTimer?: ReturnType<typeof setTimeout>;
+  /** Ignores the answers of older searches. */
+  private searchToken = 0;
+
+  constructor() {
+    this.search('');
+    inject(DestroyRef).onDestroy(() => clearTimeout(this.searchTimer));
+  }
+
+  protected onQuery(query: string): void {
+    this.query.set(query);
+    clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => this.search(query), 250);
+  }
+
+  private async search(query: string): Promise<void> {
+    const token = ++this.searchToken;
+    this.loading.set(true);
+    try {
+      const results = await this.social.searchCommunities(query);
+      if (token === this.searchToken) this.results.set(results);
+    } catch (err) {
+      if (token === this.searchToken) {
+        this.status.set({ text: `Search failed: ${errorMessage(err)}`, kind: 'error' });
+      }
+    } finally {
+      if (token === this.searchToken) this.loading.set(false);
+    }
+  }
+
+  protected async join(community: CommunitySummary): Promise<void> {
+    this.busy.set(true);
+    try {
+      const detail = await this.social.join(community.name);
+      if (detail.joined) this.router.navigate(['/communities', community.name]);
+      else {
+        this.results.update((list) =>
+          list.map((c) => (c.name === community.name ? { ...c, pending: true } : c)),
+        );
+        this.status.set({
+          text: `Request sent: an owner or admin of ${community.name} will answer it.`,
+          kind: 'ok',
+        });
+      }
+    } catch (err) {
+      this.status.set({ text: `Could not join: ${errorMessage(err)}`, kind: 'error' });
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected async create(): Promise<void> {
+    const invalid = communityNameError(this.newName());
+    if (invalid) return this.status.set({ text: invalid, kind: 'error' });
+    this.busy.set(true);
+    try {
+      const community = await this.social.createCommunity(
+        this.newName(),
+        this.newDescription(),
+        this.newNeedsApproval() ? 'approval' : 'open',
+      );
+      this.router.navigate(['/communities', community.name]);
+    } catch (err) {
+      this.status.set({ text: errorMessage(err), kind: 'error' });
+    } finally {
+      this.busy.set(false);
+    }
+  }
+}
