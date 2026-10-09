@@ -123,7 +123,7 @@
     <ul class="words">
       @for (w of savedWords(); track w.word) {
         <li>
-          <a class="hz" [routerLink]="['/words', w.word]">{{ w.word }}</a>
+          <a class="hz" [routerLink]="['/study/words', w.word]">{{ w.word }}</a>
           <app-pinyin [text]="w.pinyin" />
           @if (w.meaning) {
             — {{ w.meaning }}

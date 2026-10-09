@@ -158,8 +158,11 @@ CREATE TABLE IF NOT EXISTS review_sessions (
   CONSTRAINT review_sessions_results_array CHECK (JSON_TYPE(results) = 'ARRAY')
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin;
 
--- Upgrade from the version without review modes.
+-- Upgrade from the version without review modes, then without word reviews.
 ALTER TABLE review_sessions ADD COLUMN IF NOT EXISTS mode VARCHAR(16) NOT NULL DEFAULT 'write' AFTER user_id;
+-- ReviewKind: 'characters' or 'words' (then results[].character holds the word).
+ALTER TABLE review_sessions
+  ADD COLUMN IF NOT EXISTS kind VARCHAR(16) NOT NULL DEFAULT 'characters' AFTER user_id;
 
 -- Friends: one row per pair. A request is 'pending' until the other user accepts it; then both
 -- are friends and see each other's counts (and reviews, if they share them: app_user.share_reviews).

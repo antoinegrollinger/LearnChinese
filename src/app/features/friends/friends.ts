@@ -25,14 +25,12 @@ export class Friends {
   protected readonly status = signal<{ text: string; kind?: 'ok' | 'error' }>({ text: '' });
 
   constructor() {
-    this.social
-      .reload()
-      .catch((err) =>
-        this.status.set({
-          text: `Could not load your friends: ${errorMessage(err)}`,
-          kind: 'error',
-        }),
-      );
+    this.social.reload().catch((err) =>
+      this.status.set({
+        text: `Could not load your friends: ${errorMessage(err)}`,
+        kind: 'error',
+      }),
+    );
   }
 
   protected date(iso: string): string {

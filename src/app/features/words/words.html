@@ -1,162 +1,85 @@
 <section class="view">
-  <!-- Saved words -->
   <aside class="sidebar">
     <input
       type="search"
       placeholder="Search your words…"
-      [value]="listQuery()"
-      (input)="listQuery.set($any($event.target).value)"
+      [value]="query()"
+      (input)="query.set($any($event.target).value)"
     />
-    <p class="muted">{{ words.list().length }} word(s)</p>
+    <p class="muted">
+      {{ words.list().length }} word(s) · <a routerLink="/add/word">+ Add a word</a>
+      @if (words.list().length) {
+        · <a routerLink="/review/words">Review them →</a>
+      }
+    </p>
     <ul class="word-list">
-      @for (w of savedWords(); track w.word) {
+      @for (w of visible(); track w.word) {
         <li>
           <button
             type="button"
             class="word-tile"
-            [class.active]="w.word === editing()"
-            (click)="open(w)"
+            [class.active]="w.word === current()?.word"
+            [class.just-saved]="w.word === justSaved()"
+            (click)="select(w)"
           >
-            <span class="word-hz">{{ w.word }}</span>
+            <span class="word-hz" lang="zh">{{ w.word }}</span>
             <app-pinyin [text]="w.pinyin" />
             <span class="word-meaning">{{ w.meaning }}</span>
           </button>
         </li>
       } @empty {
-        <li class="muted">No words yet: compose one on the right.</li>
+        <li class="muted">
+          {{ words.list().length ? 'No word matches your search.' : 'No words yet.' }}
+        </li>
       }
     </ul>
   </aside>
 
-  <!-- Editor -->
-  <form class="card word-editor" [formGroup]="form" autocomplete="off" (ngSubmit)="save()">
-    @if (editing(); as w) {
-      <p class="banner">Editing {{ w }} — saving will update it in your list.</p>
-    }
+  @if (toast(); as t) {
+    <p class="toast" [class.error]="t.kind === 'error'" role="status">{{ t.text }}</p>
+  }
+  @if (current(); as w) {
+    <article class="card word-card">
+      <div class="word-card-top">
+        <div class="word-big" lang="zh">{{ w.word }}</div>
+        <div class="buttons">
+          <button type="button" title="Pronounce" (click)="speak()">🔊</button>
+          <a class="button" [routerLink]="['/add/word', w.word]" title="Edit this word">✎ Edit</a>
+          <button type="button" class="danger" title="Delete this word" (click)="deleteCurrent()">
+            🗑 Delete
+          </button>
+        </div>
+      </div>
+      <div class="pinyin"><app-pinyin [text]="w.pinyin" /></div>
+      @if (w.meaning) {
+        <div class="meaning">{{ w.meaning }}</div>
+      }
 
-    <div class="row">
-      <label class="grow">
-        Word
-        <input
-          formControlName="word"
-          class="word-input"
-          placeholder="Type or pick characters below"
-        />
-      </label>
-      <button type="button" title="Pronounce" (click)="speak()">🔊</button>
-      <button type="button" class="primary" [disabled]="lookupLoading()" (click)="lookUp()">
-        🔎 {{ lookupLoading() ? 'Looking up…' : 'Look up meaning' }}
-      </button>
-    </div>
-    @if (alreadySaved()) {
-      <p class="warning">This word is already in your list: saving will update it.</p>
-    }
-
-    <!-- The characters of the word -->
-    @if (composition().length) {
+      <h3>Characters</h3>
       <ul class="composition">
         @for (c of composition(); track $index) {
           <li class="char-chip" [class.unknown]="!c.known">
             @if (c.known; as k) {
-              <a [routerLink]="['/study', c.ch]" title="Open in Study">{{ c.ch }}</a>
+              <a [routerLink]="['/study', c.ch]" title="Open in the Characters tab">{{ c.ch }}</a>
               <app-pinyin [text]="k.pinyin" />
               <small>{{ k.meaning }}</small>
             } @else {
               <span>{{ c.ch }}</span>
               <a [routerLink]="['/add', c.ch]" title="Not in your characters yet">+ Add</a>
             }
-            <button type="button" class="remove" title="Remove" (click)="removeAt($index)">
-              ×
-            </button>
           </li>
         }
       </ul>
-    }
 
-    <!-- Character picker -->
-    <fieldset>
-      <legend>Pick from your characters</legend>
-      <input
-        type="search"
-        placeholder="Filter: 女, nü, woman…"
-        [value]="pickerQuery()"
-        (input)="pickerQuery.set($any($event.target).value)"
-      />
-      <ul class="picker">
-        @for (c of pickerCharacters(); track c.character) {
-          <li>
-            <button
-              type="button"
-              class="tile"
-              [title]="(c.meaning ?? '') + ' — click to add to the word'"
-              (click)="append(c.character)"
-            >
-              <span class="tile-char">{{ c.character }}</span>
-              <span class="tile-py">{{ toPinyin(c.pinyin) }}</span>
-            </button>
-          </li>
-        }
-      </ul>
-    </fieldset>
-
-    <!-- Dictionary results -->
-    @if (lookupError(); as error) {
-      <p class="message error">{{ error }}</p>
-    }
-    @if (lookup(); as result) {
-      <div class="lookup">
-        @for (e of result.exact; track $index) {
-          <div class="lookup-entry">
-            <div>
-              <app-pinyin [text]="e.pinyin" class="lookup-pinyin" />
-              @if (e.traditional !== e.simplified) {
-                <span class="muted"> · {{ e.traditional }}</span>
-              }
-              <p>{{ meaningOf(e) }}</p>
-            </div>
-            <button type="button" (click)="useEntry(e)">Use</button>
-          </div>
-        } @empty {
-          <p class="muted">“{{ currentWord() }}” is not in CC-CEDICT as a whole.</p>
-          @if (result.parts.length > 1) {
-            <p class="muted">It splits into:</p>
-            @for (part of result.parts; track $index) {
-              <div class="lookup-entry">
-                <div>
-                  <b>{{ part.text }}</b>
-                  @if (part.entries[0]; as e) {
-                    <app-pinyin [text]="e.pinyin" class="lookup-pinyin" />
-                    <p>{{ meaningOf(e) }}</p>
-                  } @else {
-                    <p class="muted">not found</p>
-                  }
-                </div>
-              </div>
-            }
-            <button type="button" (click)="usePartsPinyin(result.parts)">
-              Use the pinyin of the parts
-            </button>
-          }
-        }
-      </div>
-    }
-
-    <div class="row">
-      <label>Pinyin <input formControlName="pinyin" placeholder="ma1ma5 or māma" /></label>
-      <span class="pinyin-preview"><app-pinyin [text]="value().pinyin" /></span>
-    </div>
-    <label>Meaning <input formControlName="meaning" placeholder="mum" /></label>
-    <label>Notes <textarea formControlName="notes" rows="2"></textarea></label>
-
-    <div class="buttons">
-      <button type="button" (click)="clear()">New</button>
-      @if (editing()) {
-        <button type="button" class="danger" (click)="remove()">Delete</button>
+      @if (w.notes) {
+        <h3>Notes</h3>
+        <p>{{ w.notes }}</p>
       }
-      <button type="submit" class="primary" [disabled]="saving() || !!words.error()">
-        💾 {{ editing() ? 'Save changes' : 'Save word' }}
-      </button>
-    </div>
-    <p class="message" [class]="status().kind">{{ status().text }}</p>
-  </form>
+    </article>
+  } @else if (words.loaded()) {
+    <p class="muted">
+      No words yet. <a routerLink="/add/word">Add your first one</a>: compose it from your
+      characters and look up its meaning.
+    </p>
+  }
 </section>

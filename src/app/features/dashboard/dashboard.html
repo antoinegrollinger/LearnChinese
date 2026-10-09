@@ -1,7 +1,7 @@
 <section class="view centered">
   <div class="dashboard">
     <div class="dashboard-header">
-      <h2>Your reviews</h2>
+      <h2>Your {{ kindInfo[kind()].one }} reviews</h2>
       <div class="buttons">
         @if (lastReview(); as last) {
           <button
@@ -10,10 +10,11 @@
             [disabled]="!last.available"
             (click)="reviewSession(last.session)"
           >
-            ↻ Repeat the last review ({{ modeInfo[last.session.mode].icon }} {{ last.available }})
+            ↻ Repeat the last review ({{ kindInfo[last.session.kind].icon }}
+            {{ modeInfo[last.session.mode].icon }} {{ last.available }})
           </button>
         }
-        <a class="button" routerLink="/review">New review</a>
+        <a class="button" [routerLink]="reviewLink()">New review</a>
       </div>
     </div>
 
@@ -21,9 +22,10 @@
       <p class="banner error">{{ error }}</p>
     } @else if (!reviews.loaded()) {
       <p class="muted">Loading…</p>
-    } @else if (!reviews.sessions().length) {
+    } @else if (!kindSessions().length) {
       <p class="muted">
-        No reviews yet. Finish a <a routerLink="/review">review</a> to see it here.
+        No {{ kindInfo[kind()].one }} reviews yet. Finish a
+        <a [routerLink]="reviewLink()">review</a> to see it here.
       </p>
     } @else {
       <div class="filters" role="group" aria-label="Show the reviews of">
@@ -48,8 +50,11 @@
       </div>
     }
 
-    @if (reviews.sessions().length && !rows().length) {
-      <p class="muted">No reviews in this mode yet.</p>
+    @if (kindSessions().length && !rows().length) {
+      <p class="muted">
+        No {{ kindInfo[kind()].one }} reviews{{ modeFilter() === 'all' ? '' : ' in this mode' }}
+        yet.
+      </p>
     } @else if (rows().length) {
       <dl class="session-stats">
         <div>
@@ -57,7 +62,7 @@
           <dd>{{ totals().sessions }}</dd>
         </div>
         <div>
-          <dt>Characters</dt>
+          <dt>{{ kindInfo[kind()].name }}</dt>
           <dd>{{ totals().characters }}</dd>
         </div>
         <div>
@@ -72,22 +77,20 @@
 
       @if (hardest().length) {
         <div class="hardest">
-          <h3>Hardest characters</h3>
-          <ul class="missed">
-            @for (h of hardest(); track h.entry!.character) {
+          <h3>Hardest {{ kindInfo[kind()].name.toLowerCase() }}</h3>
+          <ul class="missed" lang="zh">
+            @for (h of hardest(); track h.entry.text) {
               <li
                 [title]="
-                  toPinyin(h.entry!.pinyin) +
+                  toPinyin(h.entry.pinyin) +
                   ' — ' +
-                  (h.entry!.meaning ?? '') +
+                  (h.entry.meaning ?? '') +
                   ' · ' +
                   h.extraTries +
                   ' extra tries'
                 "
               >
-                <a class="missed-char" [routerLink]="['/study', h.entry!.character]">{{
-                  h.entry!.character
-                }}</a>
+                <a class="missed-char" [routerLink]="linkOf(h.entry.text)">{{ h.entry.text }}</a>
                 <span class="muted">+{{ h.extraTries }}</span>
               </li>
             }
@@ -116,9 +119,14 @@
                   ></strong
                 >
                 <span class="muted">
-                  {{ row.stats.count }} character{{ row.stats.count === 1 ? '' : 's' }} ·
-                  {{ row.stats.firstTry }}/{{ row.stats.count }} first try ({{ row.firstTryRate }}%)
-                  · {{ row.stats.mistakes }} mistake{{ row.stats.mistakes === 1 ? '' : 's' }} ·
+                  {{ row.stats.count }} {{ kindInfo[row.session.kind].one
+                  }}{{ row.stats.count === 1 ? '' : 's' }} · {{ row.stats.firstTry }}/{{
+                    row.stats.count
+                  }}
+                  first try ({{ row.firstTryRate }}%) · {{ row.stats.mistakes }} mistake{{
+                    row.stats.mistakes === 1 ? '' : 's'
+                  }}
+                  ·
                   {{ formatDuration(row.stats.seconds) }}
                 </span>
                 @if (row.labels.length) {
@@ -139,9 +147,7 @@
                   [disabled]="!row.available"
                   [title]="
                     row.available < row.stats.count
-                      ? row.stats.count -
-                        row.available +
-                        ' of its characters are no longer in your list'
+                      ? row.stats.count - row.available + ' of them are no longer in your list'
                       : ''
                   "
                   (click)="reviewSession(row.session)"
@@ -166,7 +172,7 @@
               </div>
             </div>
             @if (expanded() === row.session.id) {
-              <ul class="session-results">
+              <ul class="session-results" [class.words]="row.session.kind === 'words'" lang="zh">
                 @for (r of row.results; track r.character) {
                   <li
                     [class.first-try]="r.tries === 1"
@@ -188,7 +194,7 @@
                 }
               </ul>
             } @else {
-              <p class="session-preview">
+              <p class="session-preview" lang="zh">
                 @for (r of row.results.slice(0, 24); track r.character) {
                   <span [class.missed-once]="r.tries > 1">{{ r.character }}</span>
                 }

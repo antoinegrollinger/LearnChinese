@@ -1,70 +1,41 @@
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { Component, afterNextRender, computed, inject, input, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CharactersService, errorMessage } from '../../core/characters.service';
 import { stripTones, toPinyin } from '../../core/pinyin';
 import { speak } from '../../core/speech';
-import { WordEntry, cleanWord } from '../../core/word.model';
-import {
-  CedictEntry,
-  LookupResult,
-  WordsService,
-  joinPinyin,
-  meaningOf,
-} from '../../core/words.service';
+import { WordEntry } from '../../core/word.model';
+import { WordsService } from '../../core/words.service';
 import { Pinyin } from '../../shared/pinyin';
 
-/** Your words: compose them from your characters, look them up in CC-CEDICT, save them. */
+/** The Words tab of Study: your words, and the card of the one selected (/study/words/:word). */
 @Component({
   selector: 'app-words',
-  imports: [ReactiveFormsModule, Pinyin, RouterLink],
+  imports: [Pinyin, RouterLink],
   templateUrl: './words.html',
+  host: { '(document:keydown)': 'onKey($event)' },
 })
 export class Words {
-  /** Route parameter: /words/:word */
+  /** Route parameter: /study/words/:word */
   readonly word = input<string>();
 
-  private readonly fb = inject(NonNullableFormBuilder);
   private readonly router = inject(Router);
   protected readonly words = inject(WordsService);
-  protected readonly characters = inject(CharactersService);
+  private readonly characters = inject(CharactersService);
 
+  protected readonly query = signal('');
   protected readonly toPinyin = toPinyin;
-  protected readonly meaningOf = meaningOf;
 
-  protected readonly form = this.fb.group({ word: '', pinyin: '', meaning: '', notes: '' });
-  protected readonly value = toSignal(this.form.valueChanges, { initialValue: this.form.value });
+  /** Short message at the bottom of the page ("Added 妈妈 ✓", "Deleted 妈妈"). */
+  protected readonly toast = signal<{ text: string; kind?: 'error' } | null>(null);
+  private toastTimer?: ReturnType<typeof setTimeout>;
 
-  /** Word being edited (already saved). */
-  protected readonly editing = signal<string | null>(null);
-  protected readonly status = signal<{ text: string; kind?: 'ok' | 'error' }>({ text: '' });
-  protected readonly saving = signal(false);
-  protected readonly listQuery = signal('');
-  protected readonly pickerQuery = signal('');
+  /** Word just saved on the Add page (passed in the navigation state), highlighted in the list. */
+  private readonly savedMessage = this.router.currentNavigation()?.extras.state?.['saved'] as
+    string | undefined;
+  protected readonly justSaved = computed(() => (this.savedMessage ? this.word() : undefined));
 
-  protected readonly lookupResult = signal<{ word: string; result: LookupResult } | null>(null);
-  protected readonly lookupLoading = signal(false);
-  protected readonly lookupError = signal<string | null>(null);
-
-  private handledRoute: string | undefined | null = null;
-
-  /** The word currently typed (no spaces). */
-  protected readonly currentWord = computed(() => (this.value().word ?? '').replace(/\s+/g, ''));
-
-  /** Each character of the word, with your data when you know it. */
-  protected readonly composition = computed(() =>
-    [...this.currentWord()].map((ch) => ({ ch, known: this.characters.find(ch) })),
-  );
-
-  /** Lookup results, only while they match the word in the form. */
-  protected readonly lookup = computed(() => {
-    const r = this.lookupResult();
-    return r && r.word === this.currentWord() ? r.result : null;
-  });
-
-  protected readonly savedWords = computed(() => {
-    const q = stripTones(this.listQuery().trim()).toLowerCase();
+  protected readonly visible = computed(() => {
+    const q = stripTones(this.query().trim()).toLowerCase();
     return this.words.list().filter((w) => {
       if (!q) return true;
       return stripTones([w.word, w.pinyin, toPinyin(w.pinyin), w.meaning].join(' '))
@@ -73,141 +44,63 @@ export class Words {
     });
   });
 
-  protected readonly pickerCharacters = computed(() => {
-    const q = stripTones(this.pickerQuery().trim()).toLowerCase();
-    return this.characters.list().filter((c) => {
-      if (!q) return true;
-      return stripTones([c.character, c.pinyin, toPinyin(c.pinyin), c.meaning].join(' '))
-        .toLowerCase()
-        .includes(q);
-    });
-  });
+  /** The word from the URL, or the first one. */
+  protected readonly current = computed<WordEntry | undefined>(
+    () => this.words.find(this.word()) ?? this.words.list()[0],
+  );
 
-  /** Typed a word that is already saved, without having opened it. */
-  protected readonly alreadySaved = computed(() => {
-    const w = this.currentWord();
-    return !!w && w !== this.editing() && !!this.words.find(w);
-  });
+  /** Each character of the word, with your data when it's one of your characters. */
+  protected readonly composition = computed(() =>
+    [...(this.current()?.word ?? '')].map((ch) => ({ ch, known: this.characters.find(ch) })),
+  );
 
   constructor() {
-    // Typing a different word stops editing the saved one.
-    this.form.controls.word.valueChanges.subscribe((w) => {
-      const editing = this.editing();
-      if (editing && w.replace(/\s+/g, '') !== editing) this.editing.set(null);
-    });
-
-    // /words/:word → open that word, once the list has loaded and only when the URL changes.
-    effect(() => {
-      const w = this.word();
-      const loaded = this.words.loaded();
-      untracked(() => {
-        if (!loaded || w === this.handledRoute) return;
-        this.handledRoute = w;
-        if (!w || this.editing() === w) return;
-        const entry = this.words.find(w);
-        if (entry) this.fill(entry);
-        else this.form.controls.word.setValue(w);
-      });
-    });
+    if (this.savedMessage) this.showToast(this.savedMessage);
+    // Bring the selected (e.g. newly added) word into view in the list.
+    afterNextRender(() =>
+      document.querySelector('.word-tile.active')?.scrollIntoView({ block: 'nearest' }),
+    );
   }
 
-  // ---------- Composing ----------
-  protected append(character: string): void {
-    this.form.controls.word.setValue(this.currentWord() + character);
+  private showToast(text: string, kind?: 'error'): void {
+    clearTimeout(this.toastTimer);
+    this.toast.set({ text, kind });
+    this.toastTimer = setTimeout(() => this.toast.set(null), 4000);
   }
 
-  protected removeAt(index: number): void {
-    const chars = [...this.currentWord()];
-    chars.splice(index, 1);
-    this.form.controls.word.setValue(chars.join(''));
+  protected select(w: WordEntry): void {
+    this.router.navigate(['/study/words', w.word], { replaceUrl: true });
   }
 
   protected speak(): void {
-    if (this.currentWord()) speak(this.currentWord());
+    const w = this.current();
+    if (w) speak(w.word);
   }
 
-  // ---------- Dictionary ----------
-  protected async lookUp(): Promise<void> {
-    const word = this.currentWord();
-    if (!word) return this.status.set({ text: 'Type or pick a word first.', kind: 'error' });
-    this.lookupLoading.set(true);
-    this.lookupError.set(null);
+  /** Deletes the selected word after confirmation, then selects its neighbour. */
+  protected async deleteCurrent(): Promise<void> {
+    const entry = this.current();
+    if (!entry || !confirm(`Delete ${entry.word} from your words?`)) return;
+    const list = this.visible();
+    const i = list.findIndex((w) => w.word === entry.word);
+    const next = list[i + 1] ?? list[i - 1];
     try {
-      const result = await this.words.lookup(word);
-      this.lookupResult.set({ word, result });
-      // A single meaning and nothing typed yet: use it straight away.
-      const { pinyin, meaning } = this.form.getRawValue();
-      if (result.exact.length === 1 && !pinyin && !meaning) this.useEntry(result.exact[0]);
+      await this.words.remove(entry.word);
+      this.showToast(`Deleted ${entry.word}`);
+      if (next) this.select(next);
+      else this.router.navigate(['/study/words'], { replaceUrl: true });
     } catch (err) {
-      this.lookupError.set(`Lookup failed: ${errorMessage(err)}`);
-    } finally {
-      this.lookupLoading.set(false);
+      this.showToast(`Delete failed: ${errorMessage(err)}`, 'error');
     }
   }
 
-  protected useEntry(entry: CedictEntry): void {
-    this.form.patchValue({ pinyin: joinPinyin(entry.pinyin), meaning: meaningOf(entry) });
-  }
-
-  /** Not in the dictionary as a whole: build the pinyin from its parts. */
-  protected usePartsPinyin(parts: LookupResult['parts']): void {
-    const pinyin = parts
-      .map((p) => (p.entries[0] ? joinPinyin(p.entries[0].pinyin) : p.text))
-      .join('');
-    this.form.patchValue({ pinyin });
-  }
-
-  // ---------- Saved words ----------
-  private fill(entry: WordEntry): void {
-    this.editing.set(entry.word);
-    this.form.setValue({
-      word: entry.word,
-      pinyin: entry.pinyin ?? '',
-      meaning: entry.meaning ?? '',
-      notes: entry.notes ?? '',
-    });
-    this.status.set({ text: '' });
-  }
-
-  protected open(entry: WordEntry): void {
-    this.router.navigate(['/words', entry.word]);
-  }
-
-  protected async save(): Promise<void> {
-    const entry = cleanWord(this.form.getRawValue());
-    if (!entry.word) return this.status.set({ text: 'Type or pick a word first.', kind: 'error' });
-    this.saving.set(true);
-    try {
-      const { entry: saved, created } = await this.words.save(entry);
-      this.editing.set(saved.word);
-      this.status.set({ text: `${created ? 'Added' : 'Updated'} ${saved.word} ✓`, kind: 'ok' });
-      this.handledRoute = saved.word;
-      this.router.navigate(['/words', saved.word], { replaceUrl: true });
-    } catch (err) {
-      this.status.set({ text: `Save failed: ${errorMessage(err)}`, kind: 'error' });
-    } finally {
-      this.saving.set(false);
-    }
-  }
-
-  protected async remove(): Promise<void> {
-    const word = this.editing();
-    if (!word || !confirm(`Delete ${word} from your words?`)) return;
-    try {
-      await this.words.remove(word);
-      this.clear();
-      this.status.set({ text: `Deleted ${word}.`, kind: 'ok' });
-    } catch (err) {
-      this.status.set({ text: `Delete failed: ${errorMessage(err)}`, kind: 'error' });
-    }
-  }
-
-  protected clear(): void {
-    this.editing.set(null);
-    this.form.reset();
-    this.lookupResult.set(null);
-    this.status.set({ text: '' });
-    this.handledRoute = undefined;
-    this.router.navigate(['/words']);
+  /** ← → move between the words shown. */
+  protected onKey(event: KeyboardEvent): void {
+    if ((event.target as HTMLElement).matches('input, textarea, select')) return;
+    const delta = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+    const list = this.visible();
+    if (!delta || !list.length) return;
+    const i = list.findIndex((w) => w.word === this.current()?.word);
+    this.select(list[(i + delta + list.length) % list.length]);
   }
 }

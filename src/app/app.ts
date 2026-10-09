@@ -13,7 +13,6 @@ import { NotificationBell } from './shared/notification-bell';
       @if (auth.user(); as user) {
         <nav class="tabs">
           <a class="button" routerLink="/study" routerLinkActive="active">Study</a>
-          <a class="button" routerLink="/words" routerLinkActive="active">Words</a>
           <a class="button" routerLink="/review" routerLinkActive="active">Review</a>
           <a class="button" routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
           <a class="button" routerLink="/add" routerLinkActive="active">Add</a>

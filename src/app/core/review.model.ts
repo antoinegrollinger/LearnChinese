@@ -1,7 +1,8 @@
 /** Shared by the Angular app and server/server.ts. */
 
-/** How one character went in a review session. */
+/** How one character (or word) went in a review session. */
 export interface ReviewResult {
+  /** The character, or the word in a words review. */
   character: string;
   /** Times it was written (or its solution shown); the last one was without a mistake. */
   tries: number;
@@ -18,10 +19,22 @@ export const REVIEW_MODES: Record<ReviewMode, { name: string; icon: string }> = 
 
 export const reviewMode = (value: unknown): ReviewMode => (value === 'pinyin' ? 'pinyin' : 'write');
 
+/** What is reviewed: your characters or your words. */
+export type ReviewKind = 'characters' | 'words';
+
+export const REVIEW_KINDS: Record<ReviewKind, { name: string; one: string; icon: string }> = {
+  characters: { name: 'Characters', one: 'character', icon: '字' },
+  words: { name: 'Words', one: 'word', icon: '词' },
+};
+
+export const reviewKind = (value: unknown): ReviewKind =>
+  value === 'words' ? 'words' : 'characters';
+
 /** A completed review session (the review_sessions table). */
 export interface ReviewSession {
   /** Set by the server. */
   id?: number;
+  kind: ReviewKind;
   mode: ReviewMode;
   /** ISO dates */
   startedAt: string;
@@ -54,6 +67,7 @@ export function cleanReview(raw: unknown): ReviewSession {
     }))
     .filter((x) => x.character && !seen.has(x.character) && seen.add(x.character));
   const session: ReviewSession = {
+    kind: reviewKind(r['kind']),
     mode: reviewMode(r['mode']),
     startedAt: startedAt && startedAt <= finishedAt ? startedAt : finishedAt,
     finishedAt,

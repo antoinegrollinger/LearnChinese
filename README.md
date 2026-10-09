@@ -128,10 +128,16 @@ npm start                    # the log says "Data: MySQL …"
 
 | Route | Page |
 |---|---|
-| `/study/:character` | Character card: *Animate* the stroke order, *Practice* drawing with stroke-by-stroke checking, toggle the outline, 🔊 pronunciation, coloured decomposition (red = meaning, blue = sound), stroke-order strip, words, notes. ← → move between characters. |
-| `/words`, `/words/:word` | Your words: compose a word by clicking your characters (or type it). Each character shows your pinyin and meaning, or a *+ Add* link if it is not in your list yet. **🔎 Look up meaning** searches CC-CEDICT; words that aren't in it are split into parts it knows. **Save** writes to the database. Each character's Study card lists your words that contain it. |
-| `/review` | You are given the pinyin and meaning and write the character from memory. Characters you have never reviewed, or often miss, come back first. Scores are kept in localStorage. |
-| `/add`, `/add/:character` | Add or edit a character. Find one by pinyin (`ma`, `ma3`, `mǎ`, `nv3`), or type it: the form fills itself in from the dictionary (pinyin, meaning, type, components with roles and stroke numbers, example words, notes). **Save** writes to the database. |
+| `/study`, `/study/:character` | **Study**, *Characters* tab: character card. *Animate* the stroke order, *Practice* drawing with stroke-by-stroke checking, toggle the outline, 🔊 pronunciation, coloured decomposition (red = meaning, blue = sound), stroke-order strip, words, notes, label. Filter by type or label; grid or list. ← → move between characters. |
+| `/study/words`, `/study/words/:word` | **Study**, *Words* tab: your words and the card of the selected one: pinyin, meaning, 🔊, its characters (with yours linked, or *+ Add*), notes; *Edit* and *Delete*. ← → move between words. (`/words/…` redirects here.) |
+| `/review`, `/review/words` | **Review**, a tab for your characters and one for your words: write them from their pinyin and meaning (a word character by character), or give the pinyin of the one shown. Choose all of them, some, or the characters of some labels. Missed ones come back soon; the session ends when each one is done without a mistake. |
+| `/dashboard`, `/dashboard/words` | **Dashboard**, a tab for the reviews of your characters and one for those of your words: totals, hardest ones, history; review one again. |
+| `/add`, `/add/:character` | **Add**, *Character* tab: add or edit a character. Find one by pinyin (`ma`, `ma3`, `mǎ`, `nv3`), or type it: the form fills itself in from the dictionary (pinyin, meaning, type, components with roles and stroke numbers, example words, notes, label). **Save** writes to the database. |
+| `/add/word`, `/add/word/:word` | **Add**, *Word* tab: add or edit a word. Compose it by clicking your characters (or type it); each character shows your pinyin and meaning, or a *+ Add* link. **🔎 Look up meaning** searches CC-CEDICT; words that aren't in it are split into parts it knows. |
+| `/friends`, `/friends/:username` | Friend requests, your friends and their counts. A friend's page has tabs *All*, *Characters* (`…/characters`) and *Words* (`…/words`) for their reviews (read only), if they share them. |
+| `/communities`, `/communities/:name` | Find, join (or ask to join) and create communities; their members, whom you can add as friends. Owners and admins answer join requests and manage members. |
+
+The 🔔 in the header lists friend and join requests (answer them there) and what happened to you.
 
 ## Project structure
 

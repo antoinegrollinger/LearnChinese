@@ -1,109 +1,127 @@
 <section class="view centered">
-  @if (!characters.list().length) {
-    @if (characters.loaded()) {
-      <p class="muted">Add some characters first.</p>
-    }
-  } @else if (!started()) {
+  @if (!started()) {
     <div class="review-setup">
       <div class="setup-header">
-        <h2>Choose the characters to review</h2>
-        <a routerLink="/dashboard">Past reviews →</a>
+        <h2>Choose the {{ one() }}s to review</h2>
+        <a [routerLink]="dashboardLink()">Past reviews →</a>
       </div>
+
       @if (lastReview(); as last) {
         <button
           type="button"
           class="repeat-last"
           [disabled]="!last.available"
-          [title]="last.available ? '' : 'None of these characters is in your list any more'"
+          [title]="last.available ? '' : 'None of them is in your lists any more'"
           (click)="repeatLast()"
         >
-          ↻ Repeat the last review ({{ modeInfo[last.session.mode].icon }}
-          {{ last.available }} character{{ last.available === 1 ? '' : 's' }})
-          <span class="muted">{{ last.preview }}</span>
+          ↻ Repeat the last review ({{ modeInfo[last.session.mode].icon }} {{ last.available }}
+          {{ kindInfo[last.session.kind].one }}{{ last.available === 1 ? '' : 's' }})
+          <span class="muted" lang="zh">{{ last.preview }}</span>
         </button>
       }
-      <div class="buttons">
-        <button type="button" (click)="selectAll()">
-          Select all ({{ characters.list().length }})
-        </button>
-        <button type="button" [disabled]="!selected().size" (click)="selectNone()">Clear</button>
-      </div>
 
-      @if (groups().length) {
-        <p class="muted">By label: click to add its characters, again to remove them.</p>
-        <div class="label-groups">
-          @for (g of groups(); track g.key) {
+      @if (!items().length) {
+        @if (itemsLoaded()) {
+          <p class="muted">
+            @if (kind() === 'words') {
+              No words yet. <a routerLink="/add/word">Add some</a> first.
+            } @else {
+              No characters yet. Add some on the <a routerLink="/add">Add</a> page first.
+            }
+          </p>
+        } @else {
+          <p class="muted">Loading…</p>
+        }
+      } @else {
+        <div class="buttons">
+          <button type="button" (click)="selectAll()">Select all ({{ items().length }})</button>
+          <button type="button" [disabled]="!selected().size" (click)="selectNone()">Clear</button>
+        </div>
+
+        @if (groups().length) {
+          <p class="muted">By label: click to add its characters, again to remove them.</p>
+          <div class="label-groups">
+            @for (g of groups(); track g.key) {
+              <button
+                type="button"
+                [class.active]="g.selected === g.characters.length"
+                [class.partial]="g.selected > 0 && g.selected < g.characters.length"
+                [attr.aria-pressed]="g.selected === g.characters.length"
+                (click)="toggleGroup(g)"
+              >
+                <span class="label-dot" [style.background]="g.color"></span>
+                {{ g.name }} ({{ g.selected }}/{{ g.characters.length }})
+              </button>
+            }
+          </div>
+        }
+
+        <p class="muted">Or click {{ one() }}s one by one:</p>
+        <ul class="review-picker" [class.words]="kind() === 'words'" lang="zh">
+          @for (item of items(); track item.text) {
+            <li>
+              <button
+                type="button"
+                class="pick"
+                [class.selected]="selected().has(item.text)"
+                [attr.aria-pressed]="selected().has(item.text)"
+                [title]="
+                  toPinyin(item.pinyin) +
+                  ' — ' +
+                  (item.meaning ?? '') +
+                  (item.label ? ' · ' + item.label : '')
+                "
+                (click)="toggle(item.text)"
+              >
+                {{ item.text }}
+                @if (item.label) {
+                  <span class="label-dot" [style.background]="labels.colorOf(item.label)"></span>
+                }
+              </button>
+            </li>
+          }
+        </ul>
+
+        <p class="muted">Mode:</p>
+        <div class="mode-choice" role="radiogroup" aria-label="Review mode">
+          @for (m of modes; track m[0]) {
             <button
               type="button"
-              [class.active]="g.selected === g.characters.length"
-              [class.partial]="g.selected > 0 && g.selected < g.characters.length"
-              [attr.aria-pressed]="g.selected === g.characters.length"
-              (click)="toggleGroup(g)"
+              role="radio"
+              [class.active]="mode() === m[0]"
+              [attr.aria-checked]="mode() === m[0]"
+              (click)="setMode(m[0])"
             >
-              <span class="label-dot" [style.background]="g.color"></span>
-              {{ g.name }} ({{ g.selected }}/{{ g.characters.length }})
+              <span aria-hidden="true">{{ m[1].icon }}</span>
+              {{ m[0] === 'write' ? 'Write the ' + one() : m[1].name }}
+              <small class="muted">{{
+                m[0] === 'write'
+                  ? 'from its pinyin and meaning' +
+                    (kind() === 'words' ? ', character by character' : '')
+                  : 'of the ' + one() + ' shown'
+              }}</small>
             </button>
           }
         </div>
+
+        <button
+          type="button"
+          class="primary start"
+          [disabled]="!reviewList().length"
+          (click)="start()"
+        >
+          Start review ({{ reviewList().length }} {{ one()
+          }}{{ reviewList().length === 1 ? '' : 's' }})
+        </button>
       }
-
-      <p class="muted">Or click characters one by one:</p>
-      <ul class="review-picker">
-        @for (c of characters.list(); track c.character) {
-          <li>
-            <button
-              type="button"
-              class="pick"
-              [class.selected]="selected().has(c.character)"
-              [attr.aria-pressed]="selected().has(c.character)"
-              [title]="
-                toPinyin(c.pinyin) + ' — ' + (c.meaning ?? '') + (c.label ? ' · ' + c.label : '')
-              "
-              (click)="toggle(c.character)"
-            >
-              {{ c.character }}
-              @if (c.label) {
-                <span class="label-dot" [style.background]="labels.colorOf(c.label)"></span>
-              }
-            </button>
-          </li>
-        }
-      </ul>
-
-      <p class="muted">Mode:</p>
-      <div class="mode-choice" role="radiogroup" aria-label="Review mode">
-        @for (m of modes; track m[0]) {
-          <button
-            type="button"
-            role="radio"
-            [class.active]="mode() === m[0]"
-            [attr.aria-checked]="mode() === m[0]"
-            (click)="setMode(m[0])"
-          >
-            <span aria-hidden="true">{{ m[1].icon }}</span> {{ m[1].name }}
-            <small class="muted">{{
-              m[0] === 'write' ? 'from its pinyin and meaning' : 'of the character shown'
-            }}</small>
-          </button>
-        }
-      </div>
-
-      <button
-        type="button"
-        class="primary start"
-        [disabled]="!reviewList().length"
-        (click)="start()"
-      >
-        Start review ({{ reviewList().length }} character{{ reviewList().length === 1 ? '' : 's' }})
-      </button>
     </div>
   } @else if (complete()) {
     <div class="review-complete" role="status">
       <div class="celebrate" aria-hidden="true">🎉</div>
       <h2>Session complete!</h2>
       <p>
-        {{ mode() === 'pinyin' ? 'You gave the pinyin of' : 'You wrote' }} all
-        {{ summary().count }} character{{ summary().count === 1 ? '' : 's' }} without a mistake.
+        {{ mode() === 'pinyin' ? 'You gave the pinyin of' : 'You wrote' }} all {{ summary().count }}
+        {{ one() }}{{ summary().count === 1 ? '' : 's' }} without a mistake.
       </p>
       <dl class="session-stats">
         <div>
@@ -125,16 +143,16 @@
       </dl>
       @if (summary().missed.length) {
         <p class="muted">Needed more than one try:</p>
-        <ul class="missed">
-          @for (m of summary().missed; track m.entry.character) {
-            <li [title]="toPinyin(m.entry.pinyin) + ' — ' + (m.entry.meaning ?? '')">
-              <span class="missed-char">{{ m.entry.character }}</span>
+        <ul class="missed" lang="zh">
+          @for (m of summary().missed; track m.item.text) {
+            <li [title]="toPinyin(m.item.pinyin) + ' — ' + (m.item.meaning ?? '')">
+              <span class="missed-char">{{ m.item.text }}</span>
               <span class="muted">×{{ m.tries }}</span>
             </li>
           }
         </ul>
       } @else {
-        <p class="muted">Every character right on the first try. Perfect session!</p>
+        <p class="muted">Every {{ one() }} right on the first try. Perfect session!</p>
       }
       <div class="buttons">
         <button type="button" class="primary" (click)="start()">↻ Review again</button>
@@ -150,7 +168,7 @@
       <p class="message" [class]="saveStatus().kind">
         {{ saveStatus().text }}
         @if (saveStatus().kind === 'ok') {
-          · <a routerLink="/dashboard">See the dashboard →</a>
+          · <a [routerLink]="dashboardLink()">See the dashboard →</a>
         }
       </p>
     </div>
@@ -158,10 +176,9 @@
     <div class="review">
       <div class="session-progress">
         <span class="muted"
-          >{{ modeInfo[mode()].icon }} {{ modeInfo[mode()].name }} · {{ validated().size }}/{{
-            reviewList().length
-          }}
-          validated ·
+          >{{ kindInfo[kind()].name }} · {{ modeInfo[mode()].icon }}
+          {{ mode() === 'write' ? 'Write the ' + one() : modeInfo[mode()].name }} ·
+          {{ validated().size }}/{{ reviewList().length }} validated ·
           <button type="button" class="link" (click)="changeSelection()">
             Change selection
           </button></span
@@ -169,12 +186,14 @@
         <progress
           [value]="validated().size"
           [max]="reviewList().length"
-          aria-label="Characters validated"
+          [attr.aria-label]="kindInfo[kind()].name + ' validated'"
         ></progress>
       </div>
       @if (mode() === 'pinyin') {
-        <p class="muted">Type the pinyin of this character:</p>
-        <div class="prompt-char" lang="zh">{{ c.character }}</div>
+        <p class="muted">Type the pinyin of this {{ one() }}:</p>
+        <div class="prompt-char" [class.prompt-word]="c.text.length > 2" lang="zh">
+          {{ c.text }}
+        </div>
         @if (meaningShown() || done()) {
           <div class="meaning">{{ c.meaning }}</div>
         }
@@ -183,7 +202,7 @@
           <input
             #answerInput
             aria-label="Pinyin"
-            placeholder="ma1 or mā"
+            [placeholder]="kind() === 'words' ? 'ma1ma5 or māma' : 'ma1 or mā'"
             autocomplete="off"
             autocapitalize="off"
             spellcheck="false"
@@ -215,46 +234,76 @@
         @if (done()) {
           <div class="answer">
             <div class="pinyin"><app-pinyin [text]="c.pinyin" /></div>
-            <span class="badge" [style.--type-color]="typeOf(c.type).color">{{
-              typeOf(c.type).name
-            }}</span>
-            <app-parts-summary class="summary" [parts]="c.components ?? []" />
+            @if (c.character; as ch) {
+              <span class="badge" [style.--type-color]="typeOf(ch.type).color">{{
+                typeOf(ch.type).name
+              }}</span>
+              <app-parts-summary class="summary" [parts]="ch.components ?? []" />
+            }
           </div>
         }
       } @else {
-        <p class="muted">Write the matching character:</p>
+        <p class="muted">
+          Write the matching {{ one()
+          }}{{
+            kind() === 'words' && cardChars().length > 1
+              ? ' (character ' + (writeIndex() + 1) + ' of ' + cardChars().length + ')'
+              : ''
+          }}:
+        </p>
         <div class="question">
           <div class="pinyin"><app-pinyin [text]="c.pinyin" /></div>
           <div class="meaning">{{ c.meaning }}</div>
         </div>
 
-        <app-hanzi-writer [character]="c.character" [showOutline]="false" [hideCharacter]="true" />
+        @if (kind() === 'words') {
+          <div class="word-slots" lang="zh" aria-hidden="true">
+            @for (slot of wordSlots(); track $index) {
+              <span [class]="'slot ' + slot.state">{{
+                slot.state === 'shown' ? slot.ch : ''
+              }}</span>
+            }
+          </div>
+        }
+
+        @for (key of [writerKey()]; track key) {
+          <app-hanzi-writer
+            [character]="currentChar()"
+            [showOutline]="false"
+            [hideCharacter]="true"
+            (loadError)="onWriterError()"
+          />
+        }
 
         <div class="buttons">
-          <button type="button" (click)="hint()">Hint (outline)</button>
-          <button type="button" (click)="solution()">Show solution</button>
+          <button type="button" [disabled]="done()" (click)="hint()">Hint (outline)</button>
+          <button type="button" [disabled]="done()" (click)="solution()">Show solution</button>
           <button type="button" title="Pronounce" (click)="speak()">🔊</button>
           <button type="button" class="primary" (click)="next()">
-            {{ allValidated() ? 'See results 🎉' : 'Next →' }}
+            {{ !done() ? 'Skip →' : allValidated() ? 'See results 🎉' : 'Next →' }}
           </button>
         </div>
         <p class="message" [class]="message().kind">{{ message().text }}</p>
 
         @if (done()) {
           <div class="answer">
-            <div class="big-char">{{ c.character }}</div>
-            <span class="badge" [style.--type-color]="typeOf(c.type).color">{{
-              typeOf(c.type).name
-            }}</span>
-            <app-parts-summary class="summary" [parts]="c.components ?? []" />
+            <div class="big-char" lang="zh">{{ c.text }}</div>
+            @if (c.character; as ch) {
+              <span class="badge" [style.--type-color]="typeOf(ch.type).color">{{
+                typeOf(ch.type).name
+              }}</span>
+              <app-parts-summary class="summary" [parts]="ch.components ?? []" />
+            }
           </div>
         }
-        <p class="muted">{{ score() }}</p>
+        @if (kind() === 'characters') {
+          <p class="muted">{{ score() }}</p>
+        }
       }
     </div>
   } @else {
     <p class="muted">
-      None of the selected characters is in your list any more.
+      None of the selected {{ one() }}s is in your list any more.
       <button type="button" class="link" (click)="changeSelection()">Choose again</button>
     </p>
   }

@@ -1,16 +1,27 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CharactersService, errorMessage } from '../../core/characters.service';
 import { LabelsService, sortLabels } from '../../core/labels.service';
 import { toPinyin } from '../../core/pinyin';
 import {
+  REVIEW_KINDS,
   REVIEW_MODES,
+  ReviewKind,
   ReviewMode,
   ReviewSession,
   formatDuration,
   reviewStats,
 } from '../../core/review.model';
 import { ReviewsService } from '../../core/reviews.service';
+import { WordsService } from '../../core/words.service';
+
+/** A character or word of your lists, as the dashboard shows it. */
+interface Known {
+  text: string;
+  pinyin?: string;
+  meaning?: string;
+  label?: string;
+}
 
 const DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
   weekday: 'short',
@@ -30,6 +41,7 @@ const DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
 export class Dashboard {
   private readonly router = inject(Router);
   private readonly characters = inject(CharactersService);
+  private readonly words = inject(WordsService);
   protected readonly labels = inject(LabelsService);
   protected readonly reviews = inject(ReviewsService);
 
@@ -39,14 +51,37 @@ export class Dashboard {
     (typeof REVIEW_MODES)[ReviewMode],
   ][];
   protected readonly modeInfo = REVIEW_MODES;
+  protected readonly kindInfo = REVIEW_KINDS;
+  /** The reviews of your characters, or of your words: the tab of the page (route data). */
+  readonly kind = input<ReviewKind>('characters');
   /** Show the sessions of every mode, or of one. */
   protected readonly modeFilter = signal<ReviewMode | 'all'>('all');
 
+  /** The reviews of this tab's kind, in every mode. */
+  protected readonly kindSessions = computed(() =>
+    this.reviews.sessions().filter((s) => s.kind === this.kind()),
+  );
+
+  /** Those of the mode chosen. */
   private readonly sessions = computed(() => {
-    const filter = this.modeFilter();
-    const sessions = this.reviews.sessions();
-    return filter === 'all' ? sessions : sessions.filter((s) => s.mode === filter);
+    const mode = this.modeFilter();
+    return this.kindSessions().filter((s) => mode === 'all' || s.mode === mode);
   });
+
+  /** The Review tab of this kind. */
+  protected readonly reviewLink = computed(() =>
+    this.kind() === 'words' ? '/review/words' : '/review',
+  );
+
+  /** The character or word, if it's still in your lists. */
+  private find(kind: ReviewKind, text: string): Known | undefined {
+    if (kind === 'words') {
+      const w = this.words.find(text);
+      return w && { text: w.word, pinyin: w.pinyin, meaning: w.meaning };
+    }
+    const c = this.characters.find(text);
+    return c && { text: c.character, pinyin: c.pinyin, meaning: c.meaning, label: c.label };
+  }
   protected readonly toPinyin = toPinyin;
   /** Id of the session whose characters are shown. */
   protected readonly expanded = signal<number | null>(null);
@@ -58,7 +93,7 @@ export class Dashboard {
       const stats = reviewStats(session);
       const entries = session.results.map((r) => ({
         ...r,
-        entry: this.characters.find(r.character),
+        entry: this.find(session.kind, r.character),
       }));
       return {
         session,
@@ -74,11 +109,11 @@ export class Dashboard {
     }),
   );
 
-  /** The last review of any mode, with how many of its characters are still in your list. */
+  /** The last review of any kind and mode, with how many of its items are still in your lists. */
   protected readonly lastReview = computed(() => {
     const session = this.reviews.last();
     if (!session) return null;
-    const available = session.results.filter((r) => this.characters.find(r.character)).length;
+    const available = session.results.filter((r) => this.find(session.kind, r.character)).length;
     return { session, available };
   });
 
@@ -95,8 +130,9 @@ export class Dashboard {
     };
   });
 
-  /** The characters that needed the most extra tries, over all sessions (still in your list). */
+  /** The characters (or words) that needed the most extra tries in the sessions shown. */
   protected readonly hardest = computed(() => {
+    const kind = this.kind();
     const extra = new Map<string, number>();
     for (const session of this.sessions()) {
       for (const r of session.results) {
@@ -104,29 +140,38 @@ export class Dashboard {
       }
     }
     return [...extra]
-      .map(([character, extraTries]) => ({ entry: this.characters.find(character), extraTries }))
-      .filter((h) => h.entry)
+      .map(([text, extraTries]) => ({ entry: this.find(kind, text), extraTries }))
+      .filter((h): h is { entry: Known; extraTries: number } => !!h.entry)
       .sort((a, b) => b.extraTries - a.extraTries)
       .slice(0, 12);
   });
 
-  /** Opens the Review page and starts a session with these characters, in this mode. */
-  protected review(characters: string[], mode: ReviewMode): void {
-    this.router.navigate(['/review'], { state: { replay: characters, mode } });
+  /** Opens the Review page and starts a session with these characters or words, in this mode. */
+  protected review(texts: string[], mode: ReviewMode, kind: ReviewKind): void {
+    this.router.navigate([kind === 'words' ? '/review/words' : '/review'], {
+      state: { replay: texts, mode, kind },
+    });
   }
 
   protected reviewSession(session: ReviewSession): void {
     this.review(
       session.results.map((r) => r.character),
       session.mode,
+      session.kind,
     );
   }
 
   protected reviewHardest(mode: ReviewMode): void {
     this.review(
-      this.hardest().map((h) => h.entry!.character),
+      this.hardest().map((h) => h.entry.text),
       mode,
+      this.kind(),
     );
+  }
+
+  /** Where a character or word of your lists is shown. */
+  protected linkOf(text: string): string[] {
+    return [this.kind() === 'words' ? '/study/words' : '/study', text];
   }
 
   protected toggle(id: number | undefined): void {

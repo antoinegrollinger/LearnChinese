@@ -23,7 +23,7 @@
         </div>
         <div>
           <dt>Reviews</dt>
-          <dd>{{ p.sharesReviews ? p.reviews : '—' }}</dd>
+          <dd>{{ p.sharesReviews ? rows().length : '—' }}</dd>
         </div>
         <div>
           <dt>Right first try</dt>
@@ -34,11 +34,17 @@
       @if (!p.sharesReviews) {
         <p class="muted">{{ p.username }} doesn't share their reviews.</p>
       } @else if (!rows().length) {
-        <p class="muted">{{ p.username }} hasn't finished a review yet.</p>
+        <p class="muted">{{ p.username }} hasn't finished a {{ reviewName() }} yet.</p>
       } @else {
-        <h3>Their reviews</h3>
+        <h3>Their {{ reviewName() }}s</h3>
         <p class="muted">
-          {{ totals().characters }} characters reviewed in {{ totals().time }}. Read only.
+          {{ totals().items }}
+          {{
+            kind() === 'all'
+              ? 'characters and words'
+              : kindInfo[kind() === 'words' ? 'words' : 'characters'].name.toLowerCase()
+          }}
+          reviewed in {{ totals().time }}. Read only.
         </p>
         <ul class="sessions">
           @for (row of rows(); track row.session.id) {
@@ -47,16 +53,21 @@
                 <div class="session-info">
                   <strong
                     >{{ row.date }}
-                    <span class="mode-tag"
-                      >{{ modeInfo[row.session.mode].icon }}
+                    <span class="mode-tag">
+                      @if (kind() === 'all') {
+                        <span lang="zh">{{ kindInfo[row.session.kind].icon }}</span>
+                        {{ kindInfo[row.session.kind].name }} ·
+                      }
+                      {{ modeInfo[row.session.mode].icon }}
                       {{ modeInfo[row.session.mode].name }}</span
                     ></strong
                   >
                   <span class="muted">
-                    {{ row.stats.count }} character{{ row.stats.count === 1 ? '' : 's' }} ·
-                    {{ row.stats.firstTry }}/{{ row.stats.count }} first try ({{
-                      row.firstTryRate
-                    }}%) · {{ row.stats.mistakes }} mistake{{
+                    {{ row.stats.count }} {{ kindInfo[row.session.kind].one
+                    }}{{ row.stats.count === 1 ? '' : 's' }} · {{ row.stats.firstTry }}/{{
+                      row.stats.count
+                    }}
+                    first try ({{ row.firstTryRate }}%) · {{ row.stats.mistakes }} mistake{{
                       row.stats.mistakes === 1 ? '' : 's'
                     }}
                     · {{ formatDuration(row.stats.seconds) }}
@@ -73,7 +84,7 @@
                 </div>
               </div>
               @if (expanded() === row.session.id) {
-                <ul class="session-results">
+                <ul class="session-results" [class.words]="row.session.kind === 'words'" lang="zh">
                   @for (r of row.session.results; track r.character) {
                     <li [class.first-try]="r.tries === 1">
                       <span class="result-char">{{ r.character }}</span>
@@ -87,7 +98,7 @@
                   }
                 </ul>
               } @else {
-                <p class="session-preview">
+                <p class="session-preview" lang="zh">
                   @for (r of row.session.results.slice(0, 24); track r.character) {
                     <span [class.missed-once]="r.tries > 1">{{ r.character }}</span>
                   }

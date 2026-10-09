@@ -286,13 +286,14 @@ function reviewsStore(pool: mysql.Pool): ReviewStore {
   return {
     async all(user) {
       const [rows] = await pool.query<Rows>(
-        `SELECT id, mode, started_at, finished_at, results FROM review_sessions
+        `SELECT id, kind, mode, started_at, finished_at, results FROM review_sessions
          WHERE user_id = ? ORDER BY finished_at DESC, id DESC`,
         [user],
       );
       return rows.map((r) =>
         cleanReview({
           id: r['id'],
+          kind: r['kind'],
           mode: r['mode'],
           startedAt: r['started_at'],
           finishedAt: r['finished_at'],
@@ -303,10 +304,11 @@ function reviewsStore(pool: mysql.Pool): ReviewStore {
     async add(user, session) {
       // Dates go in and come back as Date objects (mysql2 converts them the same way both times).
       const [result] = await pool.query<Result>(
-        `INSERT INTO review_sessions (user_id, mode, started_at, finished_at, results)
-         VALUES (?, ?, ?, ?, ?)`,
+        `INSERT INTO review_sessions (user_id, kind, mode, started_at, finished_at, results)
+         VALUES (?, ?, ?, ?, ?, ?)`,
         [
           user,
+          session.kind,
           session.mode,
           new Date(session.startedAt),
           new Date(session.finishedAt),

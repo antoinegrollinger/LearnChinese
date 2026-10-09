@@ -215,6 +215,50 @@ h3 {
 }
 
 /* ---------- Study ---------- */
+/* Tabs of the Study page: Characters | Words */
+.page-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 14px 20px 0;
+  border-bottom: 1px solid var(--border);
+}
+.page-tabs a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  margin-bottom: -1px;
+  border: 1px solid transparent;
+  border-radius: 8px 8px 0 0;
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 600;
+}
+.page-tabs a:hover {
+  color: var(--ink);
+}
+.page-tabs a.active {
+  color: var(--ink);
+  background: var(--bg);
+  border-color: var(--border);
+  border-bottom-color: var(--bg);
+}
+.tab-count {
+  min-width: 1.6em;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 0.75rem;
+  font-weight: normal;
+  text-align: center;
+}
+@media (max-width: 700px) {
+  .page-tabs {
+    padding: 10px 16px 0;
+  }
+}
+
 .sidebar {
   width: 260px;
   flex-shrink: 0;
@@ -589,6 +633,38 @@ app-stroke-svg {
   width: 7px;
   height: 7px;
 }
+/* Words: wider tiles in the picker */
+.review-picker.words {
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+}
+.review-picker.words .pick {
+  font-size: 1.2rem;
+  padding: 6px 4px;
+}
+/* Writing a word: its characters, shown once written */
+.word-slots {
+  display: flex;
+  gap: 6px;
+}
+.word-slots .slot {
+  width: 2.4rem;
+  height: 2.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+}
+.word-slots .slot.current {
+  border: 2px solid var(--accent);
+}
+.word-slots .slot.shown {
+  border-style: solid;
+}
+.prompt-char.prompt-word {
+  font-size: 4rem;
+}
 .review-setup .start {
   align-self: flex-start;
   margin-top: 6px;
@@ -840,9 +916,11 @@ app-stroke-svg {
   padding: 4px 10px;
 }
 .session-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 0.45em;
   margin: 6px 0 0;
   font-size: 1.2rem;
-  letter-spacing: 0.15em;
   overflow-wrap: anywhere;
 }
 /* Needed more than one try */
@@ -865,6 +943,12 @@ app-stroke-svg {
   border-left: 4px solid var(--tone1);
   border-radius: 8px;
   padding: 4px 2px;
+}
+.session-results.words {
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+}
+.session-results.words .result-char {
+  font-size: 1.2rem;
 }
 .session-results li.first-try {
   border-left-color: var(--tone3);
@@ -1262,6 +1346,14 @@ fieldset {
 .word-tile .word-hz { font-size: 1.4rem; grid-row: span 2; align-self: center; }
 .word-tile .word-meaning { font-size: 0.8rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .word-tile.active { border-color: var(--accent); background: var(--bg); }
+/* The word card (Study, Words tab) */
+.word-card { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.word-card h3 { margin: 14px 0 6px; }
+.word-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.word-big { font-size: 4rem; line-height: 1.1; letter-spacing: 0.05em; }
+.word-tile.just-saved { animation: just-saved 1.6s ease-out 2; }
+/* The word form (Add, Word tab) */
+.word-editor.add-word { flex: 0 1 820px; }
 .word-editor { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
 .word-editor label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; }
 .word-editor .row { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
