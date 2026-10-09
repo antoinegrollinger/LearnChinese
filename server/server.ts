@@ -6,6 +6,8 @@
  *   GET    /api/characters             → the list           (same routes for /api/words)
  *   POST   /api/characters             → add or update one character (body: CharacterEntry)
  *   DELETE /api/characters/:character  → delete one character
+ *   GET    /api/labels                 → the labels ({ name, color }); same POST and DELETE routes
+ *                                         (a character's label is also created when it is saved)
  *   GET    /api/lookup/:word           → CC-CEDICT entries for a word (see cedict.ts)
  *
  * During development (npm start) Angular's dev server forwards /api to this server (proxy.conf.json).
@@ -18,6 +20,7 @@ import { lookupWord, loadCedict } from './cedict.ts';
 import { User } from '../src/app/core/auth.model.ts';
 import { AuthError, createAuth } from './auth.ts';
 import { CHARACTERS, ListFile, ROOT, WORDS } from './data-files.ts';
+import { Label, cleanLabel } from '../src/app/core/character.model.ts';
 import { ListStore, createStores } from './store.ts';
 
 const DIST = join(ROOT, 'dist', 'hanzi-workshop', 'browser');
@@ -31,6 +34,8 @@ const stores = (() => {
   }
 })();
 const auth = createAuth(stores.pool);
+/** The labels are only in the database (no JSON file). */
+const LABELS: ListFile<Label> = { name: 'labels', key: 'name', clean: cleanLabel };
 /** Set by the host in production (a port number or a socket path); 8642 on your computer. */
 const PORT = process.env['PORT'];
 const LOCAL_PORT = 8642;
@@ -171,6 +176,7 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, url: URL): P
   if (!user) throw new AuthError(401, 'Please log in.');
   if (resource === 'characters') return handleList(CHARACTERS, stores.characters, user, req, res, param);
   if (resource === 'words') return handleList(WORDS, stores.words, user, req, res, param);
+  if (resource === 'labels') return handleList(LABELS, stores.labels, user, req, res, param);
   if (resource === 'lookup' && param && req.method === 'GET') {
     return sendJson(res, 200, await lookupWord(decodeURIComponent(param)));
   }

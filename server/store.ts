@@ -5,10 +5,17 @@
  *                  (on Hostinger: mysql://u123_user:password@localhost:3306/u123_db)
  *
  * "npm run db:import" creates the tables and copies data/*.json in. A character's components are
- * kept in the components and character_components tables (see db/schema.sql).
+ * kept in the components and character_components tables, its label in the labels table (see
+ * db/schema.sql).
  */
 import mysql from 'mysql2/promise';
-import { CharacterEntry, CharacterPart, cleanEntry } from '../src/app/core/character.model.ts';
+import {
+  CharacterEntry,
+  CharacterPart,
+  Label,
+  cleanEntry,
+  cleanLabel,
+} from '../src/app/core/character.model.ts';
 import { WordEntry, cleanWord } from '../src/app/core/word.model.ts';
 
 /** A list; user is the app_user.id whose list it is. */
@@ -24,6 +31,8 @@ export interface Stores {
   pool: mysql.Pool;
   characters: ListStore<CharacterEntry>;
   words: ListStore<WordEntry>;
+  /** The user's labels, sorted by name; save() sets a label's colour (creating it if needed). */
+  labels: ListStore<Label>;
   /** For the startup log. */
   description: string;
   /** Fails if the database can't be reached or has no tables. */
@@ -47,7 +56,10 @@ interface Table<T> {
 const parseJson = (value: unknown): unknown =>
   typeof value === 'string' ? JSON.parse(value) : value;
 
-/** The characters table; components are in the components and character_components tables. */
+/**
+ * The characters table; components are in the components and character_components tables, the
+ * label in the labels table.
+ */
 export const CHARACTERS_TABLE: Table<CharacterEntry> = {
   name: 'characters',
   columns: ['hanzi', 'pinyin', 'meaning', 'type', 'words', 'notes'],
@@ -195,12 +207,22 @@ function charactersStore(pool: mysql.Pool): ListStore<CharacterEntry> {
       for (const { of_hanzi, hanzi, ...part } of links) {
         parts.set(of_hanzi, [...(parts.get(of_hanzi) ?? []), { character: hanzi, ...part }]);
       }
+      const [labelled] = await pool.query<Rows>(
+        `SELECT ch.hanzi, lb.name FROM characters ch JOIN labels lb ON lb.id = ch.label_id
+         WHERE ch.user_id = ?`,
+        [user],
+      );
+      const labels = new Map(labelled.map((r) => [r['hanzi'] as string, r['name'] as string]));
       // cleanEntry() puts the parts in shape and drops empty values ('' = none).
-      return characters.map((c) => cleanEntry({ ...c, components: parts.get(c.character) ?? [] }));
+      return characters.map((c) =>
+        cleanEntry({ ...c, label: labels.get(c.character), components: parts.get(c.character) ?? [] }),
+      );
     },
     async save(user, entry) {
       return userTransaction(pool, user, async (db) => {
         const { id, created } = await upsert(db, CHARACTERS_TABLE, user, entry);
+        const labelId = entry.label ? await labelIdOf(db, user, entry.label) : null;
+        await db.query(`UPDATE characters SET label_id = ? WHERE id = ?`, [labelId, id]);
         await db.query(`DELETE FROM character_components WHERE character_id = ?`, [id]);
         for (const [i, part] of (entry.components ?? []).entries()) {
           await saveLink(db, user, id, i + 1, part);
@@ -209,6 +231,43 @@ function charactersStore(pool: mysql.Pool): ListStore<CharacterEntry> {
       });
     },
     remove: generic.remove, // its character_components rows go with it (ON DELETE CASCADE)
+  };
+}
+
+/** Id of the user's label with this name, created if missing. */
+async function labelIdOf(db: Db, user: number, name: string): Promise<number> {
+  const [result] = await db.query<Result>(
+    `INSERT INTO labels (user_id, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)`,
+    [user, name],
+  );
+  return result.insertId;
+}
+
+function labelsStore(pool: mysql.Pool): ListStore<Label> {
+  return {
+    async all(user) {
+      const [rows] = await pool.query<Rows>(
+        `SELECT name, color FROM labels WHERE user_id = ? ORDER BY name`,
+        [user],
+      );
+      return rows.map(cleanLabel);
+    },
+    async save(user, label) {
+      const [result] = await pool.query<Result>(
+        `INSERT INTO labels (user_id, name, color) VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE color = VALUES(color)`,
+        [user, label.name, label.color ?? null],
+      );
+      return result.affectedRows === 1; // 1 = inserted, 2 = updated, 0 = unchanged
+    },
+    async remove(user, name) {
+      // Its characters keep no label (ON DELETE SET NULL).
+      const [result] = await pool.query<Result>(`DELETE FROM labels WHERE user_id = ? AND name = ?`, [
+        user,
+        name,
+      ]);
+      return result.affectedRows > 0;
+    },
   };
 }
 
@@ -265,6 +324,7 @@ export function createStores(): Stores {
     pool,
     characters: charactersStore(pool),
     words: tableStore(pool, WORDS_TABLE),
+    labels: labelsStore(pool),
     description: `MySQL ${safeUrl(url)}`,
     check: async () => void (await pool.query(`SELECT 1 FROM sessions LIMIT 1`)),
   };

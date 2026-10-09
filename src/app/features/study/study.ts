@@ -3,8 +3,26 @@ import { Router } from '@angular/router';
 import { CharacterEntry } from '../../core/character.model';
 import { CharactersService, errorMessage } from '../../core/characters.service';
 import { DEFAULT_TYPE, TYPES, typeOf } from '../../core/config';
+import { LabelsService } from '../../core/labels.service';
 import { stripTones, toPinyin } from '../../core/pinyin';
 import { CharacterCard } from './character-card';
+
+const LAYOUT_KEY = 'hanzi-workshop-study-layout';
+
+/** localStorage can be unavailable (private browsing): then the setting is just not kept. */
+function readSetting(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeSetting(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {}
+}
 
 @Component({
   selector: 'app-study',
@@ -18,9 +36,16 @@ export class Study {
 
   private readonly router = inject(Router);
   protected readonly characters = inject(CharactersService);
+  protected readonly labels = inject(LabelsService);
 
   protected readonly query = signal('');
   protected readonly typeFilter = signal('all');
+  /** null: all characters, '': those without a label, otherwise that label. */
+  protected readonly labelFilter = signal<string | null>(null);
+  /** The character list as tiles or as rows; remembered in this browser. */
+  protected readonly layout = signal<'grid' | 'list'>(
+    readSetting(LAYOUT_KEY) === 'list' ? 'list' : 'grid',
+  );
   protected readonly toPinyin = toPinyin;
   protected readonly typeOf = typeOf;
 
@@ -41,6 +66,11 @@ export class Study {
     );
   }
 
+  protected setLayout(layout: 'grid' | 'list'): void {
+    this.layout.set(layout);
+    writeSetting(LAYOUT_KEY, layout);
+  }
+
   private showToast(text: string, kind?: 'error'): void {
     clearTimeout(this.toastTimer);
     this.toast.set({ text, kind });
@@ -59,14 +89,32 @@ export class Study {
     ];
   });
 
+  /** The label dropdown: each label with its number of characters. */
+  protected readonly labelFilters = computed(() => {
+    const list = this.characters.list();
+    const count = (label: string) => list.filter((c) => (c.label ?? '') === label).length;
+    return {
+      all: list.length,
+      none: count(''),
+      labels: this.labels.names().map((name) => ({ name, count: count(name) })),
+    };
+  });
+
+  /** Option of the label dropdown: "all", "none" or "=<label>". */
+  protected setLabelFilter(value: string): void {
+    this.labelFilter.set(value === 'all' ? null : value === 'none' ? '' : value.slice(1));
+  }
+
   protected readonly visible = computed(() => {
     const q = stripTones(this.query().trim()).toLowerCase();
     const filter = this.typeFilter();
+    const label = this.labelFilter();
     return this.characters.list().filter((c) => {
       if (filter !== 'all' && (c.type ?? DEFAULT_TYPE) !== filter) return false;
+      if (label !== null && (c.label ?? '') !== label) return false;
       if (!q) return true;
       const haystack = stripTones(
-        [c.character, c.pinyin, toPinyin(c.pinyin), c.meaning].join(' '),
+        [c.character, c.pinyin, toPinyin(c.pinyin), c.meaning, c.label].join(' '),
       ).toLowerCase();
       return haystack.includes(q);
     });

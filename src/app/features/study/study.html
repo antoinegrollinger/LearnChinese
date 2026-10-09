@@ -17,7 +17,44 @@
         </button>
       }
     </div>
-    <ul class="tiles">
+    @if (labelFilters().labels.length) {
+      <select
+        class="label-filter"
+        title="Show only the characters with this label"
+        (change)="setLabelFilter($any($event.target).value)"
+      >
+        <option value="all" [selected]="labelFilter() === null">
+          All labels ({{ labelFilters().all }})
+        </option>
+        <option value="none" [selected]="labelFilter() === ''">
+          No label ({{ labelFilters().none }})
+        </option>
+        @for (l of labelFilters().labels; track l.name) {
+          <option [value]="'=' + l.name" [selected]="labelFilter() === l.name">
+            {{ l.name }} ({{ l.count }})
+          </option>
+        }
+      </select>
+    }
+    <div class="layout-toggle" role="group" aria-label="Show the characters as">
+      <button
+        type="button"
+        [class.active]="layout() === 'grid'"
+        [attr.aria-pressed]="layout() === 'grid'"
+        (click)="setLayout('grid')"
+      >
+        ▦ Grid
+      </button>
+      <button
+        type="button"
+        [class.active]="layout() === 'list'"
+        [attr.aria-pressed]="layout() === 'list'"
+        (click)="setLayout('list')"
+      >
+        ☰ List
+      </button>
+    </div>
+    <ul class="tiles" [class.as-list]="layout() === 'list'">
       @for (c of visible(); track c.character) {
         <li>
           <button
@@ -26,11 +63,22 @@
             [class.active]="c.character === current()?.character"
             [class.just-saved]="c.character === justSaved()"
             [style.--type-color]="typeOf(c.type).color"
-            [title]="(c.meaning ?? '') + ' — ' + typeOf(c.type).name"
+            [title]="
+              (c.meaning ?? '') + ' — ' + typeOf(c.type).name + (c.label ? ' · ' + c.label : '')
+            "
             (click)="select(c)"
           >
             <span class="tile-char">{{ c.character }}</span>
             <span class="tile-py">{{ toPinyin(c.pinyin) }}</span>
+            @if (layout() === 'list') {
+              <span class="tile-meaning">{{ c.meaning }}</span>
+            }
+            @if (c.label) {
+              <span class="label-dot" [style.background]="labels.colorOf(c.label)"></span>
+              <span class="label-tip" [style.--label-color]="labels.colorOf(c.label)">{{
+                c.label
+              }}</span>
+            }
           </button>
         </li>
       }

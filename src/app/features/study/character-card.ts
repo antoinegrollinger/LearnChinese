@@ -12,19 +12,21 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CharacterEntry, CharacterPart } from '../../core/character.model';
+import { CharactersService, errorMessage } from '../../core/characters.service';
 import { ROLES, typeOf } from '../../core/config';
 import { speak } from '../../core/speech';
 import { StatsService } from '../../core/stats.service';
 import { WordsService } from '../../core/words.service';
 import { StrokeDataService, partColors } from '../../core/stroke-data.service';
 import { HanziWriterView } from '../../shared/hanzi-writer';
+import { LabelPicker } from '../../shared/label-picker';
 import { Pinyin } from '../../shared/pinyin';
 import { StrokeSvg } from '../../shared/stroke-svg';
 import { PartsSummary } from './parts-summary';
 
 @Component({
   selector: 'app-character-card',
-  imports: [HanziWriterView, Pinyin, StrokeSvg, RouterLink, PartsSummary],
+  imports: [HanziWriterView, Pinyin, StrokeSvg, RouterLink, PartsSummary, LabelPicker],
   templateUrl: './character-card.html',
 })
 export class CharacterCard {
@@ -35,6 +37,7 @@ export class CharacterCard {
   private readonly strokeData = inject(StrokeDataService);
   private readonly statsService = inject(StatsService);
   private readonly words = inject(WordsService);
+  private readonly characters = inject(CharactersService);
   private readonly writer = viewChild.required(HanziWriterView);
 
   protected readonly roles = ROLES;
@@ -42,6 +45,7 @@ export class CharacterCard {
   /** Practice mode stays on when you move to another character (← → or the list). */
   protected readonly practicing = signal(false);
   protected readonly message = signal<{ text: string; kind?: 'ok' | 'error' }>({ text: '' });
+  protected readonly savingLabel = signal(false);
 
   protected readonly type = computed(() => typeOf(this.entry().type));
   protected readonly parts = computed<CharacterPart[]>(() => this.entry().components ?? []);
@@ -120,6 +124,21 @@ export class CharacterCard {
         this.statsService.record(character, totalMistakes);
       },
     });
+  }
+
+  /** Saves the character with this label ('' = none). */
+  protected async setLabel(label: string): Promise<void> {
+    const entry = this.entry();
+    if ((entry.label ?? '') === label) return;
+    this.savingLabel.set(true);
+    try {
+      await this.characters.save({ ...entry, label: label || undefined });
+      this.message.set({ text: label ? `Label: ${label} ✓` : 'Label removed ✓', kind: 'ok' });
+    } catch (err) {
+      this.message.set({ text: `Could not save the label: ${errorMessage(err)}`, kind: 'error' });
+    } finally {
+      this.savingLabel.set(false);
+    }
   }
 
   protected speak(): void {

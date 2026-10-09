@@ -46,6 +46,21 @@ CREATE TABLE IF NOT EXISTS sessions (
   CONSTRAINT sessions_user FOREIGN KEY (user_id) REFERENCES app_user (id) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin;
 
+-- The user's labels for grouping characters ("HSK 1", "food"…), offered in a dropdown.
+CREATE TABLE IF NOT EXISTS labels (
+  id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  user_id    BIGINT UNSIGNED NOT NULL,
+  name       VARCHAR(64) NOT NULL,
+  color      CHAR(7),                      -- "#d1495b"; NULL = a colour picked from the name
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY labels_user_name (user_id, name),
+  CONSTRAINT labels_user FOREIGN KEY (user_id) REFERENCES app_user (id) ON DELETE CASCADE,
+  CONSTRAINT labels_name_not_empty CHECK (name <> '')
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin;
+
+-- Upgrade from the version without label colours.
+ALTER TABLE labels ADD COLUMN IF NOT EXISTS color CHAR(7) AFTER name;
+
 -- One row per character in data/characters.json (CharacterEntry in src/app/core/character.model.ts).
 CREATE TABLE IF NOT EXISTS characters (
   id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -55,6 +70,7 @@ CREATE TABLE IF NOT EXISTS characters (
   pinyin     VARCHAR(255),                 -- "ma1" or "mā"
   meaning    TEXT,
   type       VARCHAR(32),                  -- key of TYPES in src/app/core/config.ts
+  label_id   BIGINT UNSIGNED,              -- optional; "label" (its name) in the JSON
   -- components: see the components and character_components tables below
   words      JSON NOT NULL,                -- example words: [["中国人", "Zhong1guo2ren2", "Chinese person"], ...]
   notes      TEXT,
@@ -64,8 +80,15 @@ CREATE TABLE IF NOT EXISTS characters (
   KEY characters_user_position (user_id, position),
   CONSTRAINT characters_user FOREIGN KEY (user_id) REFERENCES app_user (id) ON DELETE CASCADE,
   CONSTRAINT characters_hanzi_not_empty CHECK (hanzi <> ''),
-  CONSTRAINT characters_words_array CHECK (JSON_TYPE(words) = 'ARRAY')
+  CONSTRAINT characters_words_array CHECK (JSON_TYPE(words) = 'ARRAY'),
+  CONSTRAINT characters_label FOREIGN KEY (label_id) REFERENCES labels (id) ON DELETE SET NULL
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin;
+
+-- Upgrade from the version without labels.
+ALTER TABLE characters
+  ADD COLUMN IF NOT EXISTS label_id BIGINT UNSIGNED AFTER type,
+  ADD CONSTRAINT characters_label FOREIGN KEY IF NOT EXISTS (label_id)
+    REFERENCES labels (id) ON DELETE SET NULL;
 
 -- The parts characters are made of (女 and 马 in 妈), with their usual pinyin and meaning.
 -- A component doesn't have to be in the characters table (e.g. 亻 or 疋).

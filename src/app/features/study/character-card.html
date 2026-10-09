@@ -43,6 +43,14 @@
         >{{ type().name }} · {{ type().chinese }}</span
       >
       <p class="type-description">{{ type().description }}</p>
+      <div class="label-row">
+        <span class="muted">Label</span>
+        <app-label-picker
+          [value]="entry().label"
+          [disabled]="savingLabel()"
+          (changed)="setLabel($event)"
+        />
+      </div>
       @if (strokeInfo.value(); as info) {
         <p class="muted">
           {{ info.strokes.length }} stroke{{ info.strokes.length > 1 ? 's' : '' }}

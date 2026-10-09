@@ -231,6 +231,76 @@ h3 {
   font-size: 0.8rem;
   padding: 3px 8px;
 }
+.label-filter {
+  font-size: 0.85rem;
+}
+.layout-toggle {
+  display: flex;
+  gap: 4px;
+}
+.layout-toggle button {
+  flex: 1;
+  font-size: 0.8rem;
+  padding: 3px 8px;
+}
+.label-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.tile .label-dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+}
+/* The label, shown under the character while you hover it (or reach it with Tab). */
+.label-tip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  max-width: 220px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--label-color);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.2);
+}
+.tile:hover .label-tip,
+.tile:focus-visible .label-tip {
+  display: block;
+}
+.label-picker input[type='color'] {
+  width: 34px;
+  height: 32px;
+  padding: 2px;
+  cursor: pointer;
+}
+.label-picker .error {
+  color: var(--tone1);
+  font-size: 0.85rem;
+}
+.label-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.label-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
 .tiles {
   list-style: none;
   margin: 0;
@@ -240,6 +310,7 @@ h3 {
   gap: 6px;
 }
 .tile {
+  position: relative;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -254,6 +325,37 @@ h3 {
 .tile-py {
   font-size: 0.75rem;
   color: var(--muted);
+}
+/* List layout: one row per character. */
+.tiles.as-list {
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
+.tiles.as-list .tile {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 22px 4px 8px;
+  text-align: left;
+}
+.tiles.as-list .tile-char {
+  font-size: 1.3rem;
+}
+.tiles.as-list .tile-py {
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+.tile-meaning {
+  font-size: 0.85rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tiles.as-list .tile .label-dot {
+  top: 50%;
+  margin-top: -4.5px;
+  right: 8px;
 }
 .tile.active {
   background: var(--bg);

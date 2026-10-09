@@ -80,6 +80,10 @@
         }
       </select>
     </label>
+    <label>
+      Label <span class="muted">(optional, to group and filter your characters)</span>
+      <app-label-picker [value]="value().label" (changed)="form.controls.label.setValue($event)" />
+    </label>
 
     <fieldset formArrayName="components">
       <legend>Components (in writing order)</legend>

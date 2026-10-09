@@ -28,6 +28,7 @@ import {
 } from '../../core/dictionary.service';
 import { StrokeDataService } from '../../core/stroke-data.service';
 import { toPinyin } from '../../core/pinyin';
+import { LabelPicker } from '../../shared/label-picker';
 import { Pinyin } from '../../shared/pinyin';
 
 type PartForm = FormGroup<{
@@ -41,7 +42,7 @@ type PartForm = FormGroup<{
 /** Add a character, or edit one already in your list (route /add/:character). */
 @Component({
   selector: 'app-add',
-  imports: [ReactiveFormsModule, Pinyin, RouterLink],
+  imports: [ReactiveFormsModule, Pinyin, RouterLink, LabelPicker],
   templateUrl: './add.html',
 })
 export class Add {
@@ -65,6 +66,7 @@ export class Add {
     pinyin: '',
     meaning: '',
     type: '',
+    label: '',
     components: this.fb.array<PartForm>([]),
     words: '',
     notes: '',
@@ -204,15 +206,16 @@ export class Add {
     return cleanEntry({ ...v, words: v.words.split('\n').map((line) => line.split('|')) });
   }
 
-  /** True when nothing but the character has been typed. */
+  /** True when nothing but the character (and maybe a label) has been typed. */
   private isBlank(): boolean {
     const e = this.readForm();
     return !e.pinyin && !e.meaning && !e.type && !e.components && !e.words && !e.notes;
   }
 
-  /** Fills the whole form (from your list or from the dictionary). */
+  /** Fills the whole form (from your list or from the dictionary, which keeps the chosen label). */
   private fill(entry: CharacterEntry): void {
-    this.editing.set(this.characters.find(entry.character) ? entry.character : null);
+    const known = !!this.characters.find(entry.character);
+    this.editing.set(known ? entry.character : null);
     this.parts.clear();
     for (const part of entry.components ?? []) this.addPart(part);
     if (!this.parts.length) this.addPart();
@@ -221,6 +224,7 @@ export class Add {
       pinyin: entry.pinyin ?? '',
       meaning: entry.meaning ?? '',
       type: TYPES[entry.type ?? ''] ? entry.type : '',
+      label: known ? (entry.label ?? '') : this.form.controls.label.value,
       words: (entry.words ?? []).map((w) => w.filter((x) => x != null).join(' | ')).join('\n'),
       notes: entry.notes ?? '',
     });

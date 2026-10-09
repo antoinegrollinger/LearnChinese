@@ -1,7 +1,7 @@
 /* Builds the SQL that puts one user's lists in the database (used by db-import.ts and db-export.ts).
  * The result can be imported in phpMyAdmin or run with the mariadb client, after db/schema.sql. */
 import mysql from 'mysql2/promise';
-import { CharacterEntry } from '../src/app/core/character.model.ts';
+import { CharacterEntry, Label } from '../src/app/core/character.model.ts';
 import { WordEntry } from '../src/app/core/word.model.ts';
 import { CHARACTERS_TABLE, WORDS_TABLE, componentsOf, partOverride } from '../server/store.ts';
 
@@ -68,15 +68,41 @@ export interface SeedOptions {
    * false: the account must exist (created in the app); otherwise nothing is changed.
    */
   createUser: boolean;
+  /** The labels with their colours (also those no character uses). Default: the characters' labels. */
+  labels?: Label[];
 }
 
-/** One transaction that replaces the user's characters, components and words with these. */
+/** The labels table, and each labelled character's label_id (run after the characters). */
+function labelsSql(characters: CharacterEntry[], labels: Label[]): string {
+  const colors = new Map(labels.map((l) => [l.name, l.color]));
+  const byLabel = new Map<string, string[]>(labels.map((l) => [l.name, []]));
+  for (const c of characters) {
+    if (c.label) byLabel.set(c.label, [...(byLabel.get(c.label) ?? []), c.character]);
+  }
+  return [
+    insertSql(
+      'labels',
+      ['user_id', 'name', 'color'],
+      [...byLabel.keys()].map((name) => ['@user', quote(name), quote(colors.get(name))]),
+    ),
+    ...[...byLabel].filter(([, hanzi]) => hanzi.length).map(
+      ([name, hanzi]) =>
+        `UPDATE characters SET label_id = ` +
+        `(SELECT id FROM labels WHERE user_id = @user AND name = ${quote(name)})\n` +
+        `  WHERE user_id = @user AND hanzi IN (${hanzi.map(quote).join(', ')});`,
+    ),
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
+/** One transaction that replaces the user's characters, labels, components and words with these. */
 export function seedSql(characters: CharacterEntry[], words: WordEntry[], options: SeedOptions): string {
-  const { username, title, createUser } = options;
+  const { username, title, createUser, labels = [] } = options;
   const name = quote(username);
   return [
     `-- ${title}\n` +
-      `-- Replaces the characters, components and words of user ${name}. Run db/schema.sql first.` +
+      `-- Replaces the characters, labels, components and words of user ${name}. Run db/schema.sql first.` +
       (createUser
         ? ''
         : `\n-- The account ${name} must exist (create it in the app first). If it doesn't, this stops\n` +
@@ -87,8 +113,10 @@ export function seedSql(characters: CharacterEntry[], words: WordEntry[], option
       `SET @user = (SELECT id FROM app_user WHERE username = ${name});`,
     `DELETE FROM characters WHERE user_id = @user; -- and their character_components\n` +
       `DELETE FROM components WHERE user_id = @user;\n` +
+      `DELETE FROM labels WHERE user_id = @user;\n` +
       `DELETE FROM words WHERE user_id = @user;`,
     listSql(CHARACTERS_TABLE, characters),
+    labelsSql(characters, labels),
     componentsSql(characters),
     listSql(WORDS_TABLE, words),
     `COMMIT;`,
