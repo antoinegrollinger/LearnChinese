@@ -8,10 +8,21 @@ export interface ReviewResult {
   mistakes: number;
 }
 
+/** write: write the character from its pinyin and meaning; pinyin: give the pinyin of the character. */
+export type ReviewMode = 'write' | 'pinyin';
+
+export const REVIEW_MODES: Record<ReviewMode, { name: string; icon: string }> = {
+  write: { name: 'Write the character', icon: '✍' },
+  pinyin: { name: 'Give the pinyin', icon: '🔤' },
+};
+
+export const reviewMode = (value: unknown): ReviewMode => (value === 'pinyin' ? 'pinyin' : 'write');
+
 /** A completed review session (the review_sessions table). */
 export interface ReviewSession {
   /** Set by the server. */
   id?: number;
+  mode: ReviewMode;
   /** ISO dates */
   startedAt: string;
   finishedAt: string;
@@ -43,6 +54,7 @@ export function cleanReview(raw: unknown): ReviewSession {
     }))
     .filter((x) => x.character && !seen.has(x.character) && seen.add(x.character));
   const session: ReviewSession = {
+    mode: reviewMode(r['mode']),
     startedAt: startedAt && startedAt <= finishedAt ? startedAt : finishedAt,
     finishedAt,
     results,

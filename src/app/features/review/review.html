@@ -17,9 +17,8 @@
           [title]="last.available ? '' : 'None of these characters is in your list any more'"
           (click)="repeatLast()"
         >
-          ↻ Repeat the last review ({{ last.available }} character{{
-            last.available === 1 ? '' : 's'
-          }})
+          ↻ Repeat the last review ({{ modeInfo[last.session.mode].icon }}
+          {{ last.available }} character{{ last.available === 1 ? '' : 's' }})
           <span class="muted">{{ last.preview }}</span>
         </button>
       }
@@ -71,6 +70,24 @@
         }
       </ul>
 
+      <p class="muted">Mode:</p>
+      <div class="mode-choice" role="radiogroup" aria-label="Review mode">
+        @for (m of modes; track m[0]) {
+          <button
+            type="button"
+            role="radio"
+            [class.active]="mode() === m[0]"
+            [attr.aria-checked]="mode() === m[0]"
+            (click)="setMode(m[0])"
+          >
+            <span aria-hidden="true">{{ m[1].icon }}</span> {{ m[1].name }}
+            <small class="muted">{{
+              m[0] === 'write' ? 'from its pinyin and meaning' : 'of the character shown'
+            }}</small>
+          </button>
+        }
+      </div>
+
       <button
         type="button"
         class="primary start"
@@ -85,8 +102,8 @@
       <div class="celebrate" aria-hidden="true">🎉</div>
       <h2>Session complete!</h2>
       <p>
-        You wrote all {{ summary().count }} character{{ summary().count === 1 ? '' : 's' }} without
-        a mistake.
+        {{ mode() === 'pinyin' ? 'You gave the pinyin of' : 'You wrote' }} all
+        {{ summary().count }} character{{ summary().count === 1 ? '' : 's' }} without a mistake.
       </p>
       <dl class="session-stats">
         <div>
@@ -141,7 +158,10 @@
     <div class="review">
       <div class="session-progress">
         <span class="muted"
-          >{{ validated().size }}/{{ reviewList().length }} validated ·
+          >{{ modeInfo[mode()].icon }} {{ modeInfo[mode()].name }} · {{ validated().size }}/{{
+            reviewList().length
+          }}
+          validated ·
           <button type="button" class="link" (click)="changeSelection()">
             Change selection
           </button></span
@@ -152,34 +172,85 @@
           aria-label="Characters validated"
         ></progress>
       </div>
-      <p class="muted">Write the matching character:</p>
-      <div class="question">
-        <div class="pinyin"><app-pinyin [text]="c.pinyin" /></div>
-        <div class="meaning">{{ c.meaning }}</div>
-      </div>
+      @if (mode() === 'pinyin') {
+        <p class="muted">Type the pinyin of this character:</p>
+        <div class="prompt-char" lang="zh">{{ c.character }}</div>
+        @if (meaningShown() || done()) {
+          <div class="meaning">{{ c.meaning }}</div>
+        }
 
-      <app-hanzi-writer [character]="c.character" [showOutline]="false" [hideCharacter]="true" />
+        <form class="pinyin-answer" (submit)="$event.preventDefault(); submitAnswer()">
+          <input
+            #answerInput
+            aria-label="Pinyin"
+            placeholder="ma1 or mā"
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+            [value]="answer()"
+            [readOnly]="done()"
+            (input)="answer.set($any($event.target).value)"
+          />
+          <button type="submit" class="primary">
+            {{ !done() ? 'Check' : allValidated() ? 'See results 🎉' : 'Next →' }}
+          </button>
+        </form>
+        @if (!done()) {
+          <span class="muted typed-preview" aria-live="polite">{{ toPinyin(answer()) }}</span>
+        }
 
-      <div class="buttons">
-        <button type="button" (click)="hint()">Hint (outline)</button>
-        <button type="button" (click)="solution()">Show solution</button>
-        <button type="button" title="Pronounce" (click)="speak()">🔊</button>
-        <button type="button" class="primary" (click)="next()">
-          {{ allValidated() ? 'See results 🎉' : 'Next →' }}
-        </button>
-      </div>
-      <p class="message" [class]="message().kind">{{ message().text }}</p>
-
-      @if (done()) {
-        <div class="answer">
-          <div class="big-char">{{ c.character }}</div>
-          <span class="badge" [style.--type-color]="typeOf(c.type).color">{{
-            typeOf(c.type).name
-          }}</span>
-          <app-parts-summary class="summary" [parts]="c.components ?? []" />
+        <div class="buttons">
+          @if (!done()) {
+            <button type="button" [disabled]="meaningShown()" (click)="hint()">
+              Hint (meaning)
+            </button>
+            <button type="button" (click)="solution()">Show answer</button>
+            <button type="button" (click)="next()">Skip →</button>
+          } @else {
+            <button type="button" title="Pronounce" (click)="speak()">🔊 Pronounce</button>
+          }
         </div>
+        <p class="message" [class]="message().kind">{{ message().text }}</p>
+
+        @if (done()) {
+          <div class="answer">
+            <div class="pinyin"><app-pinyin [text]="c.pinyin" /></div>
+            <span class="badge" [style.--type-color]="typeOf(c.type).color">{{
+              typeOf(c.type).name
+            }}</span>
+            <app-parts-summary class="summary" [parts]="c.components ?? []" />
+          </div>
+        }
+      } @else {
+        <p class="muted">Write the matching character:</p>
+        <div class="question">
+          <div class="pinyin"><app-pinyin [text]="c.pinyin" /></div>
+          <div class="meaning">{{ c.meaning }}</div>
+        </div>
+
+        <app-hanzi-writer [character]="c.character" [showOutline]="false" [hideCharacter]="true" />
+
+        <div class="buttons">
+          <button type="button" (click)="hint()">Hint (outline)</button>
+          <button type="button" (click)="solution()">Show solution</button>
+          <button type="button" title="Pronounce" (click)="speak()">🔊</button>
+          <button type="button" class="primary" (click)="next()">
+            {{ allValidated() ? 'See results 🎉' : 'Next →' }}
+          </button>
+        </div>
+        <p class="message" [class]="message().kind">{{ message().text }}</p>
+
+        @if (done()) {
+          <div class="answer">
+            <div class="big-char">{{ c.character }}</div>
+            <span class="badge" [style.--type-color]="typeOf(c.type).color">{{
+              typeOf(c.type).name
+            }}</span>
+            <app-parts-summary class="summary" [parts]="c.components ?? []" />
+          </div>
+        }
+        <p class="muted">{{ score() }}</p>
       }
-      <p class="muted">{{ score() }}</p>
     </div>
   } @else {
     <p class="muted">

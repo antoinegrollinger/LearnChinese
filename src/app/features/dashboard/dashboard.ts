@@ -3,7 +3,13 @@ import { Router, RouterLink } from '@angular/router';
 import { CharactersService, errorMessage } from '../../core/characters.service';
 import { LabelsService, sortLabels } from '../../core/labels.service';
 import { toPinyin } from '../../core/pinyin';
-import { ReviewSession, formatDuration, reviewStats } from '../../core/review.model';
+import {
+  REVIEW_MODES,
+  ReviewMode,
+  ReviewSession,
+  formatDuration,
+  reviewStats,
+} from '../../core/review.model';
 import { ReviewsService } from '../../core/reviews.service';
 
 const DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
@@ -28,6 +34,19 @@ export class Dashboard {
   protected readonly reviews = inject(ReviewsService);
 
   protected readonly formatDuration = formatDuration;
+  protected readonly modes = Object.entries(REVIEW_MODES) as [
+    ReviewMode,
+    (typeof REVIEW_MODES)[ReviewMode],
+  ][];
+  protected readonly modeInfo = REVIEW_MODES;
+  /** Show the sessions of every mode, or of one. */
+  protected readonly modeFilter = signal<ReviewMode | 'all'>('all');
+
+  private readonly sessions = computed(() => {
+    const filter = this.modeFilter();
+    const sessions = this.reviews.sessions();
+    return filter === 'all' ? sessions : sessions.filter((s) => s.mode === filter);
+  });
   protected readonly toPinyin = toPinyin;
   /** Id of the session whose characters are shown. */
   protected readonly expanded = signal<number | null>(null);
@@ -35,7 +54,7 @@ export class Dashboard {
 
   /** One row per session, newest first. */
   protected readonly rows = computed(() =>
-    this.reviews.sessions().map((session) => {
+    this.sessions().map((session) => {
       const stats = reviewStats(session);
       const entries = session.results.map((r) => ({
         ...r,
@@ -55,7 +74,15 @@ export class Dashboard {
     }),
   );
 
-  /** Totals over all sessions. */
+  /** The last review of any mode, with how many of its characters are still in your list. */
+  protected readonly lastReview = computed(() => {
+    const session = this.reviews.last();
+    if (!session) return null;
+    const available = session.results.filter((r) => this.characters.find(r.character)).length;
+    return { session, available };
+  });
+
+  /** Totals over the sessions shown. */
   protected readonly totals = computed(() => {
     const all = this.rows().map((r) => r.stats);
     const sum = (key: keyof (typeof all)[number]) => all.reduce((s, x) => s + x[key], 0);
@@ -71,7 +98,7 @@ export class Dashboard {
   /** The characters that needed the most extra tries, over all sessions (still in your list). */
   protected readonly hardest = computed(() => {
     const extra = new Map<string, number>();
-    for (const session of this.reviews.sessions()) {
+    for (const session of this.sessions()) {
       for (const r of session.results) {
         if (r.tries > 1) extra.set(r.character, (extra.get(r.character) ?? 0) + r.tries - 1);
       }
@@ -83,17 +110,23 @@ export class Dashboard {
       .slice(0, 12);
   });
 
-  /** Opens the Review page and starts a session with these characters. */
-  protected review(characters: string[]): void {
-    this.router.navigate(['/review'], { state: { replay: characters } });
+  /** Opens the Review page and starts a session with these characters, in this mode. */
+  protected review(characters: string[], mode: ReviewMode): void {
+    this.router.navigate(['/review'], { state: { replay: characters, mode } });
   }
 
   protected reviewSession(session: ReviewSession): void {
-    this.review(session.results.map((r) => r.character));
+    this.review(
+      session.results.map((r) => r.character),
+      session.mode,
+    );
   }
 
-  protected reviewHardest(): void {
-    this.review(this.hardest().map((h) => h.entry!.character));
+  protected reviewHardest(mode: ReviewMode): void {
+    this.review(
+      this.hardest().map((h) => h.entry!.character),
+      mode,
+    );
   }
 
   protected toggle(id: number | undefined): void {

@@ -64,3 +64,43 @@ export function pinyinSegments(text: string | undefined): { text: string; tone: 
       tone: !piece.trim() || /^[,/]$/.test(piece) ? 0 : toneOf(piece),
     }));
 }
+
+/**
+ * One way of writing each syllable, for comparing answers: "mā", "ma1", "MA1" → "ma1";
+ * "ma", "ma5", "ma0" → "ma5"; "nǚ", "nü3", "nv3", "nu:3" → "nv3". Words are separated by spaces.
+ */
+export function normalizePinyin(text: string): string {
+  return toPinyin(text.trim().toLowerCase())
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => {
+      const base = word
+        .normalize('NFD')
+        .replace(/u\u0308|ü|u:/g, 'v')
+        .replace(/[^a-z]/g, '');
+      return base ? base + toneOf(word) : '';
+    })
+    .filter(Boolean)
+    .join(' ');
+}
+
+/** The readings of a character's pinyin ("hao3, hao4" or "hǎo / hào"), normalized. */
+export function pinyinReadings(text: string | undefined): string[] {
+  return String(text ?? '')
+    .split(/[,/;]|\bor\b/)
+    .map(normalizePinyin)
+    .filter(Boolean);
+}
+
+/** right: one of the readings; tone: right syllable(s) with a wrong tone; wrong: anything else. */
+export function checkPinyin(
+  answer: string,
+  expected: string | undefined,
+): 'right' | 'tone' | 'wrong' {
+  const given = normalizePinyin(answer);
+  const readings = pinyinReadings(expected);
+  if (!given) return 'wrong';
+  if (readings.includes(given)) return 'right';
+  const noTone = (s: string) => s.replace(/[1-5]/g, '');
+  return readings.some((r) => noTone(r) === noTone(given)) ? 'tone' : 'wrong';
+}

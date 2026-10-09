@@ -3,14 +3,14 @@
     <div class="dashboard-header">
       <h2>Your reviews</h2>
       <div class="buttons">
-        @if (rows()[0]; as last) {
+        @if (lastReview(); as last) {
           <button
             type="button"
             class="primary"
             [disabled]="!last.available"
             (click)="reviewSession(last.session)"
           >
-            ↻ Repeat the last review ({{ last.available }})
+            ↻ Repeat the last review ({{ modeInfo[last.session.mode].icon }} {{ last.available }})
           </button>
         }
         <a class="button" routerLink="/review">New review</a>
@@ -21,11 +21,36 @@
       <p class="banner error">{{ error }}</p>
     } @else if (!reviews.loaded()) {
       <p class="muted">Loading…</p>
-    } @else if (!rows().length) {
+    } @else if (!reviews.sessions().length) {
       <p class="muted">
         No reviews yet. Finish a <a routerLink="/review">review</a> to see it here.
       </p>
     } @else {
+      <div class="filters" role="group" aria-label="Show the reviews of">
+        <button
+          type="button"
+          [class.active]="modeFilter() === 'all'"
+          [attr.aria-pressed]="modeFilter() === 'all'"
+          (click)="modeFilter.set('all')"
+        >
+          All modes
+        </button>
+        @for (m of modes; track m[0]) {
+          <button
+            type="button"
+            [class.active]="modeFilter() === m[0]"
+            [attr.aria-pressed]="modeFilter() === m[0]"
+            (click)="modeFilter.set(m[0])"
+          >
+            {{ m[1].icon }} {{ m[1].name }}
+          </button>
+        }
+      </div>
+    }
+
+    @if (reviews.sessions().length && !rows().length) {
+      <p class="muted">No reviews in this mode yet.</p>
+    } @else if (rows().length) {
       <dl class="session-stats">
         <div>
           <dt>Reviews</dt>
@@ -67,7 +92,13 @@
               </li>
             }
           </ul>
-          <button type="button" (click)="reviewHardest()">Review these</button>
+          <div class="buttons">
+            @for (m of modes; track m[0]) {
+              <button type="button" (click)="reviewHardest(m[0])">
+                Review these: {{ m[1].icon }} {{ m[1].name.toLowerCase() }}
+              </button>
+            }
+          </div>
         </div>
       }
 
@@ -77,7 +108,13 @@
           <li class="session">
             <div class="session-top">
               <div class="session-info">
-                <strong>{{ row.date }}</strong>
+                <strong
+                  >{{ row.date }}
+                  <span class="mode-tag" [title]="modeInfo[row.session.mode].name"
+                    >{{ modeInfo[row.session.mode].icon }}
+                    {{ modeInfo[row.session.mode].name }}</span
+                  ></strong
+                >
                 <span class="muted">
                   {{ row.stats.count }} character{{ row.stats.count === 1 ? '' : 's' }} ·
                   {{ row.stats.firstTry }}/{{ row.stats.count }} first try ({{ row.firstTryRate }}%)

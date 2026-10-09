@@ -1,11 +1,28 @@
-import { Component, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+  viewChild,
+} from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CharacterEntry } from '../../core/character.model';
 import { CharactersService, errorMessage } from '../../core/characters.service';
 import { typeOf } from '../../core/config';
 import { LabelsService } from '../../core/labels.service';
-import { toPinyin } from '../../core/pinyin';
-import { ReviewSession, formatDuration } from '../../core/review.model';
+import { checkPinyin, toPinyin } from '../../core/pinyin';
+import {
+  REVIEW_MODES,
+  ReviewMode,
+  ReviewSession,
+  formatDuration,
+  reviewMode,
+} from '../../core/review.model';
 import { ReviewsService } from '../../core/reviews.service';
 import { readSetting, writeSetting } from '../../core/settings';
 import { speak } from '../../core/speech';
@@ -33,6 +50,8 @@ export const previewOf = (session: ReviewSession, max = 8): string =>
 
 /** Characters chosen for the last review, in this browser (JSON array). */
 const SELECTION_KEY = 'hanzi-workshop-review-selection';
+/** The last review mode, in this browser. */
+const MODE_KEY = 'hanzi-workshop-review-mode';
 
 /** The characters of one label ('' = without a label), for selecting them all at once. */
 interface LabelGroup {
@@ -51,9 +70,9 @@ interface Attempts {
 }
 
 /**
- * Pick the characters to review (all, some, or those of some labels), then write each one from its
- * pinyin and meaning, in random order; missed characters come back soon. The session is complete
- * when each one has been written without a mistake.
+ * Pick the characters to review (all, some, or those of some labels) and the mode, then for each
+ * one, in random order: write it from its pinyin and meaning, or give its pinyin. Missed characters
+ * come back soon. The session is complete when each one has been done without a mistake.
  */
 @Component({
   selector: 'app-review',
@@ -67,6 +86,22 @@ export class Review {
   private readonly router = inject(Router);
   private readonly statsService = inject(StatsService);
   private readonly writer = viewChild(HanziWriterView);
+  private readonly answerInput = viewChild<ElementRef<HTMLInputElement>>('answerInput');
+  private readonly injector = inject(Injector);
+
+  protected readonly modes = Object.entries(REVIEW_MODES) as [
+    ReviewMode,
+    (typeof REVIEW_MODES)[ReviewMode],
+  ][];
+  protected readonly modeInfo = REVIEW_MODES;
+  /** Write the character, or give its pinyin; chosen before the session starts. */
+  protected readonly mode = signal<ReviewMode>(reviewMode(readSetting(MODE_KEY)));
+  /** Pinyin mode: what you typed. */
+  protected readonly answer = signal('');
+  /** Pinyin mode: the meaning is shown (Hint). */
+  protected readonly meaningShown = signal(false);
+  /** Pinyin mode: wrong answers for the current card. */
+  private pinyinMistakes = 0;
 
   /** Characters chosen for the review. */
   protected readonly selected = signal<ReadonlySet<string>>(new Set());
@@ -81,9 +116,9 @@ export class Review {
   private sessionStart = 0;
   /** Saving the completed session to your history. */
   protected readonly saveStatus = signal<{ text: string; kind?: 'ok' | 'error' }>({ text: '' });
-  /** Characters to review straight away, from the dashboard ("Review again"). */
-  private readonly replay = this.router.currentNavigation()?.extras.state?.['replay'] as
-    string[] | undefined;
+  /** Characters to review straight away, and in which mode, from the dashboard ("Review again"). */
+  private readonly replay = this.router.currentNavigation()?.extras.state as
+    { replay?: string[]; mode?: ReviewMode } | undefined;
   private readonly sessionEnd = signal(0);
   protected readonly toPinyin = toPinyin;
 
@@ -172,7 +207,8 @@ export class Review {
       if (!list.length || this.selectionLoaded) return;
       this.selectionLoaded = true;
       untracked(() => {
-        if (this.replay && this.reviewCharacters(this.replay)) return;
+        const replay = this.replay;
+        if (replay?.replay && this.reviewCharacters(replay.replay, replay.mode)) return;
         const known = new Set(list.map((c) => c.character));
         const previous = this.savedSelection().filter((c) => known.has(c));
         this.selected.set(new Set(previous.length ? previous : known));
@@ -233,13 +269,19 @@ export class Review {
     this.next();
   }
 
+  protected setMode(mode: ReviewMode): void {
+    this.mode.set(mode);
+    writeSetting(MODE_KEY, mode);
+  }
+
   /**
-   * Starts a session with these characters (those still in your list). Returns false when none
-   * of them is.
+   * Starts a session with these characters (those still in your list), in this mode (default: the
+   * current one). Returns false when none of them is in your list.
    */
-  protected reviewCharacters(characters: string[]): boolean {
+  protected reviewCharacters(characters: string[], mode?: ReviewMode): boolean {
     const known = characters.filter((c) => this.characters.find(c));
     if (!known.length) return false;
+    if (mode) this.setMode(reviewMode(mode));
     this.selected.set(new Set(known));
     this.start();
     return true;
@@ -247,7 +289,11 @@ export class Review {
 
   protected repeatLast(): void {
     const session = this.reviews.last();
-    if (session) this.reviewCharacters(session.results.map((r) => r.character));
+    if (session)
+      this.reviewCharacters(
+        session.results.map((r) => r.character),
+        session.mode,
+      );
   }
 
   /** A new session with only the characters that needed more than one try. */
@@ -275,12 +321,17 @@ export class Review {
     this.done.set(false);
     this.outline.set(false);
     this.message.set({ text: '' });
+    this.answer.set('');
+    this.meaningShown.set(false);
+    this.pinyinMistakes = 0;
+    if (this.mode() === 'pinyin') this.focusAnswer();
   }
 
   /** Adds the completed session to your history (the dashboard). */
   private async saveSession(): Promise<void> {
     const attempts = this.attempts();
     const session: ReviewSession = {
+      mode: this.mode(),
       startedAt: new Date(this.sessionStart).toISOString(),
       finishedAt: new Date(this.sessionEnd()).toISOString(),
       results: this.reviewList().map((c) => ({
@@ -298,12 +349,35 @@ export class Review {
   }
 
   protected hint(): void {
-    this.writer()?.revealOutline();
+    if (this.mode() === 'pinyin') this.meaningShown.set(true);
+    else this.writer()?.revealOutline();
   }
 
   protected solution(): void {
+    if (this.mode() === 'pinyin') return this.finish(this.pinyinMistakes + 1, true);
     this.writer()?.animate();
     this.finish(1, true); // counts as a miss
+  }
+
+  // ---------- Pinyin mode ----------
+  private focusAnswer(): void {
+    afterNextRender(() => this.answerInput()?.nativeElement.focus(), { injector: this.injector });
+  }
+
+  /** Enter: checks the answer, or goes to the next card once this one is done. */
+  protected submitAnswer(): void {
+    const card = this.card();
+    if (!card) return;
+    if (this.done()) return this.next();
+    if (!this.answer().trim()) return;
+    const result = checkPinyin(this.answer(), card.pinyin);
+    if (result === 'right') return this.finish(this.pinyinMistakes);
+    this.pinyinMistakes++;
+    this.message.set({
+      text: result === 'tone' ? 'Right syllable, wrong tone. Try again…' : 'Not quite… Try again.',
+      kind: 'error',
+    });
+    this.focusAnswer();
   }
 
   protected speak(): void {
@@ -325,7 +399,9 @@ export class Review {
     const card = this.card();
     if (this.done() || !card) return;
     this.done.set(true);
-    this.statsService.record(card.character, mistakes);
+    // The practice stats (Study page) are about writing.
+    if (this.mode() === 'write') this.statsService.record(card.character, mistakes);
+    else this.focusAnswer(); // Enter goes on to the next card
     this.attempts.update((all) => {
       const previous = all.get(card.character) ?? { tries: 0, mistakes: 0 };
       const next = { tries: previous.tries + 1, mistakes: previous.mistakes + mistakes };
@@ -335,7 +411,12 @@ export class Review {
     else this.validated.update((v) => new Set(v).add(card.character));
     this.message.set(
       solutionShown
-        ? { text: 'Watch the stroke order carefully, it will come back soon.' }
+        ? {
+            text:
+              this.mode() === 'pinyin'
+                ? 'Say it out loud a few times, it will come back soon.'
+                : 'Watch the stroke order carefully, it will come back soon.',
+          }
         : mistakes
           ? { text: `Done with ${mistakes} mistake(s).` }
           : { text: 'Perfect! 🎉', kind: 'ok' },

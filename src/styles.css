@@ -705,6 +705,49 @@ app-stroke-svg {
   text-align: left;
 }
 
+/* Review mode choice and the pinyin mode */
+.mode-choice {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+}
+.mode-choice button {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 6px;
+  text-align: left;
+  padding: 8px 12px;
+}
+.mode-choice button.active {
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.mode-choice small {
+  flex-basis: 100%;
+  font-size: 0.8rem;
+}
+.prompt-char {
+  font-size: 6rem;
+  line-height: 1.1;
+}
+.pinyin-answer {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 340px;
+}
+.pinyin-answer input {
+  flex: 1;
+  min-width: 0;
+  font-size: 1.3rem;
+  text-align: center;
+}
+.typed-preview {
+  min-height: 1.4em;
+  font-size: 1.1rem;
+}
+
 /* ---------- Dashboard ---------- */
 .dashboard {
   display: flex;
@@ -770,6 +813,16 @@ app-stroke-svg {
   gap: 2px;
   min-width: 0;
   font-size: 0.9rem;
+}
+.mode-tag {
+  margin-left: 8px;
+  padding: 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: normal;
+  color: var(--muted);
+  white-space: nowrap;
 }
 .session-labels {
   display: flex;
