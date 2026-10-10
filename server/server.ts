@@ -36,6 +36,7 @@
  *   POST   /api/feedback               → About page: contact message or bug report (no login needed)
  *
  *   GET    /api/lookup/:word           → CC-CEDICT entries for a word (see cedict.ts)
+ *   GET    /api/lookup?pinyin=nihao    → CC-CEDICT words with this pinyin (tones optional)
  *
  * During development (npm start) Angular's dev server forwards /api to this server (proxy.conf.json).
  * With `npm run app`, it also serves the built app from dist/.
@@ -43,7 +44,7 @@
 import { createReadStream, existsSync } from 'node:fs';
 import { IncomingMessage, ServerResponse, createServer } from 'node:http';
 import { extname, join, resolve, sep } from 'node:path';
-import { lookupWord, loadCedict } from './cedict.ts';
+import { lookupWord, loadCedict, searchPinyin } from './cedict.ts';
 import { User } from '../src/app/core/auth.model.ts';
 import { AuthError, createAuth } from './auth.ts';
 import { CHARACTERS, ListFile, ROOT, WORDS } from './data-files.ts';
@@ -343,6 +344,9 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, url: URL): P
   if (resource === 'reviews') return handleReviews(user, req, res, param);
   if (['social', 'friends', 'communities', 'notifications'].includes(resource)) {
     return handleSocial(user, req, res, url, resource, param, action);
+  }
+  if (resource === 'lookup' && !param && req.method === 'GET') {
+    return sendJson(res, 200, await searchPinyin(url.searchParams.get('pinyin') ?? ''));
   }
   if (resource === 'lookup' && param && req.method === 'GET') {
     return sendJson(res, 200, await lookupWord(decodeURIComponent(param)));

@@ -40,6 +40,13 @@ export class WordsService extends ApiListStore<WordEntry> {
     );
   }
 
+  /** CC-CEDICT words with this pinyin ("nihao", "ni3 hao3", "nǐhǎo"…), exact matches first. */
+  searchPinyin(pinyin: string): Promise<CedictEntry[]> {
+    return firstValueFrom(
+      this.httpClient.get<CedictEntry[]>('/api/lookup', { params: { pinyin: pinyin.trim() } }),
+    );
+  }
+
   /** Your words that contain the character. */
   containing(character: string): WordEntry[] {
     return this.list().filter((w) => w.word.includes(character));

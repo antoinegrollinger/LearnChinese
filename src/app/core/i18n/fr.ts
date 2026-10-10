@@ -732,4 +732,20 @@ export const FR: Record<string, string> = {
   'Pinyin and meaning.': 'Pinyin et sens.',
   'Made with Hanzi Workshop - chinese.grolltech.be':
     'Réalisé avec Hanzi Workshop - chinese.grolltech.be',
+  // Add a word: search by pinyin, add its characters
+  'Find a word by pinyin': 'Trouver un mot par son pinyin',
+  'nihao, ni3 hao3, nǐhǎo…': 'nihao, ni3 hao3, nǐhǎo…',
+  'Searching…': 'Recherche…',
+  'No word found with this pinyin.': 'Aucun mot trouvé avec ce pinyin.',
+  '✓ already in your words': '✓ déjà dans vos mots',
+  'Also add its character that is not in your list yet:':
+    "Ajouter aussi son caractère qui n'est pas encore dans votre liste :",
+  'Also add its {n} characters that are not in your list yet:':
+    'Ajouter aussi ses {n} caractères qui ne sont pas encore dans votre liste :',
+  'They will be added with the default data of the dictionary (in English). To change it, open them afterwards in My 汉字 and words and edit them.':
+    'Ils seront ajoutés avec les données par défaut du dictionnaire (en anglais). Pour les modifier, ouvrez-les ensuite dans Mes 汉字 et mots.',
+  '{n} character added: {chars}': '{n} caractère ajouté : {chars}',
+  '{n} characters added: {chars}': '{n} caractères ajoutés : {chars}',
+  'Not in the dictionary: {chars}': 'Pas dans le dictionnaire : {chars}',
+  'Could not add the characters: {error}': "Impossible d'ajouter les caractères : {error}",
 };

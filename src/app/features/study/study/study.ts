@@ -51,8 +51,11 @@ export class Study {
   private toastTimer?: ReturnType<typeof setTimeout>;
 
   /** Character just saved on the Add page (passed in the navigation state), highlighted in the list. */
-  private readonly savedMessage = this.router.currentNavigation()?.extras.state?.['saved'] as
-    string | undefined;
+  // Inside the tabbed page, this page is created after the navigation when you come from another
+  // page (Add): the state is then on the navigation that just ended.
+  private readonly savedMessage = (
+    this.router.currentNavigation() ?? this.router.lastSuccessfulNavigation()
+  )?.extras.state?.['saved'] as string | undefined;
   protected readonly justSaved = computed(() => (this.savedMessage ? this.character() : undefined));
 
   constructor() {

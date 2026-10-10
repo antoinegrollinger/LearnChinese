@@ -3256,3 +3256,53 @@ button.cta:disabled {
 .paper-field small {
   font-size: 0.8rem;
 }
+
+/* Add a word: words found by pinyin, and adding its characters with it. */
+.word-results {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.word-result {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 12px;
+  text-align: left;
+  border-radius: 14px;
+}
+.word-result-hz {
+  font-size: 1.25rem;
+}
+.word-result-meaning {
+  font-size: 0.85rem;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.word-result.known .word-result-meaning {
+  color: var(--tone3);
+}
+.add-characters {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.add-characters .checkbox {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+.add-characters strong {
+  font-size: 1.1rem;
+  letter-spacing: 0.1em;
+}

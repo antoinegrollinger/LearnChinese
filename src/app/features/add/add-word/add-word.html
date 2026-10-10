@@ -17,6 +17,52 @@
       }}
     </p>
 
+    <fieldset>
+      <legend>{{ 'Find a word by pinyin' | t }}</legend>
+      <input
+        type="search"
+        [placeholder]="'nihao, ni3 hao3, nǐhǎo…' | t"
+        [value]="pinyinQuery()"
+        (input)="searchPinyin($any($event.target).value)"
+        (keydown.enter)="$event.preventDefault()"
+      />
+      @if (pinyinQuery().trim()) {
+        <p class="muted">
+          @if (pinyinLoading()) {
+            {{ 'Searching…' | t }}
+          } @else if (pinyinError(); as e) {
+            {{ e }}
+          } @else if (pinyinResults().length) {
+            {{
+              '{n} result(s), most common first. Click one to fill in the form.'
+                | t: { n: pinyinResults().length }
+            }}
+          } @else {
+            {{ 'No word found with this pinyin.' | t }}
+          }
+        </p>
+        <ul class="word-results">
+          @for (e of pinyinResults(); track e.simplified + e.pinyin) {
+            <li>
+              <button
+                type="button"
+                class="word-result"
+                [class.known]="!!words.find(e.simplified)"
+                [title]="meaningOf(e)"
+                (click)="pickWord(e)"
+              >
+                <span class="word-result-hz" lang="zh">{{ e.simplified }}</span>
+                <app-pinyin [text]="e.pinyin" />
+                <span class="word-result-meaning">{{
+                  words.find(e.simplified) ? ('✓ already in your words' | t) : meaningOf(e)
+                }}</span>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </fieldset>
+
     @if (editing(); as w) {
       <p class="banner">
         {{ 'Editing {item} — saving will update it in your list.' | t: { item: w } }}
@@ -159,6 +205,35 @@
       <app-label-picker [value]="value().label" (changed)="form.controls.label.setValue($event)" />
     </label>
     <label>{{ 'Notes' | t }} <textarea formControlName="notes" rows="2"></textarea></label>
+
+    @if (missingCharacters().length) {
+      <div class="add-characters">
+        <label class="checkbox">
+          <input
+            type="checkbox"
+            [checked]="addCharacters()"
+            (change)="setAddCharacters($any($event.target).checked)"
+          />
+          <span>
+            {{
+              missingCharacters().length
+                | tn
+                  : 'Also add its character that is not in your list yet:'
+                  : 'Also add its {n} characters that are not in your list yet:'
+            }}
+            <strong lang="zh">{{ missingCharacters().join(' ') }}</strong>
+          </span>
+        </label>
+        @if (addCharacters()) {
+          <p class="source-note" role="note">
+            {{
+              'They will be added with the default data of the dictionary (in English). To change it, open them afterwards in My 汉字 and words and edit them.'
+                | t
+            }}
+          </p>
+        }
+      </div>
+    }
 
     <div class="buttons form-actions">
       <button type="button" (click)="clear()">{{ 'New' | t }}</button>
