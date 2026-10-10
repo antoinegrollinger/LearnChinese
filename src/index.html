@@ -5,10 +5,15 @@
     <title>Hanzi Workshop</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- 语 icon: SVG for current browsers, .ico for older ones, PNG for iPhone home screens. -->
-    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-    <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48" />
-    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <!-- Browser tab icon (语). ?v=… makes browsers fetch it again instead of their cached old icon:
+         raise it when an icon changes. The .ico (32×32 only) comes first so that browsers able to
+         show SVG prefer favicon.svg; Safari uses the PNG; iPhones and Android their larger PNGs. -->
+    <link rel="icon" href="/favicon.ico?v=2" sizes="32x32" />
+    <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml" sizes="any" />
+    <link rel="icon" href="/favicon-32.png?v=2" type="image/png" sizes="32x32" />
+    <link rel="icon" href="/icon-192.png?v=2" type="image/png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2" sizes="180x180" />
+    <meta name="theme-color" content="#c0392b" />
     <script>
       // The theme you chose (ThemeService), before the page is drawn: no flash of the other one.
       try {
