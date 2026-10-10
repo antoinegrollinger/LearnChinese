@@ -7,7 +7,7 @@ import { typeOf } from '../../core/config';
 import { t, tn } from '../../core/i18n';
 import { toPinyin } from '../../core/pinyin';
 import { WordEntry } from '../../core/word.model';
-import { PAGE, SHEET_FONT, SheetOp, SheetPage } from './worksheet';
+import { PAGE, SHEET_FONT, SheetOp, SheetPage, creditLine } from './worksheet';
 
 export interface MaterialOptions {
   /** '' = the default title (DEFAULT_MATERIAL_TITLE, in the app's language). */
@@ -555,6 +555,7 @@ function header(title: string, subtitle: string, page: number, pages: number): S
   const base = MARGIN.top + 6;
   const right = PAGE.width - MARGIN.x;
   const ops: SheetOp[] = [
+    creditLine(),
     {
       kind: 'text',
       text: title,

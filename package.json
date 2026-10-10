@@ -28,6 +28,7 @@
     "@angular/router": "^21.2.0",
     "hanzi-writer": "^3.7.3",
     "mysql2": "^3.24.5",
+    "nodemailer": "^7.0.13",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },
@@ -36,6 +37,7 @@
     "@angular/cli": "^21.2.0",
     "@angular/compiler-cli": "^21.2.0",
     "@types/node": "^26.6.4",
+    "@types/nodemailer": "^8.0.2",
     "concurrently": "^10.0.5",
     "esbuild": "^0.25.0",
     "prettier": "^3.8.1",

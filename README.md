@@ -35,7 +35,7 @@ An internet connection is needed: the stroke data (Hanzi Writer) and the diction
 | Node version | **22.x** or 24.x |
 | Build command | `npm run build` |
 | Entry file | `server.js` (it starts `dist/server/server.mjs`) |
-| Environment variables | `DATABASE_URL`: **required**, your MySQL database (see [Database](#database-mysql--mariadb)).<br>`OWNER_EMAIL`: your email address, so your account gets the imported lists (see [Accounts](#accounts)). |
+| Environment variables | `DATABASE_URL`: **required**, your MySQL database (see [Database](#database-mysql--mariadb)).<br>`OWNER_EMAIL`: your email address, so your account gets the imported lists (see [Accounts](#accounts)).<br>`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `FEEDBACK_TO`: email the contact messages and bug reports of the About page (see [Contact form](#contact-form)). |
 
 Environment variables read by the server:
 
@@ -202,3 +202,23 @@ Sources:
 - Jun Da's character frequency list.
 - [CC-CEDICT](https://cc-cedict.org) (CC BY-SA 4.0): word meanings on the Words page. It is downloaded once into `.cache/`; delete that folder to get a newer version.
 - [Complete HSK vocabulary](https://github.com/drkameleon/complete-hsk-vocabulary): example words.
+
+## Contact form
+
+The contact and bug report forms of the About page save each message in the `feedback` table:
+
+```sql
+SELECT created_at, kind, email, subject, message FROM feedback ORDER BY created_at DESC;
+```
+
+To also receive them by email, give the server an SMTP mailbox. With a Hostinger mailbox (hPanel → Emails), set these environment variables on the Node.js app, then restart it:
+
+| Variable | Value |
+| --- | --- |
+| `SMTP_HOST` | `smtp.hostinger.com` |
+| `SMTP_PORT` | `465` (SSL; `587` for STARTTLS) |
+| `SMTP_USER` | the mailbox, e.g. `contact@grolltech.be` |
+| `SMTP_PASS` | its password |
+| `FEEDBACK_TO` | where the messages go (optional, default: `SMTP_USER`) |
+
+Each email has the subject `[Hanzi Workshop] Contact: …` (or `Bug: …`); answering it writes to the person who sent the message. On startup the server logs where the messages go; if an email can't be sent, the error is logged and the message stays in the table.

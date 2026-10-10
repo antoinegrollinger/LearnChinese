@@ -64,6 +64,8 @@ export type SheetOp =
       color: string;
       anchor: 'start' | 'middle' | 'end';
       bold?: boolean;
+      /** Makes the text a link in the PDF (the preview shows it as text). */
+      link?: string;
     };
 
 export interface SheetPage {
@@ -172,12 +174,33 @@ function header(title: string, page: number, pages: number): SheetOp[] {
   const line = (x1: number, y1: number, x2: number, width: number) =>
     ({ kind: 'line', x1, y1, x2, y2: y1, width, color: INK }) as const;
   return [
+    creditLine(),
     text(t('Name:'), MARGIN.x, 'start', 3.6),
     line(MARGIN.x + 14, base + 0.8, MARGIN.x + 48, 0.2),
     text(title, PAGE.width / 2, 'middle', 4.6),
     text(pages > 1 ? t('Page {page} / {pages}', { page, pages }) : '', right, 'end', 3.6),
     line(MARGIN.x, base + 3, right, 0.35),
   ].filter((op) => op.kind !== 'text' || op.text);
+}
+
+/** The site of the app, linked from the credit line of every page. */
+export const APP_URL = 'https://chinese.grolltech.be';
+
+/**
+ * "Made with Hanzi Workshop - chinese.grolltech.be", at the top of every page of every PDF the
+ * app makes (practice sheets, learning material). Always there: no option removes it.
+ */
+export function creditLine(): SheetOp {
+  return {
+    kind: 'text',
+    text: t('Made with Hanzi Workshop - chinese.grolltech.be'),
+    x: PAGE.width / 2,
+    y: 7.5,
+    size: 2.7,
+    color: '#8a8a8a',
+    anchor: 'middle',
+    link: APP_URL,
+  };
 }
 
 /** One row of boxes with their guide lines. */

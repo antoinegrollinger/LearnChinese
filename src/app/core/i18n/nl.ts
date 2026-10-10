@@ -716,4 +716,6 @@ export const NL: Record<string, string> = {
   'Each entry with its components, example words and notes.':
     'Elk item met zijn componenten, voorbeeldwoorden en notities.',
   'Pinyin and meaning.': 'Pinyin en betekenis.',
+  'Made with Hanzi Workshop - chinese.grolltech.be':
+    'Gemaakt met Hanzi Workshop - chinese.grolltech.be',
 };

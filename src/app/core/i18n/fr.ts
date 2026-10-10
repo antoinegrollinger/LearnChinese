@@ -730,4 +730,6 @@ export const FR: Record<string, string> = {
   'Each entry with its components, example words and notes.':
     "Chaque entrée avec ses composants, ses mots d'exemple et ses notes.",
   'Pinyin and meaning.': 'Pinyin et sens.',
+  'Made with Hanzi Workshop - chinese.grolltech.be':
+    'Réalisé avec Hanzi Workshop - chinese.grolltech.be',
 };

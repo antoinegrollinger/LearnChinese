@@ -50,6 +50,7 @@ import { CHARACTERS, ListFile, ROOT, WORDS } from './data-files.ts';
 import { Label, cleanLabel } from '../src/app/core/character.model.ts';
 import { cleanReview } from '../src/app/core/review.model.ts';
 import { createFeedback } from './feedback.ts';
+import { createMailer } from './mailer.ts';
 import { createSocial } from './social.ts';
 import { ListStore, createStores } from './store.ts';
 
@@ -65,7 +66,16 @@ const stores = (() => {
 })();
 const auth = createAuth(stores.pool);
 const social = createSocial(stores.pool, stores.reviews);
-const feedback = createFeedback(stores.pool);
+/** Emails the contact messages and bug reports (SMTP_*, FEEDBACK_TO: see mailer.ts), if set. */
+const mailer = (() => {
+  try {
+    return createMailer();
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : err);
+    process.exit(1);
+  }
+})();
+const feedback = createFeedback(stores.pool, mailer);
 /** The labels are only in the database (no JSON file). */
 const LABELS: ListFile<Label> = { name: 'labels', key: 'name', clean: cleanLabel };
 /** Set by the host in production (a port number or a socket path); 8642 on your computer. */
@@ -393,6 +403,10 @@ const onListening = () => {
   );
   console.log(`Data: ${stores.description} · accounts${auth.owner ? ` (owner: ${auth.owner})` : ''}`);
   if (CORS_ORIGINS.length) console.log(`Accepting API calls from ${CORS_ORIGINS.join(', ')}`);
+  console.log(
+    `Contact messages: saved in the feedback table` +
+      (mailer ? ` and ${mailer.description}` : ' (set SMTP_HOST to also get them by email)'),
+  );
   stores.check().then(
     () => console.log('Database connected'),
     (err) =>

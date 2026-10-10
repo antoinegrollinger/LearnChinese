@@ -4,7 +4,7 @@
  * - text (pinyin with tone marks, the title in any language) is drawn on a canvas at print
  *   resolution and embedded as an image with a soft mask, so no font has to be embedded.
  * Streams are compressed with the browser's CompressionStream ("deflate" = zlib = FlateDecode). */
-import { PAGE, SHEET_FONT, SheetOp, SheetPage } from './worksheet';
+import { APP_URL, PAGE, SHEET_FONT, SheetOp, SheetPage } from './worksheet';
 
 /** Points per millimetre. */
 const K = 72 / 25.4;
@@ -145,7 +145,10 @@ export async function sheetPdf(pages: SheetPage[], title: string): Promise<Blob>
 
   const catalog = reserve();
   const pagesId = reserve();
-  const info = await add(`<< /Title ${pdfString(title)} /Producer (Hanzi Workshop) >>`);
+  const info = await add(
+    `<< /Title ${pdfString(title)} /Creator ${pdfString(`Hanzi Workshop - ${APP_URL}`)} ` +
+      `/Producer (Hanzi Workshop) >>`,
+  );
 
   /** Form XObject of each stroke: "<character>|<index>" → name. */
   const strokeForms = new Map<string, string>();
@@ -191,6 +194,8 @@ export async function sheetPdf(pages: SheetPage[], title: string): Promise<Blob>
   const pageIds: number[] = [];
   for (const page of pages) {
     const content: string[] = [];
+    /** Link annotations of the page (texts with a link). */
+    const annots: number[] = [];
     for (const op of page.ops) {
       if (op.kind === 'line') {
         content.push(
@@ -213,13 +218,27 @@ export async function sheetPdf(pages: SheetPage[], title: string): Promise<Blob>
           `q ${num(t.width * K)} 0 0 ${num(t.height * K)} ` +
             `${num(t.x * K)} ${num((PAGE.height - t.y - t.height) * K)} cm /${t.name} Do Q`,
         );
+        if (op.link) {
+          // A clickable area over the text, opening the address.
+          const rect = [t.x, PAGE.height - t.y - t.height, t.x + t.width, PAGE.height - t.y]
+            .map((v) => num(v * K))
+            .join(' ');
+          annots.push(
+            await add(
+              `<< /Type /Annot /Subtype /Link /Rect [${rect}] /Border [0 0 0] ` +
+                `/A << /S /URI /URI ${pdfString(op.link, false)} >> >>`,
+            ),
+          );
+        }
       }
     }
     const contentId = await add('', encoder.encode(content.join('\n')));
     pageIds.push(
       await add(
         `<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${num(PAGE.width * K)} ${num(PAGE.height * K)}] ` +
-          `/Resources ${resources} 0 R /Contents ${contentId} 0 R >>`,
+          `/Resources ${resources} 0 R /Contents ${contentId} 0 R` +
+          (annots.length ? ` /Annots [${annots.map((id) => `${id} 0 R`).join(' ')}]` : '') +
+          ' >>',
       ),
     );
   }
@@ -260,8 +279,14 @@ function concat(parts: Uint8Array[]): Uint8Array {
   return out;
 }
 
-/** A PDF text string: UTF-16 (big endian, with its byte order mark) in hexadecimal. */
-function pdfString(text: string): string {
+/**
+ * A PDF string in hexadecimal: UTF-16 (big endian, with its byte order mark) for text, or plain
+ * ASCII bytes (unicode: false) for a URI.
+ */
+function pdfString(text: string, unicode = true): string {
+  if (!unicode) {
+    return `<${[...text].map((c) => c.charCodeAt(0).toString(16).padStart(2, '0')).join('')}>`;
+  }
   let hex = 'FEFF';
   for (let i = 0; i < text.length; i++) hex += text.charCodeAt(i).toString(16).padStart(4, '0');
   return `<${hex}>`;
