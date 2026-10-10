@@ -1,25 +1,23 @@
 import { Component, computed, effect, inject, resource, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { CharactersService, errorMessage } from '../../core/characters.service';
-import { LabelsService } from '../../core/labels.service';
-import { toPinyin } from '../../core/pinyin';
-import { MessagePipe, PluralPipe, TranslatePipe, t } from '../../core/i18n';
-import { readSetting, writeSetting } from '../../core/settings';
-import { StrokeDataService } from '../../core/stroke-data.service';
-import { WordsService } from '../../core/words.service';
-import { SlidingThumb } from '../../shared/directives/sliding-thumb';
-import { sheetPdf } from './pdf';
+import { CharactersService, errorMessage } from '../../../core/characters.service';
+import { LabelsService } from '../../../core/labels.service';
+import { toPinyin } from '../../../core/pinyin';
+import { MessagePipe, PluralPipe, TranslatePipe, t } from '../../../core/i18n';
+import { readSetting, writeSetting } from '../../../core/settings';
+import { StrokeDataService } from '../../../core/stroke-data.service';
+import { WordsService } from '../../../core/words.service';
+import { SlidingThumb } from '../../../shared/directives/sliding-thumb';
+import { sheetPdf } from '../pdf';
+import { SheetPreview } from '../sheet-preview/sheet-preview';
 import {
   DEFAULT_SHEET_OPTIONS,
   DEFAULT_SHEET_TITLE,
   GridStyle,
-  PAGE,
-  SHEET_FONT,
   SheetCharacter,
   SheetOptions,
-  glyphTransform,
   layoutSheet,
-} from './worksheet';
+} from '../worksheet';
 
 const TEXT_KEY = 'hanzi-workshop-paper-text';
 const OPTIONS_KEY = 'hanzi-workshop-paper-options';
@@ -34,7 +32,7 @@ const isHan = (ch: string) => /\p{Script=Han}/u.test(ch);
  */
 @Component({
   selector: 'app-paper',
-  imports: [RouterLink, SlidingThumb, TranslatePipe, PluralPipe, MessagePipe],
+  imports: [RouterLink, SlidingThumb, TranslatePipe, PluralPipe, MessagePipe, SheetPreview],
   templateUrl: './paper.html',
 })
 export class Paper {
@@ -43,9 +41,6 @@ export class Paper {
   protected readonly labels = inject(LabelsService);
   private readonly strokeData = inject(StrokeDataService);
 
-  protected readonly page = PAGE;
-  protected readonly font = SHEET_FONT;
-  protected readonly glyphTransform = glyphTransform;
   protected readonly defaultTitle = DEFAULT_SHEET_TITLE;
   protected readonly grids: [GridStyle, string][] = [
     ['mi', 'Cross and diagonals (米)'],

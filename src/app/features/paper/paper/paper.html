@@ -195,59 +195,11 @@
     </div>
   </div>
 
-  <div class="paper-preview" [attr.aria-label]="'Preview' | t">
-    @for (p of pages(); track $index) {
-      <svg
-        class="sheet-page"
-        role="img"
-        [attr.aria-label]="'Page {n}' | t: { n: $index + 1 }"
-        [attr.viewBox]="'0 0 ' + page.width + ' ' + page.height"
-      >
-        <rect [attr.width]="page.width" [attr.height]="page.height" fill="#fff" />
-        @for (op of p.ops; track $index) {
-          @switch (op.kind) {
-            @case ('line') {
-              <line
-                [attr.x1]="op.x1"
-                [attr.y1]="op.y1"
-                [attr.x2]="op.x2"
-                [attr.y2]="op.y2"
-                [attr.stroke]="op.color"
-                [attr.stroke-width]="op.width"
-              />
-            }
-            @case ('glyph') {
-              <g [attr.transform]="glyphTransform(op)">
-                @for (d of op.strokes; track $index) {
-                  <path [attr.d]="d" [attr.fill]="op.colors[$index]" />
-                }
-              </g>
-            }
-            @case ('text') {
-              <text
-                [attr.x]="op.x"
-                [attr.y]="op.y"
-                [attr.font-size]="op.size"
-                [attr.fill]="op.color"
-                [attr.text-anchor]="op.anchor"
-                [attr.font-family]="font"
-              >
-                {{ op.text }}
-              </text>
-            }
-          }
-        }
-      </svg>
-    } @empty {
-      <div class="sheet-page sheet-empty">
-        <p class="muted">
-          @if (loading()) {
-            {{ 'Loading the strokes…' | t }}
-          } @else {
-            {{ 'Type or pick characters: the preview of the sheets shows here.' | t }}
-          }
-        </p>
-      </div>
+  <app-sheet-preview [pages]="pages()">
+    @if (loading()) {
+      {{ 'Loading the strokes…' | t }}
+    } @else {
+      {{ 'Type or pick characters: the preview of the sheets shows here.' | t }}
     }
-  </div>
+  </app-sheet-preview>
 </section>

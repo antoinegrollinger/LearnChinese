@@ -699,4 +699,35 @@ export const FR: Record<string, string> = {
   'You already sent {name} a request.': 'Vous avez déjà envoyé une demande à {name}.',
   'You and {name} are already friends.': '{name} et vous êtes déjà amis.',
   'Don\'t use "/", "\\", "?", "#" or "%".': "N'utilisez pas « / », « \\ », « ? », « # » ou « % ».",
+  // Train on paper: export of the learning material
+  'Practice sheets': "Fiches d'exercice",
+  'Export learning material': "Exporter le matériel d'apprentissage",
+  'Your characters and words with their pinyin, meaning and notes, as a PDF to print and exercise with.':
+    'Vos caractères et mots avec leur pinyin, leur sens et vos notes, en PDF à imprimer pour vous exercer.',
+  Version: 'Version',
+  'With answers': 'Avec les réponses',
+  'Without answers': 'Sans les réponses',
+  'Without answers (exercise)': 'Sans les réponses (exercice)',
+  'Pinyin, meaning, components and example words.': "Pinyin, sens, composants et mots d'exemple.",
+  'The pinyin and meaning are left blank, to fill in.':
+    'Le pinyin et le sens sont laissés vides, à compléter.',
+  'Include the notes': 'Inclure les notes',
+  'No characters yet.': 'Pas encore de caractères.',
+  'Choose characters or words: the preview of the document shows here.':
+    "Choisissez des caractères ou des mots : l'aperçu du document s'affiche ici.",
+  'My learning material': "Mon matériel d'apprentissage",
+  exercise: 'exercice',
+  'Components:': 'Composants :',
+  'Notes:': 'Notes :',
+  meaning: 'sens',
+  sound: 'son',
+  'The pinyin and meaning are left blank, to fill in. No notes.':
+    'Le pinyin et le sens sont laissés vides, à compléter. Sans les notes.',
+  Detailed: 'Détaillée',
+  Compact: 'Compacte',
+  'Just the character or word, its pinyin and meaning, in a table: fewer pages.':
+    'Seulement le caractère ou le mot, son pinyin et son sens, dans un tableau : moins de pages.',
+  'Each entry with its components, example words and notes.':
+    "Chaque entrée avec ses composants, ses mots d'exemple et ses notes.",
+  'Pinyin and meaning.': 'Pinyin et sens.',
 };

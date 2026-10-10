@@ -684,4 +684,36 @@ export const NL: Record<string, string> = {
   'You already sent {name} a request.': 'Je hebt {name} al een verzoek gestuurd.',
   'You and {name} are already friends.': 'Jij en {name} zijn al vrienden.',
   'Don\'t use "/", "\\", "?", "#" or "%".': 'Gebruik geen "/", "\\", "?", "#" of "%".',
+  // Train on paper: export of the learning material
+  'Practice sheets': 'Oefenbladen',
+  'Export learning material': 'Leermateriaal exporteren',
+  'Your characters and words with their pinyin, meaning and notes, as a PDF to print and exercise with.':
+    'Je karakters en woorden met hun pinyin, betekenis en notities, als pdf om af te drukken en mee te oefenen.',
+  Version: 'Versie',
+  'With answers': 'Met antwoorden',
+  'Without answers': 'Zonder antwoorden',
+  'Without answers (exercise)': 'Zonder antwoorden (oefening)',
+  'Pinyin, meaning, components and example words.':
+    'Pinyin, betekenis, componenten en voorbeeldwoorden.',
+  'The pinyin and meaning are left blank, to fill in.':
+    'De pinyin en betekenis blijven leeg, om in te vullen.',
+  'Include the notes': 'Notities opnemen',
+  'No characters yet.': 'Nog geen karakters.',
+  'Choose characters or words: the preview of the document shows here.':
+    'Kies karakters of woorden: het voorbeeld van het document verschijnt hier.',
+  'My learning material': 'Mijn leermateriaal',
+  exercise: 'oefening',
+  'Components:': 'Componenten:',
+  'Notes:': 'Notities:',
+  meaning: 'betekenis',
+  sound: 'klank',
+  'The pinyin and meaning are left blank, to fill in. No notes.':
+    'De pinyin en betekenis blijven leeg, om in te vullen. Zonder notities.',
+  Detailed: 'Uitgebreid',
+  Compact: 'Compact',
+  'Just the character or word, its pinyin and meaning, in a table: fewer pages.':
+    "Alleen het karakter of woord, de pinyin en de betekenis, in een tabel: minder pagina's.",
+  'Each entry with its components, example words and notes.':
+    'Elk item met zijn componenten, voorbeeldwoorden en notities.',
+  'Pinyin and meaning.': 'Pinyin en betekenis.',
 };

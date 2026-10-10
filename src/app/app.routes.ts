@@ -40,6 +40,10 @@ const FRIEND_TABS: PageTab[] = [
   { name: 'Characters', icon: '字', path: '/friends/:username/characters' },
   { name: 'Words', icon: '词', path: '/friends/:username/words' },
 ];
+const PAPER_TABS: PageTab[] = [
+  { name: 'Practice sheets', icon: '练', path: '/paper' },
+  { name: 'Export learning material', icon: '印', path: '/paper/export' },
+];
 const ADD_TABS: PageTab[] = [
   { name: 'Character', icon: '字', path: '/add' },
   { name: 'Word', icon: '词', path: '/add/word' },
@@ -133,11 +137,24 @@ const pages: Routes = [
       },
     ],
   },
-  // Train on paper: printable practice sheets (PDF).
+  // Train on paper: printable practice sheets (/paper) and your learning material (/paper/export),
+  // as PDF.
   {
     path: 'paper',
-    loadComponent: () => import('./features/paper/paper').then((m) => m.Paper),
-    title: 'Train on paper · Hanzi Workshop',
+    component: TabbedPage,
+    data: { tabs: PAPER_TABS, label: 'Train on paper' },
+    children: [
+      {
+        path: 'export',
+        loadComponent: () => import('./features/paper/export/export').then((m) => m.LearningExport),
+        title: 'Export learning material · Train on paper · Hanzi Workshop',
+      },
+      {
+        path: '',
+        loadComponent: () => import('./features/paper/paper/paper').then((m) => m.Paper),
+        title: 'Practice sheets · Train on paper · Hanzi Workshop',
+      },
+    ],
   },
   {
     path: 'friends',

@@ -1,0 +1,183 @@
+<section class="view paper">
+  <div class="paper-setup">
+    <h2>{{ 'Export learning material' | t }}</h2>
+    <p class="muted">
+      {{
+        'Your characters and words with their pinyin, meaning and notes, as a PDF to print and exercise with.'
+          | t
+      }}
+    </p>
+
+    <div class="paper-field">
+      <span>{{ 'Version' | t }}</span>
+      <div
+        class="layout-toggle segmented"
+        appSlidingThumb
+        role="group"
+        [attr.aria-label]="'Version' | t"
+      >
+        <button
+          type="button"
+          [class.active]="options().answers"
+          [attr.aria-pressed]="options().answers"
+          (click)="set('answers', true)"
+        >
+          {{ 'With answers' | t }}
+        </button>
+        <button
+          type="button"
+          [class.active]="!options().answers"
+          [attr.aria-pressed]="!options().answers"
+          (click)="set('answers', false)"
+        >
+          {{ 'Without answers' | t }}
+        </button>
+      </div>
+      <small class="muted">
+        {{
+          (options().answers
+            ? options().layout === 'compact'
+              ? 'Pinyin and meaning.'
+              : 'Pinyin, meaning, components and example words.'
+            : 'The pinyin and meaning are left blank, to fill in. No notes.'
+          ) | t
+        }}
+      </small>
+    </div>
+    <div class="paper-field">
+      <span>{{ 'Layout' | t }}</span>
+      <div
+        class="layout-toggle segmented"
+        appSlidingThumb
+        role="group"
+        [attr.aria-label]="'Layout' | t"
+      >
+        <button
+          type="button"
+          [class.active]="options().layout === 'detailed'"
+          [attr.aria-pressed]="options().layout === 'detailed'"
+          (click)="set('layout', 'detailed')"
+        >
+          {{ 'Detailed' | t }}
+        </button>
+        <button
+          type="button"
+          [class.active]="options().layout === 'compact'"
+          [attr.aria-pressed]="options().layout === 'compact'"
+          (click)="set('layout', 'compact')"
+        >
+          {{ 'Compact' | t }}
+        </button>
+      </div>
+      <small class="muted">
+        {{
+          (options().layout === 'compact'
+            ? 'Just the character or word, its pinyin and meaning, in a table: fewer pages.'
+            : 'Each entry with its components, example words and notes.'
+          ) | t
+        }}
+      </small>
+    </div>
+    @if (options().answers && options().layout === 'detailed') {
+      <label class="check">
+        <input
+          type="checkbox"
+          [checked]="options().notes"
+          (change)="set('notes', $any($event.target).checked)"
+        />
+        {{ 'Include the notes' | t }}
+      </label>
+    }
+    <label class="paper-field">
+      <span>{{ 'Title' | t }}</span>
+      <input
+        [value]="options().title"
+        [placeholder]="defaultTitle | t"
+        maxlength="80"
+        (input)="set('title', $any($event.target).value)"
+      />
+    </label>
+
+    <fieldset class="paper-options export-choice">
+      <legend>
+        {{ 'Characters' | t }} ({{ chosenCharacters().length }}/{{ allCharacters().length }})
+      </legend>
+      @if (allCharacters().length) {
+        <div class="buttons">
+          <button type="button" (click)="chooseAllCharacters(true)">{{ 'Select all' | t }}</button>
+          <button type="button" (click)="chooseAllCharacters(false)">{{ 'Clear' | t }}</button>
+        </div>
+        <div class="paper-chips" lang="zh">
+          @for (c of allCharacters(); track c.character) {
+            <button
+              type="button"
+              [class.chosen]="isCharacterChosen(c.character)"
+              [attr.aria-pressed]="isCharacterChosen(c.character)"
+              [title]="toPinyin(c.pinyin) + (c.meaning ? ' — ' + c.meaning : '')"
+              (click)="toggleCharacter(c.character)"
+            >
+              {{ c.character }}
+            </button>
+          }
+        </div>
+      } @else if (characters.loaded()) {
+        <p class="muted">{{ 'No characters yet.' | t }}</p>
+      }
+    </fieldset>
+
+    <fieldset class="paper-options export-choice">
+      <legend>{{ 'Words' | t }} ({{ chosenWords().length }}/{{ allWords().length }})</legend>
+      @if (allWords().length) {
+        <div class="buttons">
+          <button type="button" (click)="chooseAllWords(true)">{{ 'Select all' | t }}</button>
+          <button type="button" (click)="chooseAllWords(false)">{{ 'Clear' | t }}</button>
+        </div>
+        <div class="paper-chips" lang="zh">
+          @for (w of allWords(); track w.word) {
+            <button
+              type="button"
+              [class.chosen]="isWordChosen(w.word)"
+              [attr.aria-pressed]="isWordChosen(w.word)"
+              [title]="toPinyin(w.pinyin) + (w.meaning ? ' — ' + w.meaning : '')"
+              (click)="toggleWord(w.word)"
+            >
+              {{ w.word }}
+            </button>
+          }
+        </div>
+      } @else if (words.loaded()) {
+        <p class="muted">{{ 'No words yet.' | t }}</p>
+      }
+    </fieldset>
+
+    <!-- Stays at the bottom of the panel while the settings scroll. -->
+    <div class="paper-actions">
+      <button
+        type="button"
+        class="primary cta"
+        [disabled]="!pages().length || loading() || downloading()"
+        (click)="download()"
+      >
+        {{
+          downloading()
+            ? ('Making the PDF…' | t)
+            : ('Download the PDF' | t) +
+              (pages().length > 1
+                ? ' (' + (pages().length | tn: '{n} page' : '{n} pages') + ')'
+                : '')
+        }}
+      </button>
+      @if (error(); as e) {
+        <p class="message error">{{ e | tm }}</p>
+      }
+    </div>
+  </div>
+
+  <app-sheet-preview [pages]="pages()">
+    @if (loading()) {
+      {{ 'Loading the strokes…' | t }}
+    } @else {
+      {{ 'Choose characters or words: the preview of the document shows here.' | t }}
+    }
+  </app-sheet-preview>
+</section>

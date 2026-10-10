@@ -63,6 +63,7 @@ export type SheetOp =
       size: number;
       color: string;
       anchor: 'start' | 'middle' | 'end';
+      bold?: boolean;
     };
 
 export interface SheetPage {

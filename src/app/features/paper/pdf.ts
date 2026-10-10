@@ -93,7 +93,7 @@ interface TextImage {
 function renderText(op: Extract<SheetOp, { kind: 'text' }>) {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d')!;
-  const font = `${op.size * TEXT_PX_PER_MM}px ${SHEET_FONT}`;
+  const font = `${op.bold ? 'bold ' : ''}${op.size * TEXT_PX_PER_MM}px ${SHEET_FONT}`;
   ctx.font = font;
   const m = ctx.measureText(op.text);
   const pad = 4;
